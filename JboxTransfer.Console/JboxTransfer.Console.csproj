@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -9,6 +9,12 @@
 	  <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
+	<ItemGroup>
+		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+		<PackageReference Include="Teru.Code" Version="1.0.2" />
+		<PackageReference Include="ZXing.Net" Version="0.16.9" />
+	</ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\JboxTransfer.Core\JboxTransfer.Core.csproj" />
   </ItemGroup>
