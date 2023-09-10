@@ -1,0 +1,74 @@
+﻿<Page x:Class="JboxTransfer.Views.LoginPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:local="clr-namespace:JboxTransfer.Views"
+      xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+      Title="HomePage"
+      d:Width="1000" d:Height="600"
+      d:Background="AliceBlue" Loaded="Page_Loaded"
+      mc:Ignorable="d">
+    <Grid ClipToBounds="True">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition />
+            <ColumnDefinition Width="0.9*" />
+        </Grid.ColumnDefinitions>
+        <Image HorizontalAlignment="Center" VerticalAlignment="Center"
+               Grid.ColumnSpan="2"
+               Source="/Resources/privateBackground.e551aecc.jpg"
+               Stretch="UniformToFill" />
+        <StackPanel Margin="60,50,0,0" Orientation="Vertical">
+            <TextBlock Foreground="White"
+                       Text="JboxTransfer"
+                       FontSize="42" FontFamily="Berlin Sans FB" />
+            <TextBlock Margin="0,10,0,0"
+                       Foreground="White"
+                       Text="全自动地转移您的文件"
+                       FontWeight="Light"
+                       FontSize="28" />
+        </StackPanel>
+        <TextBlock HorizontalAlignment="Stretch" VerticalAlignment="Bottom"
+                   Margin="0,0,0,10"
+                   Grid.ColumnSpan="2"
+                   Foreground="White"
+                   Text="版权所有 © 2023 上海交通大学网络信息中心&#x0D;JboxTransfer 由 ChatSJTU 学生开发团队 提供技术支持"
+                   Opacity="0.6" TextAlignment="Center" />
+        <md:Card Margin="0,36,36,56"
+                 Grid.Column="1" 
+                 Opacity="0.95">
+            <TabControl HorizontalContentAlignment="Center">
+                <TabItem Header="快捷登录">
+                    <Grid VerticalAlignment="Center">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+                        <TextBlock HorizontalAlignment="Center"
+                                   Text="微信或交我办扫码认证"
+                                   FontSize="20" />
+                        <Grid HorizontalAlignment="Stretch"
+                              Margin="80,10,80,0"
+                              Grid.Row="1">
+                            <Image Source="{Binding ImageSource}" />
+                            <Border x:Name="MaskBorder"
+                                    Background="#EEFFFFFF"
+                                    MouseDown="MaskBorder_MouseDown" Visibility="Visible">
+                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           TextWrapping="Wrap"
+                                           Text="{Binding Message}"
+                                           FontSize="14" />
+                            </Border>
+                        </Grid>
+                    </Grid>
+                </TabItem>
+                <TabItem Header="账号密码登录">
+                    <TextBlock Margin="8" Text="Filled, centered, required width, tab 2" />
+                </TabItem>
+                <TabItem Header="Cookie 登录">
+                    <TextBlock Margin="8" Text="Filled, centered, required width, tab 3" />
+                </TabItem>
+            </TabControl>
+        </md:Card>
+    </Grid>
+</Page>

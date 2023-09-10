@@ -17,6 +17,8 @@ namespace JboxTransfer
         protected override void OnStartup(StartupEventArgs e)
         {
             InitIoC();
+            GlobalCookie.Read();
+            NetService.Init();
             base.OnStartup(e);
         }
 
@@ -27,6 +29,7 @@ namespace JboxTransfer
             ioc.AddSingleton<IPageService, PageService>();
 
             ioc.AddSingleton<HomePage>();
+            ioc.AddSingleton<LoginPage>();
 
             var serviceProvider = ioc.BuildServiceProvider();
 

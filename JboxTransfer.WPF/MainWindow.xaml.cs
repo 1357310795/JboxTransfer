@@ -1,5 +1,7 @@
-﻿using JboxTransfer.Services;
+﻿using JboxTransfer.Core.Helpers;
+using JboxTransfer.Services;
 using JboxTransfer.Services.Contracts;
+using JboxTransfer.Views;
 using Microsoft.Extensions.DependencyInjection;
 using System.Text;
 using System.Windows;
@@ -31,7 +33,10 @@ namespace JboxTransfer
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            navigationService.NavigateTo("HomePage");
+            if (GlobalCookie.HasJacCookie())
+                navigationService.NavigateTo(nameof(HomePage));
+            else
+                navigationService.NavigateTo(nameof(LoginPage));
         }
     }
 }

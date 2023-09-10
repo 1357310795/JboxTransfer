@@ -9,7 +9,16 @@
 	  <LangVersion>latest</LangVersion>
     <RootNamespace>JboxTransfer</RootNamespace>
     <Platforms>AnyCPU;x86</Platforms>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Resources\privateBackground.e551aecc.jpg" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\privateBackground.e551aecc.jpg" />
+  </ItemGroup>
 
   <ItemGroup>
 	<PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1" />
@@ -30,7 +39,6 @@
   <ItemGroup>
     <Folder Include="ViewModels\" />
     <Folder Include="Models\" />
-    <Folder Include="Resources\" />
   </ItemGroup>
 
 </Project>
