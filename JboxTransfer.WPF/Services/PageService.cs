@@ -22,6 +22,7 @@ public class PageService : IPageService
     {
         _pages.Add(nameof(LoginPage), typeof(LoginPage));
         _pages.Add(nameof(HomePage), typeof(HomePage));
+        _pages.Add(nameof(DebugPage), typeof(DebugPage));
         //_pages.Add(nameof(EncodePage), typeof(EncodePage));
         //_pages.Add(nameof(DecodePage), typeof(DecodePage));
         //_pages.Add(nameof(DrawPage), typeof(DrawPage));

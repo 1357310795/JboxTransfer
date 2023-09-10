@@ -106,5 +106,10 @@ namespace JboxTransfer.Views
                 helper.Refresh();
             }
         }
+
+        private void Page_Unloaded(object sender, RoutedEventArgs e)
+        {
+            helper.Dispose();
+        }
     }
 }

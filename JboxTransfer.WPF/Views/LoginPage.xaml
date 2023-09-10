@@ -6,7 +6,7 @@
       xmlns:local="clr-namespace:JboxTransfer.Views"
       xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
       Title="HomePage"
-      d:Width="1000" d:Height="600"
+      d:Width="1000" d:Height="600" Unloaded="Page_Unloaded"
       d:Background="AliceBlue" Loaded="Page_Loaded"
       mc:Ignorable="d">
     <Grid ClipToBounds="True">

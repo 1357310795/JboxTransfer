@@ -8,7 +8,7 @@
     <UseWPF>true</UseWPF>
 	  <LangVersion>latest</LangVersion>
     <RootNamespace>JboxTransfer</RootNamespace>
-    <Platforms>AnyCPU;x86</Platforms>
+    <Platforms>AnyCPU;x86;x64</Platforms>
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
 

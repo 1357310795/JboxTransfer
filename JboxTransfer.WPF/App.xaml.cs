@@ -30,6 +30,7 @@ namespace JboxTransfer
 
             ioc.AddSingleton<HomePage>();
             ioc.AddSingleton<LoginPage>();
+            ioc.AddSingleton<DebugPage>();
 
             var serviceProvider = ioc.BuildServiceProvider();
 
