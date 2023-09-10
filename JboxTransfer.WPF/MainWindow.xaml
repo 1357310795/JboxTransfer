@@ -7,7 +7,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     Title="MainWindow"
     Width="800"
-    Height="450"
+    Height="450" Loaded="Window_Loaded"
     mc:Ignorable="d">
-    <Grid />
+    <Frame x:Name="MainFrame"/>
 </Window>
