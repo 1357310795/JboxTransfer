@@ -3,7 +3,7 @@ using System;
 using System.Diagnostics;
 using Teru.Code.Models;
 
-namespace JboxTransfer.Core.Helpers
+namespace JboxTransfer.Helpers
 {
     public static class AutorunHelper
     {

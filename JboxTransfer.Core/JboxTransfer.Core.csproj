@@ -5,11 +5,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
 	  <Nullable>disable</Nullable>
 	  <LangVersion>latest</LangVersion>
+	  <Platforms>AnyCPU;x86</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="sqlite-net-pcl" Version="1.8.116" />
     <PackageReference Include="Teru.Code" Version="1.0.2" />
     <PackageReference Include="ZXing.Net" Version="0.16.9" />
   </ItemGroup>
