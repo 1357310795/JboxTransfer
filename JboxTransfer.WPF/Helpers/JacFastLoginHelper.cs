@@ -54,6 +54,9 @@ namespace JboxTransfer.Helpers
             cookieContainer = cc;
             this.targetUri = targetUri;
             client = NetService.Client;
+            worker = new LoopWorker();
+            tokensource = new CancellationTokenSource();
+            ws = new ClientWebSocket();
         }
         #endregion
 
@@ -273,13 +276,6 @@ namespace JboxTransfer.Helpers
                 if (conn.StatusCode == HttpStatusCode.OK && conn.RequestMessage.RequestUri.OriginalString.Contains("https://jaccount.sjtu.edu.cn/jaccount/jalogin"))
                 {
                     Fail($"expresslogin失败，未认证");
-                    return;
-                }
-
-                var res = UserInfoService.GetUserInfo(client);
-                if (!res.success)
-                {
-                    Fail($"获取用户信息失败");
                     return;
                 }
 

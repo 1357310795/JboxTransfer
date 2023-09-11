@@ -1,0 +1,120 @@
+﻿using JboxTransfer.Services;
+using Newtonsoft.Json;
+using System;
+using System.Buffers;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Text;
+using System.Threading.Tasks;
+using Teru.Code.Extensions;
+using Teru.Code.Models;
+
+namespace JboxTransfer.Modules.Sync
+{
+    public class JboxService
+    {
+        public static string S;
+        public static bool Logined;
+        public static CommonResult Login()
+        {
+            HttpClient client = NetService.Client;
+            HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Get, "https://jbox.sjtu.edu.cn");
+            req.Headers.Accept.ParseAdd("text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
+            req.Headers.AcceptEncoding.ParseAdd("gzip, deflate, br");
+            req.Headers.AcceptLanguage.ParseAdd("zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7");
+            req.Headers.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36 Edg/116.0.1938.76");
+            var res = client.SendAsync(req).GetAwaiter().GetResult();
+
+            if (!res.IsSuccessStatusCode)
+            {
+                return new CommonResult(false, $"服务器响应{res.StatusCode}");
+            }
+
+            if (res.RequestMessage.RequestUri.Host.Contains("jaccount"))
+            {
+                return new CommonResult(false, $"未成功认证");
+            }
+
+            var body = res.Content.ReadAsStringAsync().Result;
+
+            if (body.Contains("vpn",StringComparison.OrdinalIgnoreCase))
+            {
+                return new CommonResult(false, $"校外访问");
+            }
+
+            var cookies = GlobalCookie.CookieContainer.GetCookies(new Uri("https://jbox.sjtu.edu.cn"));
+            var Sc = cookies.FirstOrDefault(x => x.Name == "S");
+            if (Sc != null)
+            {
+                S = Sc.Value;
+                Logined = true;
+            }
+            else
+                return new CommonResult(false, "找不到 Cookie");
+            return new CommonResult(true, "");
+        }
+
+        public static CommonResult<MemoryStream> DownloadChunk(string path, long start, long size, Pack<long> chunkProgress)
+        {
+            Dictionary<string, string> form = new Dictionary<string, string>();
+            form.Add("path_type", "self");
+            form.Add("S", S);
+
+            string url = "https://jbox.sjtu.edu.cn:10081/v2/files/databox";
+            url += path.UrlEncodeByParts();
+            StringBuilder sb = new StringBuilder();
+            sb.Append(url);
+
+            if (form.Count > 0)
+            {
+                sb.Append("?");
+                int i = 0;
+                foreach (var item in form)
+                {
+                    if (i > 0)
+                        sb.Append("&");
+                    sb.AppendFormat("{0}={1}", item.Key, item.Value);
+                    i++;
+                }
+            }
+            url = sb.ToString();
+
+            HttpWebRequest req = HttpWebRequest.CreateHttp(url);
+            req.Method = "GET";
+            req.Accept = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9";
+            req.Headers.Add("Accept-Encoding", "gzip, deflate, br");
+            req.Headers.Add("Accept-Language", "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7");
+            req.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36 Edg/116.0.1938.76";
+            req.Referer = "https://jbox.sjtu.edu.cn/";
+            req.AddRange(start, start + size - 1);
+            req.CookieContainer = GlobalCookie.CookieContainer;
+            //req.Content = new FormUrlEncodedContent(form);
+
+            var resp = req.GetResponse();
+            var body = resp.GetResponseStream();
+
+            MemoryStream ms = new MemoryStream();
+
+            chunkProgress.Value = 0;
+            byte[] buffer = ArrayPool<byte>.Shared.Rent(81920 / 2);
+            try
+            {
+                int bytesRead;
+                while ((bytesRead = body.Read(buffer, 0, buffer.Length)) != 0)
+                {
+                    ms.Write(buffer, 0, bytesRead);
+                    chunkProgress.Value += bytesRead;
+                }
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(buffer);
+            }
+
+            return new CommonResult<MemoryStream>(true, "", ms);
+        }
+    }
+}

@@ -20,6 +20,9 @@ using ZXing;
 using ZXing.Windows.Compatibility;
 using System.Diagnostics;
 using JboxTransfer.Services.Contracts;
+using JboxTransfer.Modules.Sync;
+using System.Xml.Serialization;
+using Teru.Code.Models;
 
 namespace JboxTransfer.Views
 {
@@ -52,11 +55,79 @@ namespace JboxTransfer.Views
             helper.Prepared += Helper_Prepared;
             helper.LoginFail += Helper_LoginFail;
             helper.LoginSuccess += Helper_LoginSuccess;
-            helper.Start();
+
+            if (GlobalCookie.HasJacCookie())
+                Task.Run(AutoLogin);
+            else
+                helper.Start();
+        }
+
+        private void AutoLogin()
+        {
+            this.Dispatcher.Invoke(() =>
+            {
+                MaskBorder.Visibility = Visibility.Visible;
+                Message = $"自动登录中……";
+            });
+
+            var res = Validate();
+            if (!res.success)
+            {
+                helper.Failed = true;
+                this.Dispatcher.Invoke(() =>
+                {
+                    MaskBorder.Visibility = Visibility.Visible;
+                    Message = res.result;
+
+                });
+                return;
+            }
+            else
+            {
+                this.Dispatcher.Invoke(() =>
+                {
+                    navigationService.NavigateTo(nameof(DebugPage));
+                });
+                GlobalCookie.Save();
+            }
+        }
+
+        private CommonResult Validate()
+        {
+            var res = UserInfoService.GetUserInfo();
+            if (!res.success)
+            {
+                return new CommonResult(false, $"验证失败：{res.result}\n点击以重试");
+            }
+            var res2 = JboxService.Login();
+            if (!res2.success)
+            {
+                return new CommonResult(false, $"jbox认证失败：{res.result}\n点击以重试");
+            }
+            return new CommonResult(true, "");
         }
 
         private void Helper_LoginSuccess()
         {
+            this.Dispatcher.Invoke(() =>
+            {
+                MaskBorder.Visibility = Visibility.Visible;
+                Message = $"已扫码，验证中……";
+            });
+
+            var res = Validate();
+            if (!res.success)
+            {
+                helper.Failed = true;
+                this.Dispatcher.Invoke(() =>
+                {
+                    MaskBorder.Visibility = Visibility.Visible;
+                    Message = res.result;
+
+                });
+                return;
+            }
+
             this.Dispatcher.Invoke(() =>
             {
                 navigationService.NavigateTo(nameof(HomePage));

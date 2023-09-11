@@ -33,10 +33,11 @@ namespace JboxTransfer
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            if (GlobalCookie.HasJacCookie())
-                navigationService.NavigateTo(nameof(DebugPage));
-            else
-                navigationService.NavigateTo(nameof(LoginPage));
+            navigationService.NavigateTo(nameof(LoginPage));
+            //if (GlobalCookie.HasJacCookie())
+            //    navigationService.NavigateTo(nameof(DebugPage));
+            //else
+            //    navigationService.NavigateTo(nameof(LoginPage));
         }
     }
 }

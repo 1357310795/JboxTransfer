@@ -1,7 +1,9 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using JboxTransfer.Core.Helpers;
+using JboxTransfer.Modules.Sync;
 using JboxTransfer.Services;
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -37,45 +39,72 @@ namespace JboxTransfer.Views
         [ObservableProperty]
         private double progress;
 
+        [ObservableProperty]
+        private string text;
+
+        [ObservableProperty]
+        private string message;
+
         private long len;
         private void Page_Loaded(object sender, RoutedEventArgs e)
         {
-            //Task.Run(Download);
-            var md5 = HashHelper.MD5Hash_Start();
-            md5.MD5Hash_Proc(Encoding.Default.GetBytes("123456"));
-            var res = md5.MD5Hash_Finish();
-            StringBuilder sub = new StringBuilder();
-            foreach (var t in res)
-            {
-                sub.Append(t.ToString("x2"));
-            }
-            Debug.WriteLine(sub.ToString());
+            Task.Run(Download);
+            //var md5 = HashHelper.MD5Hash_Start();
+            //md5.MD5Hash_Proc(Encoding.Default.GetBytes("123456"));
+            //var res = md5.MD5Hash_Finish();
+            //StringBuilder sub = new StringBuilder();
+            //foreach (var t in res)
+            //{
+            //    sub.Append(t.ToString("x2"));
+            //}
+            //Debug.WriteLine(sub.ToString());
         }
 
         public void Download()
         {
+            FileSyncTask task = new FileSyncTask("/final2.mp4", "a2959e6affa4f4cf1baa1d74b0e07afc", 111515990);
+            task.Start();
+            while(true)
+            {
+                Thread.Sleep(1000);
+                Text = task.GetProgressStr();
+                Message = task.Message;
+            }
             //var client = NetService.Client;
             //var req = new HttpRequestMessage(HttpMethod.Connect, "http://10.119.4.90:443/auto.exe");
             //var res = client.SendAsync(req).Result;
 
-            HttpWebRequest req = HttpWebRequest.CreateHttp("http://10.119.4.90:443/auto.exe");
-            req.Method = "GET";
-            var resp = req.GetResponse() as HttpWebResponse;
+            //HttpWebRequest req = HttpWebRequest.CreateHttp("http://10.119.4.90:443/auto.exe");
+            //req.Method = "GET";
+            //var resp = req.GetResponse() as HttpWebResponse;
 
-            var stream = resp.GetResponseStream();
-            len = resp.ContentLength;
+            //var stream = resp.GetResponseStream();
+            //len = resp.ContentLength;
 
-            MyStream ms = new MyStream();
-            ms.OnWrite += Ms_OnWrite;
-            stream.CopyTo(ms);
+            //MyStream ms = new MyStream();
+            //ms.OnWrite += Ms_OnWrite;
+            ////stream.CopyTo(ms);
 
+            //byte[] buffer = ArrayPool<byte>.Shared.Rent(81920/2);
+            //try
+            //{
+            //    int bytesRead;
+            //    while ((bytesRead = stream.Read(buffer, 0, buffer.Length)) != 0)
+            //    {
+            //        ms.Write(buffer, 0, bytesRead);
+            //    }
+            //}
+            //finally
+            //{
+            //    ArrayPool<byte>.Shared.Return(buffer);
+            //}
 
         }
 
-        private void Ms_OnWrite(long off)
-        {
-            Progress = (double)off / (double)len;
-        }
+        //private void Ms_OnWrite(long off)
+        //{
+        //    Progress = (double)off / (double)len;
+        //}
     }
 
     public class MyStream : MemoryStream

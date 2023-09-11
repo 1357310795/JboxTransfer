@@ -9,20 +9,32 @@ using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
 using Teru.Code.Models;
+using ZXing.Aztec.Internal;
 
 namespace JboxTransfer.Services
 {
     public class UserInfoService : IUserInfoService
     {
         public static UserInfoEntity entity;
-        public static CommonResult GetUserInfo(HttpClient client)
+        public static CommonResult GetUserInfo()
         {
+            HttpClient client = NetService.Client;
             HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Get, "https://my.sjtu.edu.cn/api/resource/my/info");
             req.Headers.Accept.ParseAdd("text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
             req.Headers.AcceptEncoding.ParseAdd("gzip, deflate, br");
             req.Headers.AcceptLanguage.ParseAdd("zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7");
             req.Headers.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36 Edg/116.0.1938.76");
             var res = client.SendAsync(req).GetAwaiter().GetResult();
+
+            while (res.StatusCode == HttpStatusCode.Found && res.Headers.Location.Scheme == "http")
+            {
+                req = new HttpRequestMessage(HttpMethod.Get, res.Headers.Location.OriginalString.Replace("http", "https"));
+                req.Headers.Accept.ParseAdd("text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
+                req.Headers.AcceptEncoding.ParseAdd("gzip, deflate, br");
+                req.Headers.AcceptLanguage.ParseAdd("zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7");
+                req.Headers.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36 Edg/116.0.1938.76");
+                res = client.SendAsync(req).GetAwaiter().GetResult();
+            }
 
             if (!res.IsSuccessStatusCode)
             {

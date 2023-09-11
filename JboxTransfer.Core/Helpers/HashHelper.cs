@@ -38,6 +38,19 @@ namespace JboxTransfer.Core.Helpers
             return sub.ToString();
         }
 
+        public static string SHA256Hash(MemoryStream str)
+        {
+            var data = SHA256.Create().ComputeHash(str);
+
+            StringBuilder sub = new StringBuilder();
+            foreach (var t in data)
+            {
+                sub.Append(t.ToString("x2"));
+            }
+
+            return sub.ToString();
+        }
+
         public static SHA256 SHA256Hash_Start()
         {
             return SHA256.Create();
@@ -58,6 +71,19 @@ namespace JboxTransfer.Core.Helpers
         {
             var buffer = Encoding.UTF8.GetBytes(str);
             var data = MD5.Create().ComputeHash(buffer);
+
+            StringBuilder sub = new StringBuilder();
+            foreach (var t in data)
+            {
+                sub.Append(t.ToString("x2"));
+            }
+
+            return sub.ToString();
+        }
+
+        public static string MD5Hash(MemoryStream str)
+        {
+            var data = MD5.Create().ComputeHash(str);
 
             StringBuilder sub = new StringBuilder();
             foreach (var t in data)
