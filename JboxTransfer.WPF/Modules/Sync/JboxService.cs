@@ -1,4 +1,6 @@
-﻿using JboxTransfer.Services;
+﻿using JboxTransfer.Core.Helpers;
+using JboxTransfer.Models;
+using JboxTransfer.Services;
 using Newtonsoft.Json;
 using System;
 using System.Buffers;
@@ -11,11 +13,13 @@ using System.Text;
 using System.Threading.Tasks;
 using Teru.Code.Extensions;
 using Teru.Code.Models;
+using Teru.Code.Services;
 
 namespace JboxTransfer.Modules.Sync
 {
     public class JboxService
     {
+        public const string baseUrl = "https://jbox.sjtu.edu.cn";
         public static string S;
         public static bool Logined;
         public static CommonResult Login()
@@ -115,6 +119,36 @@ namespace JboxTransfer.Modules.Sync
             }
 
             return new CommonResult<MemoryStream>(true, "", ms);
+        }
+
+        public static CommonResult<JboxItemInfo> GetJboxItemInfo(string path)
+        {
+            if (!Logined)
+                return new CommonResult<JboxItemInfo>(false, $"未登录，请先登录");
+
+            HttpClient client = NetService.Client;
+            HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Get, baseUrl + $"/v2/metadata_page/databox" + path.UrlEncodeByParts() + $"?S={S}");
+            req.Headers.Accept.ParseAdd("text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
+            req.Headers.AcceptEncoding.ParseAdd("gzip, deflate, br");
+            req.Headers.AcceptLanguage.ParseAdd("zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7");
+            req.Headers.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36 Edg/116.0.1938.76");
+
+            var res = client.SendAsync(req).GetAwaiter().GetResult();
+
+            if (!res.IsSuccessStatusCode)
+            {
+                return new CommonResult<JboxItemInfo>(false, $"服务器响应{res.StatusCode}");
+            }
+
+            var body = res.Content.ReadAsStringAsync().Result;
+            var json = JsonConvert.DeserializeObject<JboxItemInfo>(body);
+
+            if (json.Type == "error")
+            {
+                return new CommonResult<JboxItemInfo>(false, $"服务器返回失败：{json.Message}");
+            }
+
+            return new CommonResult<JboxItemInfo>(true, "", json);
         }
     }
 }

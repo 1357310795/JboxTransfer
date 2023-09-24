@@ -8,6 +8,6 @@ namespace JboxTransfer.Models
 {
     public enum SyncTaskState
     {
-        Wait, Running, Error, Complete
+        Wait, Running, Error, Complete, Parse
     }
 }

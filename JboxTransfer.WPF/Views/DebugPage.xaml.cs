@@ -46,6 +46,17 @@ namespace JboxTransfer.Views
         [ObservableProperty]
         private string message;
 
+        [ObservableProperty]
+        private string path;
+
+        [ObservableProperty]
+        private long size;
+
+        [ObservableProperty]
+        private string hash;
+
+        FileSyncTask task;
+
         private long len;
         private void Page_Loaded(object sender, RoutedEventArgs e)
         {
@@ -55,7 +66,7 @@ namespace JboxTransfer.Views
             var hash = crc64.CRC64Hash_Finish();
             Debug.WriteLine(hash.ToString("x"));
 
-            Task.Run(Download);
+            //Task.Run(Download);
             //var md5 = HashHelper.MD5Hash_Start();
             //md5.MD5Hash_Proc(Encoding.Default.GetBytes("123456"));
             //var res = md5.MD5Hash_Finish();
@@ -69,14 +80,9 @@ namespace JboxTransfer.Views
 
         public void Download()
         {
-            FileSyncTask task = new FileSyncTask("/AutoCAD_2020_Simplified_Chinese_Win_64bit_dlm.zip", "", 2117098343);
+            task = new FileSyncTask(Path, Hash, Size);
             task.Start();
-            while(true)
-            {
-                Thread.Sleep(1000);
-                Text = task.GetProgressStr();
-                Message = task.Message;
-            }
+            
             //var client = NetService.Client;
             //var req = new HttpRequestMessage(HttpMethod.Connect, "http://10.119.4.90:443/auto.exe");
             //var res = client.SendAsync(req).Result;
@@ -108,11 +114,21 @@ namespace JboxTransfer.Views
 
         }
 
+        private void Listen()
+        {
+            while (true)
+            {
+                Thread.Sleep(1000);
+                Text = task.GetProgressStr();
+                Message = task.Message;
+            }
+        }
+
         private void Button_Click(object sender, RoutedEventArgs e)
         {
             Debug.WriteLine(TboxAccessTokenKeeper.Cred.SpaceId);
 
-            var res = TboxService.StartChunkUpload("finale2.mp4", 50);
+            //var res = TboxService.StartChunkUpload("finale2.mp4", 50);
             //FileSyncTask task = new FileSyncTask("/final2.mp4", "a2959e6affa4f4cf1baa1d74b0e07afc", 111515990);
             //task.Start();
             //while (true)
@@ -121,6 +137,35 @@ namespace JboxTransfer.Views
             //    Text = task.GetProgressStr();
             //    Message = task.Message;
             //}
+        }
+
+        private void ButtonGetInfo_Click(object sender, RoutedEventArgs e)
+        {
+            var res = JboxService.GetJboxItemInfo(Path);
+            if (!res.Success)
+            {
+                Message = res.Message; 
+                return;
+            }
+            Hash = res.Result.Hash;
+            Size = res.Result.Bytes;
+            Message = $"获取信息成功，大小为{Size}";
+        }
+
+        private void ButtonStart_Click(object sender, RoutedEventArgs e)
+        {
+            Download();
+            Task.Run(Listen);
+        }
+
+        private void ButtonPause_Click(object sender, RoutedEventArgs e)
+        {
+            task.Parse();
+        }
+
+        private void ButtonResume_Click(object sender, RoutedEventArgs e)
+        {
+            task.Resume();
         }
 
         //private void Ms_OnWrite(long off)

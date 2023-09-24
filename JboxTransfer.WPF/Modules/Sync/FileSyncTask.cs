@@ -34,8 +34,7 @@ namespace JboxTransfer.Modules.Sync
 
         private List<string> sha256_list;
 
-        public CancellationTokenSource cts;
-        public CancellationToken ct;
+        public PauseTokenSource pts;
 
         public double Progress { get; set; }
 
@@ -48,6 +47,9 @@ namespace JboxTransfer.Modules.Sync
             this.chunkCount += this.chunkCount * ChunkSize == this.size ? 0 : 1;
             jbox = new JboxDownloadSession(path, size);
             tbox = new TboxUploadSession(path, size);
+            State = SyncTaskState.Wait;
+            sha256_list = new List<string>();
+            pts = new PauseTokenSource();
         }
 
         public void Start()
@@ -57,10 +59,11 @@ namespace JboxTransfer.Modules.Sync
 
         public void internalStart()
         {
-            if (ct.IsCancellationRequested) 
+            var inst_pts = pts;
+            State = SyncTaskState.Running;
+            if (inst_pts.IsPaused) 
                 return;
 
-            sha256_list = new List<string>();
             var res1 = tbox.PrepareForUpload();
             if (!res1.success)
             {
@@ -68,7 +71,7 @@ namespace JboxTransfer.Modules.Sync
                 return;
             }
 
-            if (ct.IsCancellationRequested)
+            if (inst_pts.IsPaused)
                 return;
 
             var res2 = tbox.GetNextPartNumber();
@@ -79,7 +82,7 @@ namespace JboxTransfer.Modules.Sync
             }
             curChunk = res2.Result;
 
-            if (ct.IsCancellationRequested)
+            if (inst_pts.IsPaused)
                 return;
 
             while (curChunk.PartNumber != 0)
@@ -91,21 +94,21 @@ namespace JboxTransfer.Modules.Sync
                 {
                     try
                     {
-                        if (ct.IsCancellationRequested)
+                        if (inst_pts.IsPaused)
                             return;
 
                         res1 = tbox.EnsureNoExpire(curChunk.PartNumber);
                         if (!res1.success)
                             throw new Exception(res1.result);
 
-                        if (ct.IsCancellationRequested)
+                        if (inst_pts.IsPaused)
                             return;
 
                         chunkRes = jbox.GetChunk(curChunk.PartNumber);
                         if (!chunkRes.Success)
                             throw new Exception(chunkRes.Message);
 
-                        if (ct.IsCancellationRequested)
+                        if (inst_pts.IsPaused)
                             return;
 
                         chunkRes.Result.Position = 0;
@@ -120,7 +123,7 @@ namespace JboxTransfer.Modules.Sync
                         this.ex = ex;
                     }
                 }
-                if (ct.IsCancellationRequested)
+                if (inst_pts.IsPaused)
                     return;
                 if (t <= 0)
                 {
@@ -136,8 +139,9 @@ namespace JboxTransfer.Modules.Sync
                 }
 
                 tbox.CompletePart(curChunk);
+                succChunk++;
 
-                if (ct.IsCancellationRequested)
+                if (inst_pts.IsPaused)
                     return;
 
                 res2 = tbox.GetNextPartNumber();
@@ -147,13 +151,6 @@ namespace JboxTransfer.Modules.Sync
                     return;
                 }
                 curChunk = res2.Result;
-
-                if (curChunk.PartNumber != 0)
-                {
-                    succChunk++;
-                    jbox.ClearProgress();
-                    tbox.ClearProgress();
-                }
             }
 
             var actualHash = HashHelper.MD5Hash(string.Join(',', sha256_list));
@@ -171,16 +168,34 @@ namespace JboxTransfer.Modules.Sync
                     Message = res4.Message;
                     return;
                 }
+                State = SyncTaskState.Complete;
                 Message = "同步完成";
             }
         }
 
         public string GetProgressStr()
         {
-            var down = (succChunk * ChunkSize + jbox.Progress).PrettyPrint();
-            var up = (succChunk * ChunkSize + tbox.Progress).PrettyPrint();
+            var down = (succChunk == chunkCount ? size : (succChunk * ChunkSize + jbox.Progress)).PrettyPrint();
+            var up = (succChunk == chunkCount ? size : (succChunk * ChunkSize + tbox.Progress)).PrettyPrint();
             var all = size.PrettyPrint();
             return $"{down} / {up} / {all}";
+        }
+
+        public void Parse()
+        {
+            pts.Pause();
+            State = SyncTaskState.Parse;
+            if (curChunk != null)
+                curChunk.Uploading = false;
+        }
+
+        public void Resume()
+        {
+            if (State != SyncTaskState.Parse)
+                return;
+            pts = new PauseTokenSource();
+            pts.Resume();
+            Task.Run(internalStart);
         }
 
         //public delegate void OnUpdate(SyncTaskState state);

@@ -27,6 +27,7 @@ namespace JboxTransfer.Modules
         private int chunkCount;
         private string confirmKey;
         private List<TboxUploadPartSession> remainParts;
+        public List<TboxUploadPartSession> RemainParts => remainParts;
         TboxStartChunkUploadResDto uploadContext;
         private Pack<long> chunkProgress;
         public TboxUploadState State { get; set; }
