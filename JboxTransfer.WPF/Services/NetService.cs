@@ -13,7 +13,7 @@ namespace JboxTransfer.Services
         public static HttpClient Client;
         public static void Init()
         {
-            Client = new HttpClient(new HttpClientHandler() { AllowAutoRedirect = true, CookieContainer = GlobalCookie.CookieContainer, UseCookies = true, MaxAutomaticRedirections = 10 });
+            Client = new HttpClient(new HttpClientHandler() { AllowAutoRedirect = true, CookieContainer = GlobalCookie.CookieContainer, UseCookies = true, MaxAutomaticRedirections = 10, AutomaticDecompression = DecompressionMethods.All });
         }
     }
 }

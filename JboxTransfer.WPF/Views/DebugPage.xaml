@@ -9,10 +9,11 @@
       Title="DebugPage">
 
     <Grid>
-        <TextBlock Text="{Binding Progress}" Visibility="Collapsed"/>
+        <TextBlock Text="{Binding Progress}" Visibility="Visible"/>
         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Orientation="Vertical">
             <TextBlock Text="{Binding Text}" />
             <TextBlock Text="{Binding Message}" />
+            <Button Content="11111" Click="Button_Click"/>
         </StackPanel>
         
     </Grid>

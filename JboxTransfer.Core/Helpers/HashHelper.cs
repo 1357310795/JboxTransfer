@@ -1,4 +1,5 @@
-﻿using System;
+﻿using JboxTransfer.Core.Modules;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Intrinsics.Arm;
@@ -108,6 +109,21 @@ namespace JboxTransfer.Core.Helpers
         {
             md5.TransformFinalBlock(new byte[] { }, 0, 0);
             return md5.Hash;
+        }
+
+        public static CRC64 CRC64Hash_Start()
+        {
+            return CRC64.Create();
+        }
+
+        public static void CRC64Hash_Proc(this CRC64 crc64, byte[] input)
+        {
+            crc64.TransformBlock(input, 0, input.Length);
+        }
+
+        public static ulong CRC64Hash_Finish(this CRC64 crc64)
+        {
+            return crc64.TransformFinalBlock();
         }
     }
 }

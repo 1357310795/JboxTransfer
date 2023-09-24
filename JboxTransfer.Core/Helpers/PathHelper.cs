@@ -12,5 +12,7 @@ namespace JboxTransfer.Core.Helpers
     public static class PathHelper
     {
         public static string AppDataPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Assembly.GetExecutingAssembly().GetName().Name);
+
+        public static string AppPath => System.AppDomain.CurrentDomain.BaseDirectory;
     }
 }

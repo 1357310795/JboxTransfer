@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using JboxTransfer.Core.Helpers;
+using JboxTransfer.Core.Modules;
 using JboxTransfer.Modules.Sync;
 using JboxTransfer.Services;
 using System;
@@ -48,6 +49,12 @@ namespace JboxTransfer.Views
         private long len;
         private void Page_Loaded(object sender, RoutedEventArgs e)
         {
+            var crc64 = CRC64.Create();
+            crc64.CRC64Hash_Proc(System.Text.Encoding.Default.GetBytes("123456"));
+            crc64.CRC64Hash_Proc(System.Text.Encoding.Default.GetBytes("123456"));
+            var hash = crc64.CRC64Hash_Finish();
+            Debug.WriteLine(hash.ToString("x"));
+
             Task.Run(Download);
             //var md5 = HashHelper.MD5Hash_Start();
             //md5.MD5Hash_Proc(Encoding.Default.GetBytes("123456"));
@@ -62,7 +69,7 @@ namespace JboxTransfer.Views
 
         public void Download()
         {
-            FileSyncTask task = new FileSyncTask("/final2.mp4", "a2959e6affa4f4cf1baa1d74b0e07afc", 111515990);
+            FileSyncTask task = new FileSyncTask("/AutoCAD_2020_Simplified_Chinese_Win_64bit_dlm.zip", "", 2117098343);
             task.Start();
             while(true)
             {
@@ -99,6 +106,21 @@ namespace JboxTransfer.Views
             //    ArrayPool<byte>.Shared.Return(buffer);
             //}
 
+        }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            Debug.WriteLine(TboxAccessTokenKeeper.Cred.SpaceId);
+
+            var res = TboxService.StartChunkUpload("finale2.mp4", 50);
+            //FileSyncTask task = new FileSyncTask("/final2.mp4", "a2959e6affa4f4cf1baa1d74b0e07afc", 111515990);
+            //task.Start();
+            //while (true)
+            //{
+            //    Thread.Sleep(1000);
+            //    Text = task.GetProgressStr();
+            //    Message = task.Message;
+            //}
         }
 
         //private void Ms_OnWrite(long off)
