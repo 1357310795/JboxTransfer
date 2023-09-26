@@ -6,6 +6,7 @@ using System.Runtime.Intrinsics.Arm;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using MD5 = System.Security.Cryptography.MD5;
 
 namespace JboxTransfer.Core.Helpers
 {

@@ -39,6 +39,10 @@ namespace JboxTransfer.Modules
             //Todo : 检查块大小
             var curchunksize = chunk == chunkCount ? (size % ChunkSize) : (ChunkSize);
             var res = JboxService.DownloadChunk(path, (chunk - 1) * ChunkSize, curchunksize, chunkProgress);
+            if (!res.Success)
+                return res;
+            if (res.Result.Length != curchunksize)
+                return new CommonResult<MemoryStream>(false, $"下载时发生块大小错误：got {res.Result.Length}, expected {curchunksize}");
             return res;
         }
 

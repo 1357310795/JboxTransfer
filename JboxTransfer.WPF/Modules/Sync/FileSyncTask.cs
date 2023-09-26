@@ -1,4 +1,5 @@
 ﻿using JboxTransfer.Core.Helpers;
+using JboxTransfer.Core.Modules;
 using JboxTransfer.Extensions;
 using JboxTransfer.Models;
 using System;
@@ -7,6 +8,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 using Teru.Code.Models;
@@ -18,7 +20,7 @@ namespace JboxTransfer.Modules.Sync
         public const long ChunkSize = 4 * 1024 * 1024;
         private const int RetryTimes = 3;
         private string path;
-        private string hash;
+        private string jboxhash;
         private long size;
         private TboxUploadPartSession curChunk;
         private int chunkCount;
@@ -34,13 +36,14 @@ namespace JboxTransfer.Modules.Sync
 
         private List<string> sha256_list;
 
+        private CRC64 crc64;
         public PauseTokenSource pts;
 
         public double Progress { get; set; }
 
         public FileSyncTask(string path, string hash, long size) {
             this.path = path;
-            this.hash = hash;
+            this.jboxhash = hash;
             this.size = size;
             this.succChunk = 0;
             this.chunkCount = (int)(this.size / ChunkSize);
@@ -49,6 +52,7 @@ namespace JboxTransfer.Modules.Sync
             tbox = new TboxUploadSession(path, size);
             State = SyncTaskState.Wait;
             sha256_list = new List<string>();
+            crc64 = new CRC64();
             pts = new PauseTokenSource();
         }
 
@@ -132,12 +136,10 @@ namespace JboxTransfer.Modules.Sync
                     Message = ex.Message;
                     return;
                 }
-                else
-                {
-                    chunkRes.Result.Position = 0;
-                    sha256_list.Add(HashHelper.SHA256Hash(chunkRes.Result));
-                }
 
+                chunkRes.Result.Position = 0;
+                sha256_list.Add(HashHelper.SHA256Hash(chunkRes.Result));
+                crc64.TransformBlock(chunkRes.Result.ToArray(), 0, (int)chunkRes.Result.Length);
                 tbox.CompletePart(curChunk);
                 succChunk++;
 
@@ -154,18 +156,20 @@ namespace JboxTransfer.Modules.Sync
             }
 
             var actualHash = HashHelper.MD5Hash(string.Join(',', sha256_list));
+            var actualcrc64 = crc64.TransformFinalBlock();
 
-            if (hash == actualHash)
-                Message = "哈希值校验通过";
-            else
-                Message = "哈希值校验失败";
 
-            if (succChunk == chunkCount && curChunk.PartNumber == 0)//&& hash == actualHash
+            if (succChunk == chunkCount && curChunk.PartNumber == 0)//&& 
             {
                 var res4 = tbox.Confirm();
                 if (!res4.Success)
                 {
                     Message = res4.Message;
+                    return;
+                }
+                if (actualcrc64.ToString() != res4.Result.Crc64 || jboxhash != actualHash)
+                {
+                    Message = $"hash不匹配";
                     return;
                 }
                 State = SyncTaskState.Complete;

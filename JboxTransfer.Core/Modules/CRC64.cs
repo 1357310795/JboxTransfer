@@ -83,6 +83,13 @@
             return inst;
         }
 
+        public static CRC64 FromValue(ulong value)
+        {
+            CRC64 inst = new CRC64();
+            inst.value = value;
+            return inst;
+        }
+
         public void TransformBlock(byte[] inputBuffer, int inputOffset, int inputCount)
         {
             value = ~value;
@@ -104,6 +111,11 @@
             CRC64 inst = new CRC64();
             inst.TransformBlock(input, 0, input.Length);
             return inst.TransformFinalBlock();
+        }
+
+        public ulong GetValue()
+        {
+            return value;
         }
     }
 }

@@ -138,7 +138,6 @@ namespace JboxTransfer.Modules
 
         public CommonResult Upload(MemoryStream data, int partNumber)
         {
-            //Todo:计算CRC64和Jbox Hash
             var headerInfo = uploadContext.Parts[partNumber.ToString()].Headers;
 
             Dictionary<string, string> query = new Dictionary<string, string>();

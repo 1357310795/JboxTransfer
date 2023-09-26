@@ -3,6 +3,7 @@ using JboxTransfer.Core.Helpers;
 using JboxTransfer.Core.Modules;
 using JboxTransfer.Modules.Sync;
 using JboxTransfer.Services;
+using Newtonsoft.Json;
 using System;
 using System.Buffers;
 using System.Collections.Generic;
@@ -126,7 +127,25 @@ namespace JboxTransfer.Views
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            Debug.WriteLine(TboxAccessTokenKeeper.Cred.SpaceId);
+            MD5 md5 = MD5.Create();
+            var file =  File.ReadAllBytes(@"C:\Users\13573\Downloads\touch_payload.bin");
+            md5.TransformBlock(file, 0, file.Length);
+
+            var json = md5.GetValue();
+            var jsonstr = JsonConvert.SerializeObject(json);
+            json = JsonConvert.DeserializeObject<MD5StateStorage>(jsonstr);
+
+            md5 = MD5.Create(json);
+            md5.TransformBlock(file, 0, file.Length);
+
+            var hash = md5.TransformFinalBlock();
+            StringBuilder sub = new StringBuilder();
+            foreach (var t in hash)
+            {
+                sub.Append(t.ToString("x2"));
+            }
+            Debug.WriteLine(sub.ToString());
+            //Debug.WriteLine(TboxAccessTokenKeeper.Cred.SpaceId);
 
             //var res = TboxService.StartChunkUpload("finale2.mp4", 50);
             //FileSyncTask task = new FileSyncTask("/final2.mp4", "a2959e6affa4f4cf1baa1d74b0e07afc", 111515990);
