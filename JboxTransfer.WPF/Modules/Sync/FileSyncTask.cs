@@ -2,6 +2,8 @@
 using JboxTransfer.Core.Modules;
 using JboxTransfer.Extensions;
 using JboxTransfer.Models;
+using JboxTransfer.Services;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -12,6 +14,7 @@ using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 using Teru.Code.Models;
+using MD5 = JboxTransfer.Core.Modules.MD5;
 
 namespace JboxTransfer.Modules.Sync
 {
@@ -33,10 +36,11 @@ namespace JboxTransfer.Modules.Sync
         private JboxDownloadSession jbox;
         private TboxUploadSession tbox;
 
-
-        private List<string> sha256_list;
+        private SyncTaskDbModel dbModel;
 
         private CRC64 crc64;
+        private MD5 md5;
+
         public PauseTokenSource pts;
 
         public double Progress { get; set; }
@@ -48,11 +52,44 @@ namespace JboxTransfer.Modules.Sync
             this.succChunk = 0;
             this.chunkCount = (int)(this.size / ChunkSize);
             this.chunkCount += this.chunkCount * ChunkSize == this.size ? 0 : 1;
+            if (this.size == 0)
+                this.chunkCount = 1;
             jbox = new JboxDownloadSession(path, size);
             tbox = new TboxUploadSession(path, size);
             State = SyncTaskState.Wait;
-            sha256_list = new List<string>();
+            md5 = new MD5();
             crc64 = new CRC64();
+            pts = new PauseTokenSource();
+        }
+
+        public FileSyncTask(SyncTaskDbModel dbModel)
+        {
+            this.dbModel = dbModel;
+            this.path = dbModel.FilePath;
+            this.jboxhash = dbModel.MD5_Ori;
+            this.size = dbModel.Size;
+            this.chunkCount = (int)(this.size / ChunkSize);
+            this.chunkCount += this.chunkCount * ChunkSize == this.size ? 0 : 1;
+            if (this.size == 0)
+                this.chunkCount = 1;
+            jbox = new JboxDownloadSession(path, size);
+
+            if (dbModel.ConfirmKey == null)
+            {
+                tbox = new TboxUploadSession(path, size);
+                crc64 = new CRC64();
+                md5 = new MD5();
+                this.succChunk = 0;
+            }
+            else
+            {
+                var remain = JsonConvert.DeserializeObject<List<int>>(dbModel.RemainParts);
+                tbox = new TboxUploadSession(path, size, dbModel.ConfirmKey, remain);
+                crc64 = CRC64.FromValue((ulong)dbModel.CRC64_Part);
+                md5 = MD5.Create(JsonConvert.DeserializeObject<MD5StateStorage>(dbModel.MD5_Part));
+                this.succChunk = this.chunkCount - remain.Count;
+            }
+            State = SyncTaskState.Wait;
             pts = new PauseTokenSource();
         }
 
@@ -65,6 +102,7 @@ namespace JboxTransfer.Modules.Sync
         {
             var inst_pts = pts;
             State = SyncTaskState.Running;
+            
             if (inst_pts.IsPaused) 
                 return;
 
@@ -89,6 +127,12 @@ namespace JboxTransfer.Modules.Sync
             if (inst_pts.IsPaused)
                 return;
 
+            dbModel.ConfirmKey = tbox.ConfirmKey;
+            dbModel.RemainParts = JsonConvert.SerializeObject(tbox.RemainParts.Select(x => x.PartNumber));
+            dbModel.CRC64_Part = (long)crc64.GetValue();
+            dbModel.MD5_Part = JsonConvert.SerializeObject(md5.GetValue());
+            DbService.db.Update(dbModel);
+
             while (curChunk.PartNumber != 0)
             {
                 int t = RetryTimes;
@@ -103,14 +147,14 @@ namespace JboxTransfer.Modules.Sync
 
                         res1 = tbox.EnsureNoExpire(curChunk.PartNumber);
                         if (!res1.success)
-                            throw new Exception(res1.result);
+                            throw new Exception($"{res1.result}");
 
                         if (inst_pts.IsPaused)
                             return;
 
                         chunkRes = jbox.GetChunk(curChunk.PartNumber);
                         if (!chunkRes.Success)
-                            throw new Exception(chunkRes.Message);
+                            throw new Exception($"下载块 {curChunk.PartNumber} 发生错误：{chunkRes.Message}");
 
                         if (inst_pts.IsPaused)
                             return;
@@ -120,7 +164,7 @@ namespace JboxTransfer.Modules.Sync
                         if (res3.success)
                             break;
                         else
-                            throw new Exception(res3.result);
+                            throw new Exception($"上传块 {curChunk.PartNumber} 发生错误：{res3.result}");
                     }
                     catch (Exception ex)
                     {
@@ -138,10 +182,14 @@ namespace JboxTransfer.Modules.Sync
                 }
 
                 chunkRes.Result.Position = 0;
-                sha256_list.Add(HashHelper.SHA256Hash(chunkRes.Result));
+                if (chunkRes.Result.Length > 0) md5.MD5Hash_Proc(Encoding.Default.GetBytes((curChunk.PartNumber == 1 ? "" : ",") + HashHelper.SHA256Hash(chunkRes.Result)));
                 crc64.TransformBlock(chunkRes.Result.ToArray(), 0, (int)chunkRes.Result.Length);
                 tbox.CompletePart(curChunk);
                 succChunk++;
+                dbModel.CRC64_Part = (long)crc64.GetValue();
+                dbModel.MD5_Part = JsonConvert.SerializeObject(md5.GetValue());
+                dbModel.RemainParts = JsonConvert.SerializeObject(tbox.RemainParts.Select(x=>x.PartNumber));
+                DbService.db.Update(dbModel);
 
                 if (inst_pts.IsPaused)
                     return;
@@ -149,27 +197,36 @@ namespace JboxTransfer.Modules.Sync
                 res2 = tbox.GetNextPartNumber();
                 if (!res2.Success)
                 {
-                    Message = res2.Message;
+                    Message = $"获取下一分块发生错误，当前分块为 {res2.Message}"; 
                     return;
                 }
                 curChunk = res2.Result;
             }
 
-            var actualHash = HashHelper.MD5Hash(string.Join(',', sha256_list));
+            var actualHash_bytes = md5.MD5Hash_Finish();
+            StringBuilder sub = new StringBuilder();
+            foreach (var t in actualHash_bytes)
+            {
+                sub.Append(t.ToString("x2"));
+            }
+            var actualHash = sub.ToString();
             var actualcrc64 = crc64.TransformFinalBlock();
-
 
             if (succChunk == chunkCount && curChunk.PartNumber == 0)//&& 
             {
                 var res4 = tbox.Confirm();
                 if (!res4.Success)
                 {
-                    Message = res4.Message;
+                    Message = $"{res4.Message}";
+                    dbModel.State = 3;
+                    DbService.db.Update(dbModel);
                     return;
                 }
                 if (actualcrc64.ToString() != res4.Result.Crc64 || jboxhash != actualHash)
                 {
                     Message = $"hash不匹配";
+                    dbModel.State = 2;
+                    DbService.db.Update(dbModel);
                     return;
                 }
                 State = SyncTaskState.Complete;

@@ -1,4 +1,5 @@
 ﻿using JboxTransfer.Core.Helpers;
+using JboxTransfer.Models;
 using SQLite;
 using System;
 using System.Collections.Generic;
@@ -16,6 +17,7 @@ namespace JboxTransfer.Services
         public static void Init()
         {
             db = new SQLiteConnection(dbpath);
+            db.CreateTable<SyncTaskDbModel>();
         }
     }
 }

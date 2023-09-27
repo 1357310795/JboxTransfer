@@ -6,7 +6,7 @@ using System.Runtime.Intrinsics.Arm;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
-using MD5 = System.Security.Cryptography.MD5;
+using MD5 = JboxTransfer.Core.Modules.MD5;
 
 namespace JboxTransfer.Core.Helpers
 {
@@ -85,7 +85,7 @@ namespace JboxTransfer.Core.Helpers
 
         public static string MD5Hash(MemoryStream str)
         {
-            var data = MD5.Create().ComputeHash(str);
+            var data = System.Security.Cryptography.MD5.Create().ComputeHash(str);
 
             StringBuilder sub = new StringBuilder();
             foreach (var t in data)
@@ -101,15 +101,14 @@ namespace JboxTransfer.Core.Helpers
             return MD5.Create();
         }
 
-        public static int MD5Hash_Proc(this MD5 md5, byte[] input)
+        public static void MD5Hash_Proc(this MD5 md5, byte[] input)
         {
-            return md5.TransformBlock(input, 0, input.Length, null, 0);
+            md5.TransformBlock(input, 0, input.Length);
         }
 
         public static byte[] MD5Hash_Finish(this MD5 md5)
         {
-            md5.TransformFinalBlock(new byte[] { }, 0, 0);
-            return md5.Hash;
+            return md5.TransformFinalBlock();
         }
 
         public static CRC64 CRC64Hash_Start()

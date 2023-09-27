@@ -31,6 +31,8 @@ namespace JboxTransfer.Modules
             this.size = size;
             this.chunkCount = (int)(this.size / ChunkSize);
             this.chunkCount += this.chunkCount * ChunkSize == this.size ? 0 : 1;
+            if (this.size == 0)
+                this.chunkCount = 1;
             chunkProgress = new Pack<long>(0);
         }
 

@@ -10,6 +10,7 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Teru.Code.Extensions;
 using Teru.Code.Models;
 using ZXing.QrCode.Internal;
 
@@ -24,10 +25,6 @@ namespace JboxTransfer.Modules.Sync
         {
             HttpClient client = NetService.Client;
             HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Get, "https://pan.sjtu.edu.cn/user/v1/sign-in/sso-login-redirect/xpw8ou8y");
-            req.Headers.Accept.ParseAdd("text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
-            req.Headers.AcceptEncoding.ParseAdd("gzip, deflate, br");
-            req.Headers.AcceptLanguage.ParseAdd("zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7");
-            req.Headers.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36 Edg/116.0.1938.76");
             var res = client.SendAsync(req).GetAwaiter().GetResult();
 
             if (!res.IsSuccessStatusCode)
@@ -50,35 +47,37 @@ namespace JboxTransfer.Modules.Sync
 
             ///user/v1/sign-in/verify-account-login/xpw8ou8y
             req = new HttpRequestMessage(HttpMethod.Post, $"https://pan.sjtu.edu.cn/user/v1/sign-in/verify-account-login/xpw8ou8y?device_id=Chrome+116.0.0.0&type=sso&credential={code}");
-            req.Headers.Accept.ParseAdd("text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
-            req.Headers.AcceptEncoding.ParseAdd("gzip, deflate, br");
-            req.Headers.AcceptLanguage.ParseAdd("zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7");
-            req.Headers.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36 Edg/116.0.1938.76");
 
-            res = client.SendAsync(req).GetAwaiter().GetResult();
-
-            if (!res.IsSuccessStatusCode)
+            try
             {
-                return new CommonResult(false, $"服务器响应{res.StatusCode}");
+                res = client.SendAsync(req).GetAwaiter().GetResult();
+
+                if (!res.IsSuccessStatusCode)
+                {
+                    return new CommonResult(false, $"服务器响应{res.StatusCode}");
+                }
+
+                var body = res.Content.ReadAsStringAsync().Result;
+                var json = JsonConvert.DeserializeObject<TboxLoginResDto>(body);
+
+                if (json.Status != 0)
+                {
+                    return new CommonResult(false, $"服务器返回失败：{json.Message}");
+                }
+
+                if (json.UserToken.Length != 128)
+                {
+                    return new CommonResult(false, $"UserToken无效");
+                }
+
+                TboxService.UserToken = json.UserToken;
+                Logined = true;
+                return new CommonResult(true, "");
             }
-
-            var body = res.Content.ReadAsStringAsync().Result;
-            var json = JsonConvert.DeserializeObject<TboxLoginResDto>(body);
-
-            if (json.Status != 0)
+            catch (Exception ex)
             {
-                return new CommonResult(false, $"服务器返回失败：{json.Message}");
+                return new CommonResult(false, ex.Message);
             }
-
-            if (json.UserToken.Length != 128)
-            {
-                return new CommonResult(false, $"UserToken无效");
-            }
-
-            TboxService.UserToken = json.UserToken;
-            Logined = true;
-
-            return new CommonResult(true, "");
         }
 
         public static CommonResult<TboxSpaceCred> GetSpace()
@@ -88,27 +87,40 @@ namespace JboxTransfer.Modules.Sync
 
             HttpClient client = NetService.Client;
             HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Post, baseUrl + $"/user/v1/space/1/personal?user_token={UserToken}");
-            req.Headers.Accept.ParseAdd("text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
-            req.Headers.AcceptEncoding.ParseAdd("gzip, deflate, br");
-            req.Headers.AcceptLanguage.ParseAdd("zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7");
-            req.Headers.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36 Edg/116.0.1938.76");
 
-            var res = client.SendAsync(req).GetAwaiter().GetResult();
-
-            if (!res.IsSuccessStatusCode)
+            try
             {
-                return new CommonResult<TboxSpaceCred>(false, $"服务器响应{res.StatusCode}");
+                var res = client.SendAsync(req).GetAwaiter().GetResult();
+
+                if (!res.IsSuccessStatusCode)
+                {
+                    try
+                    {
+                        var errbody = res.Content.ReadAsStringAsync().Result;
+                        var errjson = JsonConvert.DeserializeObject<TboxErrorMessageDto>(errbody);
+                        return new CommonResult<TboxSpaceCred>(false, $"{errjson.Message}");
+                    }
+                    catch (Exception ex)
+                    {
+                        return new CommonResult<TboxSpaceCred>(false, $"服务器响应{res.StatusCode}");
+                    }
+                }
+
+                var body = res.Content.ReadAsStringAsync().Result;
+                var json = JsonConvert.DeserializeObject<TboxSpaceCred>(body);
+
+                if (json.Status != 0)
+                {
+                    return new CommonResult<TboxSpaceCred>(false, $"服务器返回失败：{json.Message}");
+                }
+
+                return new CommonResult<TboxSpaceCred>(true, "", json);
             }
-
-            var body = res.Content.ReadAsStringAsync().Result;
-            var json = JsonConvert.DeserializeObject<TboxSpaceCred>(body);
-
-            if (json.Status != 0)
+            catch (Exception ex)
             {
-                return new CommonResult<TboxSpaceCred>(false, $"服务器返回失败：{json.Message}");
+                return new CommonResult<TboxSpaceCred>(false, ex.Message);
             }
-
-            return new CommonResult<TboxSpaceCred>(true, "", json);
+            
         }
 
         public static CommonResult<TboxStartChunkUploadResDto> StartChunkUpload(string path, int chunkCount)
@@ -122,34 +134,46 @@ namespace JboxTransfer.Modules.Sync
             query.Add("access_token", TboxAccessTokenKeeper.Cred.AccessToken);
 
             HttpClient client = NetService.Client;
-            HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Post, baseUrl + $"/api/v1/file/{TboxAccessTokenKeeper.Cred.LibraryId}/{TboxAccessTokenKeeper.Cred.SpaceId}/{path}" + UrlHelper.BuildQuery(query));
-            req.Headers.Accept.ParseAdd("text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
-            req.Headers.AcceptEncoding.ParseAdd("gzip, deflate, br");
-            req.Headers.AcceptLanguage.ParseAdd("zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7");
-            req.Headers.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36 Edg/116.0.1938.76");
+            HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Post, baseUrl + $"/api/v1/file/{TboxAccessTokenKeeper.Cred.LibraryId}/{TboxAccessTokenKeeper.Cred.SpaceId}/{path.UrlEncodeByParts()}" + UrlHelper.BuildQuery(query));
 
             StringBuilder sb = new StringBuilder();
             sb.Append("1");
             for (int i = 2; i <= Math.Min(chunkCount, 50); i++)
                 sb.Append($",{i}");
             req.Content = new StringContent($"{{\"partNumberRange\":[{sb.ToString()}]}}");
-            
-            var res = client.SendAsync(req).GetAwaiter().GetResult();
 
-            if (!res.IsSuccessStatusCode)
+            try
             {
-                return new CommonResult<TboxStartChunkUploadResDto>(false, $"服务器响应{res.StatusCode}");
+                var res = client.SendAsync(req).GetAwaiter().GetResult();
+
+                if (!res.IsSuccessStatusCode)
+                {
+                    try
+                    {
+                        var errbody = res.Content.ReadAsStringAsync().Result;
+                        var errjson = JsonConvert.DeserializeObject<TboxErrorMessageDto>(errbody);
+                        return new CommonResult<TboxStartChunkUploadResDto>(false, $"{errjson.Message}");
+                    }
+                    catch (Exception ex)
+                    {
+                        return new CommonResult<TboxStartChunkUploadResDto>(false, $"服务器响应{res.StatusCode}");
+                    }
+                }
+
+                var body = res.Content.ReadAsStringAsync().Result;
+                var json = JsonConvert.DeserializeObject<TboxStartChunkUploadResDto>(body);
+
+                if (json.Status != 0)
+                {
+                    return new CommonResult<TboxStartChunkUploadResDto>(false, $"服务器返回失败：{json.Message}");
+                }
+
+                return new CommonResult<TboxStartChunkUploadResDto>(true, "", json);
             }
-
-            var body = res.Content.ReadAsStringAsync().Result;
-            var json = JsonConvert.DeserializeObject<TboxStartChunkUploadResDto>(body);
-
-            if (json.Status != 0)
+            catch (Exception ex)
             {
-                return new CommonResult<TboxStartChunkUploadResDto>(false, $"服务器返回失败：{json.Message}");
+                return new CommonResult<TboxStartChunkUploadResDto>(false, ex.Message);
             }
-
-            return new CommonResult<TboxStartChunkUploadResDto>(true, "", json);
         }
 
         public static CommonResult<TboxStartChunkUploadResDto> RenewChunkUpload(string confirmKey, List<int> partNumberRange)
@@ -163,10 +187,9 @@ namespace JboxTransfer.Modules.Sync
 
             HttpClient client = NetService.Client;
             HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Post, baseUrl + $"/api/v1/file/{TboxAccessTokenKeeper.Cred.LibraryId}/{TboxAccessTokenKeeper.Cred.SpaceId}/{confirmKey}" + UrlHelper.BuildQuery(query));
-            req.Headers.Accept.ParseAdd("text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
-            req.Headers.AcceptEncoding.ParseAdd("gzip, deflate, br");
-            req.Headers.AcceptLanguage.ParseAdd("zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7");
-            req.Headers.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36 Edg/116.0.1938.76");
+
+            if (partNumberRange == null || partNumberRange.Count == 0)
+                return new CommonResult<TboxStartChunkUploadResDto>(false, "partNumberRange 为空");
 
             StringBuilder sb = new StringBuilder();
             sb.Append(partNumberRange.First());
@@ -174,22 +197,38 @@ namespace JboxTransfer.Modules.Sync
                 sb.Append($",{partNumberRange[i]}");
             req.Content = new StringContent($"{{\"partNumberRange\":[{sb.ToString()}]}}");
 
-            var res = client.SendAsync(req).GetAwaiter().GetResult();
-
-            if (!res.IsSuccessStatusCode)
+            try
             {
-                return new CommonResult<TboxStartChunkUploadResDto>(false, $"服务器响应{res.StatusCode}");
+                var res = client.SendAsync(req).GetAwaiter().GetResult();
+
+                if (!res.IsSuccessStatusCode)
+                {
+                    try
+                    {
+                        var errbody = res.Content.ReadAsStringAsync().Result;
+                        var errjson = JsonConvert.DeserializeObject<TboxErrorMessageDto>(errbody);
+                        return new CommonResult<TboxStartChunkUploadResDto>(false, $"{errjson.Message}");
+                    }
+                    catch (Exception ex)
+                    {
+                        return new CommonResult<TboxStartChunkUploadResDto>(false, $"服务器响应{res.StatusCode}");
+                    }
+                }
+
+                var body = res.Content.ReadAsStringAsync().Result;
+                var json = JsonConvert.DeserializeObject<TboxStartChunkUploadResDto>(body);
+
+                if (json.Status != 0)
+                {
+                    return new CommonResult<TboxStartChunkUploadResDto>(false, $"服务器返回失败：{json.Message}");
+                }
+
+                return new CommonResult<TboxStartChunkUploadResDto>(true, "", json);
             }
-
-            var body = res.Content.ReadAsStringAsync().Result;
-            var json = JsonConvert.DeserializeObject<TboxStartChunkUploadResDto>(body);
-
-            if (json.Status != 0)
+            catch (Exception ex)
             {
-                return new CommonResult<TboxStartChunkUploadResDto>(false, $"服务器返回失败：{json.Message}");
+                return new CommonResult<TboxStartChunkUploadResDto>(false, ex.Message);
             }
-
-            return new CommonResult<TboxStartChunkUploadResDto>(true, "", json);
         }
 
         public static CommonResult<TboxConfirmChunkUploadResDto> ConfirmChunkUpload(string confirmKey)
@@ -204,27 +243,39 @@ namespace JboxTransfer.Modules.Sync
 
             HttpClient client = NetService.Client;
             HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Post, baseUrl + $"/api/v1/file/{TboxAccessTokenKeeper.Cred.LibraryId}/{TboxAccessTokenKeeper.Cred.SpaceId}/{confirmKey}" + UrlHelper.BuildQuery(query));
-            req.Headers.Accept.ParseAdd("text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
-            req.Headers.AcceptEncoding.ParseAdd("gzip, deflate, br");
-            req.Headers.AcceptLanguage.ParseAdd("zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7");
-            req.Headers.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36 Edg/116.0.1938.76");
 
-            var res = client.SendAsync(req).GetAwaiter().GetResult();
-
-            if (!res.IsSuccessStatusCode)
+            try
             {
-                return new CommonResult<TboxConfirmChunkUploadResDto>(false, $"服务器响应{res.StatusCode}");
+                var res = client.SendAsync(req).GetAwaiter().GetResult();
+
+                if (!res.IsSuccessStatusCode)
+                {
+                    try
+                    {
+                        var errbody = res.Content.ReadAsStringAsync().Result;
+                        var errjson = JsonConvert.DeserializeObject<TboxErrorMessageDto>(errbody);
+                        return new CommonResult<TboxConfirmChunkUploadResDto>(false, $"{errjson.Message}");
+                    }
+                    catch (Exception ex)
+                    {
+                        return new CommonResult<TboxConfirmChunkUploadResDto>(false, $"服务器响应{res.StatusCode}");
+                    }
+                }
+
+                var body = res.Content.ReadAsStringAsync().Result;
+                var json = JsonConvert.DeserializeObject<TboxConfirmChunkUploadResDto>(body);
+
+                if (json.Status != 0)
+                {
+                    return new CommonResult<TboxConfirmChunkUploadResDto>(false, $"服务器返回失败：{json.Message}");
+                }
+
+                return new CommonResult<TboxConfirmChunkUploadResDto>(true, "", json);
             }
-
-            var body = res.Content.ReadAsStringAsync().Result;
-            var json = JsonConvert.DeserializeObject<TboxConfirmChunkUploadResDto>(body);
-
-            if (json.Status != 0)
+            catch (Exception ex)
             {
-                return new CommonResult<TboxConfirmChunkUploadResDto>(false, $"服务器返回失败：{json.Message}");
+                return new CommonResult<TboxConfirmChunkUploadResDto>(false, ex.Message);
             }
-
-            return new CommonResult<TboxConfirmChunkUploadResDto>(true, "", json);
         }
 
         public static CommonResult<TboxChunkUploadInfoResDto> GetChunkUploadInfo(string confirmKey)
@@ -239,27 +290,39 @@ namespace JboxTransfer.Modules.Sync
 
             HttpClient client = NetService.Client;
             HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Get, baseUrl + $"/api/v1/file/{TboxAccessTokenKeeper.Cred.LibraryId}/{TboxAccessTokenKeeper.Cred.SpaceId}/{confirmKey}" + UrlHelper.BuildQuery(query));
-            req.Headers.Accept.ParseAdd("text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
-            req.Headers.AcceptEncoding.ParseAdd("gzip, deflate, br");
-            req.Headers.AcceptLanguage.ParseAdd("zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7");
-            req.Headers.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36 Edg/116.0.1938.76");
 
-            var res = client.SendAsync(req).GetAwaiter().GetResult();
-
-            if (!res.IsSuccessStatusCode)
+            try
             {
-                return new CommonResult<TboxChunkUploadInfoResDto>(false, $"服务器响应{res.StatusCode}");
+                var res = client.SendAsync(req).GetAwaiter().GetResult();
+
+                if (!res.IsSuccessStatusCode)
+                {
+                    try
+                    {
+                        var errbody = res.Content.ReadAsStringAsync().Result;
+                        var errjson = JsonConvert.DeserializeObject<TboxErrorMessageDto>(errbody);
+                        return new CommonResult<TboxChunkUploadInfoResDto>(false, $"{errjson.Message}");
+                    }
+                    catch (Exception ex)
+                    {
+                        return new CommonResult<TboxChunkUploadInfoResDto>(false, $"服务器响应{res.StatusCode}");
+                    }
+                }
+
+                var body = res.Content.ReadAsStringAsync().Result;
+                var json = JsonConvert.DeserializeObject<TboxChunkUploadInfoResDto>(body);
+
+                if (json.Status != 0)
+                {
+                    return new CommonResult<TboxChunkUploadInfoResDto>(false, $"服务器返回失败：{json.Message}");
+                }
+
+                return new CommonResult<TboxChunkUploadInfoResDto>(true, "", json);
             }
-
-            var body = res.Content.ReadAsStringAsync().Result;
-            var json = JsonConvert.DeserializeObject<TboxChunkUploadInfoResDto>(body);
-
-            if (json.Status != 0)
+            catch(Exception ex)
             {
-                return new CommonResult<TboxChunkUploadInfoResDto>(false, $"服务器返回失败：{json.Message}");
+                return new CommonResult<TboxChunkUploadInfoResDto>(false, ex.Message);
             }
-
-            return new CommonResult<TboxChunkUploadInfoResDto>(true, "", json);
         }
     }
 }

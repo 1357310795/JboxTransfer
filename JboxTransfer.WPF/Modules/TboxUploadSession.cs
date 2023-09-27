@@ -26,6 +26,7 @@ namespace JboxTransfer.Modules
         private long size;
         private int chunkCount;
         private string confirmKey;
+        public string ConfirmKey => confirmKey;
         private List<TboxUploadPartSession> remainParts;
         public List<TboxUploadPartSession> RemainParts => remainParts;
         TboxStartChunkUploadResDto uploadContext;
@@ -49,6 +50,8 @@ namespace JboxTransfer.Modules
             this.size = size;
             this.chunkCount = (int)(this.size / ChunkSize);
             this.chunkCount += this.chunkCount * ChunkSize == this.size ? 0 : 1;
+            if (this.size == 0)
+                this.chunkCount = 1;
             this.remainParts = new List<TboxUploadPartSession>();
             this.chunkProgress = new Pack<long>(0);
             State = TboxUploadState.NotInit;
@@ -60,6 +63,8 @@ namespace JboxTransfer.Modules
             this.size = size;
             this.chunkCount = (int)(this.size / ChunkSize);
             this.chunkCount += this.chunkCount * ChunkSize == this.size ? 0 : 1;
+            if (this.size == 0)
+                this.chunkCount = 1;
             this.remainParts = remainParts.Select(x => new TboxUploadPartSession(x)).ToList();
             this.confirmKey = confirmKey;
             this.chunkProgress = new Pack<long>(0);
@@ -75,7 +80,7 @@ namespace JboxTransfer.Modules
             {
                 var res = TboxService.StartChunkUpload(path, chunkCount);
                 if (!res.Success)
-                    return new CommonResult(false, res.Message);
+                    return new CommonResult(false, $"开始分块上传出错：{res.Message}");
                 uploadContext = res.Result;
                 confirmKey = uploadContext.ConfirmKey;
                 for (int i = 1; i <= chunkCount; i++) remainParts.Add(new TboxUploadPartSession(i));
@@ -85,7 +90,7 @@ namespace JboxTransfer.Modules
             {
                 var res = TboxService.RenewChunkUpload(confirmKey, GetRefreshPartNumberList());
                 if (!res.Success)
-                    return new CommonResult(false, res.Message);
+                    return new CommonResult(false, $"刷新分块凭据出错：{res.Message}");
                 uploadContext = res.Result;
                 State = TboxUploadState.Ready;
             }
@@ -121,14 +126,14 @@ namespace JboxTransfer.Modules
             {
                 var res = TboxService.RenewChunkUpload(confirmKey, GetRefreshPartNumberList());
                 if (!res.Success)
-                    return new CommonResult(false, res.Message);
+                    return new CommonResult(false, $"刷新分块凭据出错：{res.Message}");
                 uploadContext = res.Result;
             }
             if (!uploadContext.Parts.ContainsKey(partNumber.ToString()))
             {
                 var res = TboxService.RenewChunkUpload(confirmKey, GetRefreshPartNumberList());
                 if (!res.Success)
-                    return new CommonResult(false, res.Message);
+                    return new CommonResult(false, $"刷新分块凭据出错：{res.Message}");
                 uploadContext = res.Result;
             }
             if (!uploadContext.Parts.ContainsKey(partNumber.ToString()))
@@ -193,6 +198,8 @@ namespace JboxTransfer.Modules
         {
             //Todo:再次请求检查是否有未上传
             var res = TboxService.ConfirmChunkUpload(confirmKey);
+            if (!res.Success)
+                return new CommonResult<TboxConfirmChunkUploadResDto>(false, $"确认上传出错：{res.Message}");
             return res;
         }
 

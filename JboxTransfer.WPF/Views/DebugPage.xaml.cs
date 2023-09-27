@@ -1,28 +1,15 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using JboxTransfer.Core.Helpers;
 using JboxTransfer.Core.Modules;
+using JboxTransfer.Models;
 using JboxTransfer.Modules.Sync;
 using JboxTransfer.Services;
 using Newtonsoft.Json;
-using System;
-using System.Buffers;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace JboxTransfer.Views
 {
@@ -61,11 +48,12 @@ namespace JboxTransfer.Views
         private long len;
         private void Page_Loaded(object sender, RoutedEventArgs e)
         {
-            var crc64 = CRC64.Create();
-            crc64.CRC64Hash_Proc(System.Text.Encoding.Default.GetBytes("123456"));
-            crc64.CRC64Hash_Proc(System.Text.Encoding.Default.GetBytes("123456"));
-            var hash = crc64.CRC64Hash_Finish();
-            Debug.WriteLine(hash.ToString("x"));
+            DbService.Init();
+            //var crc64 = CRC64.Create();
+            //crc64.CRC64Hash_Proc(System.Text.Encoding.Default.GetBytes("123456"));
+            //crc64.CRC64Hash_Proc(System.Text.Encoding.Default.GetBytes("123456"));
+            //var hash = crc64.CRC64Hash_Finish();
+            //Debug.WriteLine(hash.ToString("x"));
 
             //Task.Run(Download);
             //var md5 = HashHelper.MD5Hash_Start();
@@ -81,7 +69,15 @@ namespace JboxTransfer.Views
 
         public void Download()
         {
-            task = new FileSyncTask(Path, Hash, Size);
+            SyncTaskDbModel item = null;
+            DbService.db.RunInTransaction(() =>
+            {
+                item = DbService.db.Table<SyncTaskDbModel>().First(); //.Where(x => x.State == 0)
+                item.State = 1;
+                DbService.db.Update(item);
+            });
+            
+            task = new FileSyncTask(item);
             task.Start();
             
             //var client = NetService.Client;
@@ -168,7 +164,8 @@ namespace JboxTransfer.Views
             }
             Hash = res.Result.Hash;
             Size = res.Result.Bytes;
-            Message = $"获取信息成功，大小为{Size}";
+            DbService.db.Insert(new SyncTaskDbModel(res.Result.IsDir ? 1 : 0, res.Result.Path, Size) { MD5_Ori = Hash});
+            Message = $"插入数据库成功";
         }
 
         private void ButtonStart_Click(object sender, RoutedEventArgs e)

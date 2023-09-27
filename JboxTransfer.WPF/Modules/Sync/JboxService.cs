@@ -63,6 +63,7 @@ namespace JboxTransfer.Modules.Sync
 
         public static CommonResult<MemoryStream> DownloadChunk(string path, long start, long size, Pack<long> chunkProgress)
         {
+            if (size == 0) return new CommonResult<MemoryStream>(true, "", new MemoryStream());
             Dictionary<string, string> form = new Dictionary<string, string>();
             form.Add("path_type", "self");
             form.Add("S", S);

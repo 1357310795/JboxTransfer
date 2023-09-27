@@ -1,6 +1,7 @@
 ﻿using JboxTransfer.Models;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -34,7 +35,7 @@ namespace JboxTransfer.Modules.Sync
             {
                 if (Cred != null)
                 {
-                    var passed = (LastUpdate - DateTime.Now).TotalSeconds;
+                    var passed = (DateTime.Now - LastUpdate).TotalSeconds;
                     if (Cred.ExpiresIn - passed > 2*60)//大于两分钟
                     {
                         return TaskState.Started;
@@ -44,16 +45,18 @@ namespace JboxTransfer.Modules.Sync
                 var res = TboxService.GetSpace();
                 if (!res.Success)
                 {
-                    //log
+                    //Todo:log
+                    Debug.WriteLine("刷新AccessToken失败");
                     return TaskState.Started;
                 }
                 Cred = res.Result;
+                LastUpdate = DateTime.Now;
                 PauseTokenSource.Resume();
 
             }
             catch(Exception ex)
             {
-                //log
+                //Todo:log
             }
             return TaskState.Started;
         }
