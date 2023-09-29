@@ -324,5 +324,51 @@ namespace JboxTransfer.Modules.Sync
                 return new CommonResult<TboxChunkUploadInfoResDto>(false, ex.Message);
             }
         }
+
+        public static CommonResult<TboxErrorMessageDto> CreateDirectory(string dirpath)
+        {
+            if (!Logined)
+                return new CommonResult<TboxErrorMessageDto>(false, $"未登录，请先登录");
+
+            var query = new Dictionary<string, string>();
+            query.Add("conflict_resolution_strategy", "ask");
+            query.Add("access_token", TboxAccessTokenKeeper.Cred.AccessToken);
+
+            HttpClient client = NetService.Client;
+            HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Put, baseUrl + $"/api/v1/directory/{TboxAccessTokenKeeper.Cred.LibraryId}/{TboxAccessTokenKeeper.Cred.SpaceId}/{dirpath}" + UrlHelper.BuildQuery(query));
+
+            try
+            {
+                var res = client.SendAsync(req).GetAwaiter().GetResult();
+
+                if (!res.IsSuccessStatusCode)
+                {
+                    try
+                    {
+                        var errbody = res.Content.ReadAsStringAsync().Result;
+                        var errjson = JsonConvert.DeserializeObject<TboxErrorMessageDto>(errbody);
+                        return new CommonResult<TboxErrorMessageDto>(false, $"{errjson.Message}", errjson);
+                    }
+                    catch (Exception ex)
+                    {
+                        return new CommonResult<TboxErrorMessageDto>(false, $"服务器响应{res.StatusCode}");
+                    }
+                }
+
+                var body = res.Content.ReadAsStringAsync().Result;
+                var json = JsonConvert.DeserializeObject<TboxErrorMessageDto>(body);
+
+                if (json.Status != 0)
+                {
+                    return new CommonResult<TboxErrorMessageDto>(false, $"服务器返回失败：{json.Message}");
+                }
+
+                return new CommonResult<TboxErrorMessageDto>(true, "", json);
+            }
+            catch (Exception ex)
+            {
+                return new CommonResult<TboxErrorMessageDto>(false, ex.Message);
+            }
+        }
     }
 }

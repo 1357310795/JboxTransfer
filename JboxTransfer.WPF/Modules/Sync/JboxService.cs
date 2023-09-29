@@ -122,7 +122,7 @@ namespace JboxTransfer.Modules.Sync
             return new CommonResult<MemoryStream>(true, "", ms);
         }
 
-        public static CommonResult<JboxItemInfo> GetJboxItemInfo(string path)
+        public static CommonResult<JboxItemInfo> GetJboxFileInfo(string path)
         {
             if (!Logined)
                 return new CommonResult<JboxItemInfo>(false, $"未登录，请先登录");
@@ -150,6 +150,50 @@ namespace JboxTransfer.Modules.Sync
             }
 
             return new CommonResult<JboxItemInfo>(true, "", json);
+        }
+
+        public static CommonResult<JboxItemInfo> GetJboxFolderInfo(string path, int page)
+        {
+            if (!Logined)
+                return new CommonResult<JboxItemInfo>(false, $"未登录，请先登录");
+
+            Dictionary<string, string> forms = new Dictionary<string, string>();
+            forms.Add("path_type", "self");
+            forms.Add("page_size", "50");
+            forms.Add("page_num", page.ToString());
+            forms.Add("target_path", path);
+
+            HttpClient client = NetService.Client;
+            HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Post, baseUrl + $"/v2/metadata_page/databox" + $"?S={S}");
+            req.Headers.Accept.ParseAdd("text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
+            req.Headers.AcceptEncoding.ParseAdd("gzip, deflate, br");
+            req.Headers.AcceptLanguage.ParseAdd("zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7");
+            req.Headers.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36 Edg/116.0.1938.76");
+            req.Content = new FormUrlEncodedContent(forms);
+
+            try
+            {
+                var res = client.SendAsync(req).GetAwaiter().GetResult();
+
+                if (!res.IsSuccessStatusCode)
+                {
+                    return new CommonResult<JboxItemInfo>(false, $"服务器响应{res.StatusCode}");
+                }
+
+                var body = res.Content.ReadAsStringAsync().Result;
+                var json = JsonConvert.DeserializeObject<JboxItemInfo>(body);
+
+                if (json.Type == "error")
+                {
+                    return new CommonResult<JboxItemInfo>(false, $"服务器返回失败：{json.Message}");
+                }
+
+                return new CommonResult<JboxItemInfo>(true, "", json);
+            }
+            catch(Exception ex)
+            {
+                return new CommonResult<JboxItemInfo>(false, $"{ex.Message}");
+            }
         }
     }
 }

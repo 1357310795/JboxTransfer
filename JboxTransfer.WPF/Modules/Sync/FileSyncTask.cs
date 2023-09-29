@@ -93,8 +93,33 @@ namespace JboxTransfer.Modules.Sync
             pts = new PauseTokenSource();
         }
 
+        public string GetProgressStr()
+        {
+            var down = (succChunk == chunkCount ? size : (succChunk * ChunkSize + jbox.Progress)).PrettyPrint();
+            var up = (succChunk == chunkCount ? size : (succChunk * ChunkSize + tbox.Progress)).PrettyPrint();
+            var all = size.PrettyPrint();
+            return $"{down} / {up} / {all}";
+        }
+
         public void Start()
         {
+            Task.Run(internalStart);
+        }
+
+        public void Parse()
+        {
+            pts.Pause();
+            State = SyncTaskState.Parse;
+            if (curChunk != null)
+                curChunk.Uploading = false;
+        }
+
+        public void Resume()
+        {
+            if (State != SyncTaskState.Parse)
+                return;
+            pts = new PauseTokenSource();
+            pts.Resume();
             Task.Run(internalStart);
         }
 
@@ -233,32 +258,5 @@ namespace JboxTransfer.Modules.Sync
                 Message = "同步完成";
             }
         }
-
-        public string GetProgressStr()
-        {
-            var down = (succChunk == chunkCount ? size : (succChunk * ChunkSize + jbox.Progress)).PrettyPrint();
-            var up = (succChunk == chunkCount ? size : (succChunk * ChunkSize + tbox.Progress)).PrettyPrint();
-            var all = size.PrettyPrint();
-            return $"{down} / {up} / {all}";
-        }
-
-        public void Parse()
-        {
-            pts.Pause();
-            State = SyncTaskState.Parse;
-            if (curChunk != null)
-                curChunk.Uploading = false;
-        }
-
-        public void Resume()
-        {
-            if (State != SyncTaskState.Parse)
-                return;
-            pts = new PauseTokenSource();
-            pts.Resume();
-            Task.Run(internalStart);
-        }
-
-        //public delegate void OnUpdate(SyncTaskState state);
     }
 }

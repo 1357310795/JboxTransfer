@@ -14,17 +14,21 @@ namespace JboxTransfer.Models
 
         }
 
-        public SyncTaskDbModel(int type, string filePath, long size)
+        public SyncTaskDbModel(int type, string filePath, long size, int order)
         {
             Type = type;
             FilePath = filePath;
             Size = size;
+            Order = order;
             FileName = FilePath.Split('/').Last();
             State = 0;
         }
 
         [PrimaryKey, AutoIncrement]
         public int Id { get; set; }
+
+        [Indexed]
+        public int Order { get; set; }
         /// <summary>
         /// 0:file
         /// 1:folder

@@ -10,6 +10,7 @@ using System.IO;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using Teru.Code.Services;
 
 namespace JboxTransfer.Views
 {
@@ -43,11 +44,17 @@ namespace JboxTransfer.Views
         [ObservableProperty]
         private string hash;
 
-        FileSyncTask task;
+        IBaseTask task;
 
-        private long len;
+        private LoopWorker worker;
+
         private void Page_Loaded(object sender, RoutedEventArgs e)
         {
+            worker = new LoopWorker();
+            worker.Interval = 1000;
+            worker.CanRun += () => true;
+            worker.OnGoAnimation += () => { };
+            worker.Go += Worker_Go;
             DbService.Init();
             //var crc64 = CRC64.Create();
             //crc64.CRC64Hash_Proc(System.Text.Encoding.Default.GetBytes("123456"));
@@ -67,18 +74,34 @@ namespace JboxTransfer.Views
             //Debug.WriteLine(sub.ToString());
         }
 
+        private TaskState Worker_Go()
+        {
+            Thread.Sleep(1000);
+            Text = task.GetProgressStr();
+            Message = task.Message;
+            return TaskState.Started;
+        }
+
         public void Download()
         {
             SyncTaskDbModel item = null;
             DbService.db.RunInTransaction(() =>
             {
-                item = DbService.db.Table<SyncTaskDbModel>().First(); //.Where(x => x.State == 0)
+                item = DbService.db.Table<SyncTaskDbModel>().OrderBy(x=>x.Order).Where(x=>x.State == 0).First(); //.Where(x => x.State == 0)
                 item.State = 1;
                 DbService.db.Update(item);
             });
-            
-            task = new FileSyncTask(item);
-            task.Start();
+
+            if (item.Type == 0)
+            {
+                task = new FileSyncTask(item);
+                task.Start();
+            }
+            else
+            {
+                task = new FolderSyncTask(item);
+                task.Start();
+            }
             
             //var client = NetService.Client;
             //var req = new HttpRequestMessage(HttpMethod.Connect, "http://10.119.4.90:443/auto.exe");
@@ -156,7 +179,7 @@ namespace JboxTransfer.Views
 
         private void ButtonGetInfo_Click(object sender, RoutedEventArgs e)
         {
-            var res = JboxService.GetJboxItemInfo(Path);
+            var res = JboxService.GetJboxFileInfo(Path);
             if (!res.Success)
             {
                 Message = res.Message; 
@@ -164,14 +187,17 @@ namespace JboxTransfer.Views
             }
             Hash = res.Result.Hash;
             Size = res.Result.Bytes;
-            DbService.db.Insert(new SyncTaskDbModel(res.Result.IsDir ? 1 : 0, res.Result.Path, Size) { MD5_Ori = Hash});
+
+
+            var order = DbService.GetMinOrder() - 1;
+            DbService.db.Insert(new SyncTaskDbModel(res.Result.IsDir ? 1 : 0, res.Result.Path, Size, order) { MD5_Ori = Hash});
             Message = $"插入数据库成功";
         }
 
         private void ButtonStart_Click(object sender, RoutedEventArgs e)
         {
             Download();
-            Task.Run(Listen);
+            worker.StartRun();
         }
 
         private void ButtonPause_Click(object sender, RoutedEventArgs e)
