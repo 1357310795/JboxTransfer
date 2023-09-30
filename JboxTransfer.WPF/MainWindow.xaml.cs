@@ -27,13 +27,13 @@ namespace JboxTransfer
         public MainWindow()
         {
             InitializeComponent();
-            navigationService = ServiceProvider.Current.GetService<INavigationService>();
-            navigationService.Frame = this.MainFrame;
+            //navigationService = ServiceProvider.Current.GetService<INavigationService>();
+            //navigationService.Frame = this.MainFrame;
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            navigationService.NavigateTo(nameof(LoginPage));
+            //navigationService.NavigateTo(nameof(HomePage));
             //if (GlobalCookie.HasJacCookie())
             //    navigationService.NavigateTo(nameof(DebugPage));
             //else

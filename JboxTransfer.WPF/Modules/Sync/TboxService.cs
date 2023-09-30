@@ -370,5 +370,48 @@ namespace JboxTransfer.Modules.Sync
                 return new CommonResult<TboxErrorMessageDto>(false, ex.Message);
             }
         }
+
+        public static CommonResult<List<TboxUserInfoDto>> GetUserInfo()
+        {
+            if (!Logined)
+                return new CommonResult<List<TboxUserInfoDto>>(false, $"未登录，请先登录");
+
+            HttpClient client = NetService.Client;
+            HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Get, baseUrl + $"/user/v1/organization?user_token={UserToken}");
+
+            try
+            {
+                var res = client.SendAsync(req).GetAwaiter().GetResult();
+
+                if (!res.IsSuccessStatusCode)
+                {
+                    try
+                    {
+                        var errbody = res.Content.ReadAsStringAsync().Result;
+                        var errjson = JsonConvert.DeserializeObject<TboxErrorMessageDto>(errbody);
+                        return new CommonResult<List<TboxUserInfoDto>>(false, $"{errjson.Message}");
+                    }
+                    catch (Exception ex)
+                    {
+                        return new CommonResult<List<TboxUserInfoDto>>(false, $"服务器响应{res.StatusCode}");
+                    }
+                }
+
+                var body = res.Content.ReadAsStringAsync().Result;
+                var json = JsonConvert.DeserializeObject<List<TboxUserInfoDto>>(body);
+
+                //if (json.Status != 0)
+                //{
+                //    return new CommonResult<List<TboxUserInfoDto>>(false, $"服务器返回失败：{json.Message}");
+                //}
+
+                return new CommonResult<List<TboxUserInfoDto>>(true, "", json);
+            }
+            catch (Exception ex)
+            {
+                return new CommonResult<List<TboxUserInfoDto>>(false, ex.Message);
+            }
+
+        }
     }
 }

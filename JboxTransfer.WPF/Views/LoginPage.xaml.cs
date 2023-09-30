@@ -86,7 +86,11 @@ namespace JboxTransfer.Views
             {
                 this.Dispatcher.Invoke(() =>
                 {
-                    navigationService.NavigateTo(nameof(DebugPage));
+                    var mw = new MainWindow();
+                    mw.Show();
+                    App.Current.MainWindow.Close();
+                    App.Current.MainWindow = mw;
+                    //navigationService.NavigateTo(nameof(HomePage));
                 });
                 GlobalCookie.Save();
             }
