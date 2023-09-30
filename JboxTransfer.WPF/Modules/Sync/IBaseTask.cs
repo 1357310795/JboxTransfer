@@ -11,9 +11,17 @@ namespace JboxTransfer.Modules.Sync
     {
         public string GetProgressStr();
         public void Start();
-        public void Parse();
+        public void Pause();
         public void Resume();
+        public void Cancel();
+        public void Recover(bool keepProgress);
 
-        public string Message { get; set; }
+        public string GetName();
+        public string GetPath();
+        public string GetParentPath();
+
+        public double Progress { get; }
+        public string Message { get; }
+        public SyncTaskState State { get; set; }
     }
 }

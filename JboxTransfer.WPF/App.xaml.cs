@@ -18,6 +18,7 @@ namespace JboxTransfer
         {
             InitIoC();
             GlobalCookie.Read();
+            GlobalSyncInfoService.Read();
             NetService.Init();
             base.OnStartup(e);
         }
@@ -27,6 +28,7 @@ namespace JboxTransfer
             IServiceCollection ioc = new ServiceCollection();
             ioc.AddSingleton<INavigationService, NavigationService>();
             ioc.AddSingleton<IPageService, PageService>();
+            ioc.AddSingleton<ISnackBarService, SnackBarService>();
 
             ioc.AddSingleton<HomePage>();
             ioc.AddSingleton<LoginPage>();

@@ -6,8 +6,10 @@ using System.Threading.Tasks;
 
 namespace JboxTransfer.Models
 {
-    public enum SyncTaskState
+    public class GlobalSyncInfo
     {
-        Wait, Running, Error, Complete, Pause
+        public int Mode { get; set; }
+        public long SuccBytes { get; set; }
+        public long AllBytes { get; set; }
     }
 }

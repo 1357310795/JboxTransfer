@@ -88,10 +88,13 @@ namespace JboxTransfer.Modules
             }
             else //ConfirmKeyInit
             {
-                var res = TboxService.RenewChunkUpload(confirmKey, GetRefreshPartNumberList());
-                if (!res.Success)
-                    return new CommonResult(false, $"刷新分块凭据出错：{res.Message}");
-                uploadContext = res.Result;
+                if (remainParts.Count > 0)
+                {
+                    var res = TboxService.RenewChunkUpload(confirmKey, GetRefreshPartNumberList());
+                    if (!res.Success)
+                        return new CommonResult(false, $"刷新分块凭据出错：{res.Message}");
+                    uploadContext = res.Result;
+                }
                 State = TboxUploadState.Ready;
             }
             return new CommonResult(true, "");

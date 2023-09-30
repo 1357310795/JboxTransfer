@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using JboxTransfer.Core.Helpers;
 using JboxTransfer.Core.Modules;
+using JboxTransfer.Helpers;
 using JboxTransfer.Models;
 using JboxTransfer.Modules.Sync;
 using JboxTransfer.Services;
@@ -10,6 +11,7 @@ using System.IO;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using Teru.Code.Services;
 
 namespace JboxTransfer.Views
@@ -44,6 +46,9 @@ namespace JboxTransfer.Views
         [ObservableProperty]
         private string hash;
 
+        [ObservableProperty]
+        private ImageSource image;
+
         IBaseTask task;
 
         private LoopWorker worker;
@@ -56,6 +61,12 @@ namespace JboxTransfer.Views
             worker.OnGoAnimation += () => { };
             worker.Go += Worker_Go;
             DbService.Init();
+
+            //var icon = System.Drawing.Icon.ExtractAssociatedIcon(@"cccccc.idb");
+            //MemoryStream ms = new MemoryStream();
+            //icon.Save(ms);
+            //ms.Position = 0;
+            //Image = BitmapHelper.ToImageSource(ms);
             //var crc64 = CRC64.Create();
             //crc64.CRC64Hash_Proc(System.Text.Encoding.Default.GetBytes("123456"));
             //crc64.CRC64Hash_Proc(System.Text.Encoding.Default.GetBytes("123456"));
@@ -202,7 +213,7 @@ namespace JboxTransfer.Views
 
         private void ButtonPause_Click(object sender, RoutedEventArgs e)
         {
-            task.Parse();
+            task.Pause();
         }
 
         private void ButtonResume_Click(object sender, RoutedEventArgs e)

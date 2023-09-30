@@ -22,7 +22,7 @@ namespace JboxTransfer.Services
 
         public static int GetMinOrder()
         {
-            var res = db.Table<SyncTaskDbModel>().OrderBy(x => x.Order).Take(1).FirstOrDefault();
+            var res = db.Table<SyncTaskDbModel>().OrderBy(x => x.Order).FirstOrDefault();
             if (res == null)
                 return 0;
             else
@@ -31,7 +31,7 @@ namespace JboxTransfer.Services
 
         public static int GetMaxOrder()
         {
-            var res = db.Table<SyncTaskDbModel>().OrderByDescending(x => x.Order).Take(1).FirstOrDefault();
+            var res = db.Table<SyncTaskDbModel>().OrderByDescending(x => x.Order).FirstOrDefault();
             if (res == null)
                 return 0;
             else

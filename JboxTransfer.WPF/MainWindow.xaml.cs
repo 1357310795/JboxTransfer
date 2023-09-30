@@ -2,6 +2,7 @@
 using JboxTransfer.Services;
 using JboxTransfer.Services.Contracts;
 using JboxTransfer.Views;
+using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.DependencyInjection;
 using System.Text;
 using System.Windows;
@@ -24,11 +25,16 @@ namespace JboxTransfer
     public partial class MainWindow : Window
     {
         INavigationService navigationService;
+        ISnackBarService snackBarService;
         public MainWindow()
         {
             InitializeComponent();
             //navigationService = ServiceProvider.Current.GetService<INavigationService>();
             //navigationService.Frame = this.MainFrame;
+            var snackBarService = ServiceProvider.Current.GetService<ISnackBarService>() as SnackBarService;
+            snackBarService.MessageQueue = new SnackbarMessageQueue();
+            SnackbarOne.MessageQueue = (SnackbarMessageQueue)snackBarService.MessageQueue;
+
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)

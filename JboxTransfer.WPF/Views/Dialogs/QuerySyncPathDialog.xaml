@@ -1,0 +1,29 @@
+﻿<UserControl x:Class="JboxTransfer.Views.Dialogs.QuerySyncPathDialog"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:JboxTransfer.Views.Dialogs"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             d:Background="AliceBlue" d:DesignHeight="200"
+             d:DesignWidth="300"
+             mc:Ignorable="d">
+    <StackPanel Margin="24,24,24,16">
+        <TextBlock Text="请输入同步路径（“/”为根目录）" />
+        <TextBox x:Name="Text1" Text="/"
+                 HorizontalAlignment="Stretch" MinWidth="200"
+                 Margin="0,8,0,0" />
+        <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+            <Button Margin="0,8,8,0"
+                    Content="确定"
+                    IsDefault="True" Click="ButtonOK_Click"
+                    Style="{StaticResource MaterialDesignFlatButton}">
+            </Button>
+            <Button Margin="0,8,8,0"
+                    Content="取消"
+                    IsCancel="True" Click="ButtonCancel_Click"
+                    Style="{StaticResource MaterialDesignFlatButton}">
+            </Button>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

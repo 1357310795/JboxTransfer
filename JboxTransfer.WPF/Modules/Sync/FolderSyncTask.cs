@@ -30,7 +30,11 @@ namespace JboxTransfer.Modules.Sync
 
         public PauseTokenSource pts;
 
-        public double Progress { get; set; }
+        public double Progress { 
+            get {
+                return (double)succ / (double)total;
+            } 
+        }
 
         //Only for debug
         public FolderSyncTask(string path, string hash, long size)
@@ -61,6 +65,23 @@ namespace JboxTransfer.Modules.Sync
             pts = new PauseTokenSource();
         }
 
+        public string GetName()
+        {
+            var name = path.Split('/').Last();
+            return name == "" ? "根目录" : name;
+        }
+
+        public string GetPath()
+        {
+            return path;
+        }
+
+        public string GetParentPath()
+        {
+            var s = path.Split('/');
+            return string.Join('/', s.Take(s.Length - 1));
+        }
+
         public string GetProgressStr()
         {
             return $"{succ} / {total}";
@@ -71,19 +92,44 @@ namespace JboxTransfer.Modules.Sync
             Task.Run(internalStart);
         }
 
-        public void Parse()
+        public void Pause()
         {
             pts.Pause();
-            State = SyncTaskState.Parse;
+            State = SyncTaskState.Pause;
         }
 
         public void Resume()
         {
-            if (State != SyncTaskState.Parse)
+            if (State != SyncTaskState.Pause && State != SyncTaskState.Error)
                 return;
             pts = new PauseTokenSource();
             pts.Resume();
             Task.Run(internalStart);
+        }
+
+        public void Cancel()
+        {
+            pts.Pause();
+            State = SyncTaskState.Wait;
+            dbModel.State = 4;
+            DbService.db.Update(dbModel);
+            Message = "已取消";
+        }
+
+        public void Recover(bool keepProgress)
+        {
+            if (keepProgress)
+            {
+                dbModel.State = 0;
+                DbService.db.Update(dbModel);
+            }
+            else
+            {
+                dbModel.ConfirmKey = null;
+                dbModel.State = 0;
+                dbModel.RemainParts = null;
+                DbService.db.Update(dbModel);
+            }
         }
 
         public void internalStart()
@@ -96,10 +142,12 @@ namespace JboxTransfer.Modules.Sync
 
             //Create Folder in tbox
             var res0 = TboxService.CreateDirectory(path);
-            if (!res0.Success && res0.Result.Code != "SameNameDirectoryOrFileExists")
+            if (!res0.Success && res0.Result.Code != "SameNameDirectoryOrFileExists" && res0.Result.Code != "RootDirectoryNotAllowed")
             {
                 State = SyncTaskState.Error;
                 Message = $"创建文件夹失败：{res0.Result.Message}";
+                dbModel.State = 2;
+                DbService.db.Update(dbModel);
                 return;
             }
 
@@ -146,12 +194,16 @@ namespace JboxTransfer.Modules.Sync
                 if (t <= 0)
                 {
                     State = SyncTaskState.Error;
+                    dbModel.State = 2;
+                    DbService.db.Update(dbModel);
                     Message = ex.Message;
                     return;
                 }
                 if (info.Content.Length == 0)
                     break;
             }
+            dbModel.State = 3;
+            DbService.db.Update(dbModel);
             State = SyncTaskState.Complete;
             Message = "同步完成";
         }

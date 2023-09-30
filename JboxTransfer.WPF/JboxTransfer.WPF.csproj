@@ -36,8 +36,4 @@
     <ProjectReference Include="..\JboxTransfer.Core\JboxTransfer.Core.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="ViewModels\" />
-  </ItemGroup>
-
 </Project>

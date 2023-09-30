@@ -238,7 +238,7 @@ namespace JboxTransfer.Modules.Sync
 
             var query = new Dictionary<string, string>();
             query.Add("confirm", null);
-            query.Add("conflict_resolution_strategy", "rename");
+            query.Add("conflict_resolution_strategy", "overwrite");
             query.Add("access_token", TboxAccessTokenKeeper.Cred.AccessToken);
 
             HttpClient client = NetService.Client;

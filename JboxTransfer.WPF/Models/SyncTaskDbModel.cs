@@ -43,6 +43,7 @@ namespace JboxTransfer.Models
         /// 1:Busy
         /// 2:Error
         /// 3:Done
+        /// 4:Cancel
         /// </summary>
         public int State { get; set; }
         public string MD5_Part { get; set; }

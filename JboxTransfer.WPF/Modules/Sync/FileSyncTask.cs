@@ -43,7 +43,15 @@ namespace JboxTransfer.Modules.Sync
 
         public PauseTokenSource pts;
 
-        public double Progress { get; set; }
+        public double Progress
+        {
+            get
+            {
+                var up = (succChunk == chunkCount ? size : (succChunk * ChunkSize + tbox.Progress));
+                var all = size;
+                return (double)up / (double)all; 
+            }
+        }
 
         public FileSyncTask(string path, string hash, long size) {
             this.path = path;
@@ -92,6 +100,22 @@ namespace JboxTransfer.Modules.Sync
             State = SyncTaskState.Wait;
             pts = new PauseTokenSource();
         }
+        public string GetName()
+        {
+            var name = path.Split('/').Last();
+            return name == "" ? "根目录" : name;
+        }
+
+        public string GetPath()
+        {
+            return path;
+        }
+
+        public string GetParentPath()
+        {
+            var s = path.Split('/');
+            return string.Join('/', s.Take(s.Length - 1));
+        }
 
         public string GetProgressStr()
         {
@@ -106,21 +130,48 @@ namespace JboxTransfer.Modules.Sync
             Task.Run(internalStart);
         }
 
-        public void Parse()
+        public void Pause()
         {
             pts.Pause();
-            State = SyncTaskState.Parse;
+            State = SyncTaskState.Pause;
             if (curChunk != null)
                 curChunk.Uploading = false;
         }
 
         public void Resume()
         {
-            if (State != SyncTaskState.Parse)
+            if (State != SyncTaskState.Pause && State != SyncTaskState.Error)
                 return;
             pts = new PauseTokenSource();
             pts.Resume();
             Task.Run(internalStart);
+        }
+
+        public void Cancel()
+        {
+            pts.Pause();
+            State = SyncTaskState.Wait;
+            if (curChunk != null)
+                curChunk.Uploading = false;
+            dbModel.State = 4;
+            DbService.db.Update(dbModel);
+            Message = "已取消";
+        }
+
+        public void Recover(bool keepProgress)
+        {
+            if (keepProgress)
+            {
+                dbModel.State = 0;
+                DbService.db.Update(dbModel);
+            }
+            else
+            {
+                dbModel.ConfirmKey = null;
+                dbModel.State = 0;
+                dbModel.RemainParts = null;
+                DbService.db.Update(dbModel);
+            }
         }
 
         public void internalStart()
@@ -134,6 +185,9 @@ namespace JboxTransfer.Modules.Sync
             var res1 = tbox.PrepareForUpload();
             if (!res1.success)
             {
+                State = SyncTaskState.Error;
+                dbModel.State = 2;
+                DbService.db.Update(dbModel);
                 Message = res1.result;
                 return;
             }
@@ -144,6 +198,9 @@ namespace JboxTransfer.Modules.Sync
             var res2 = tbox.GetNextPartNumber();
             if (!res2.Success)
             {
+                State = SyncTaskState.Error;
+                dbModel.State = 2;
+                DbService.db.Update(dbModel);
                 Message = res2.Message;
                 return;
             }
@@ -202,6 +259,8 @@ namespace JboxTransfer.Modules.Sync
                 {
                     tbox.ResetPartNumber(curChunk);
                     State = SyncTaskState.Error;
+                    dbModel.State = 2;
+                    DbService.db.Update(dbModel);
                     Message = ex.Message;
                     return;
                 }
@@ -222,11 +281,13 @@ namespace JboxTransfer.Modules.Sync
                 res2 = tbox.GetNextPartNumber();
                 if (!res2.Success)
                 {
-                    Message = $"获取下一分块发生错误，当前分块为 {res2.Message}"; 
+                    Message = $"获取下一分块发生错误，当前分块为 {res2.Message}";
+                    State = SyncTaskState.Error;
                     return;
                 }
                 curChunk = res2.Result;
             }
+            chunkRes = null;
 
             var actualHash_bytes = md5.MD5Hash_Finish();
             StringBuilder sub = new StringBuilder();
@@ -243,20 +304,25 @@ namespace JboxTransfer.Modules.Sync
                 if (!res4.Success)
                 {
                     Message = $"{res4.Message}";
-                    dbModel.State = 3;
+                    State = SyncTaskState.Error;
+                    dbModel.State = 2;
                     DbService.db.Update(dbModel);
                     return;
                 }
                 if (actualcrc64.ToString() != res4.Result.Crc64 || jboxhash != actualHash)
                 {
-                    Message = $"hash不匹配";
+                    Message = $"校验值不匹配";
+                    State = SyncTaskState.Error;
                     dbModel.State = 2;
                     DbService.db.Update(dbModel);
                     return;
                 }
+                dbModel.State = 3;
+                DbService.db.Update(dbModel);
                 State = SyncTaskState.Complete;
                 Message = "同步完成";
             }
         }
+
     }
 }

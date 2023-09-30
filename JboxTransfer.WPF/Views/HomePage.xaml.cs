@@ -25,7 +25,7 @@ namespace JboxTransfer.Views
     /// HomePage.xaml 的交互逻辑
     /// </summary>
     [INotifyPropertyChanged]
-    public partial class HomePage : Page
+    public partial class HomePage : UserControl
     {
         [ObservableProperty]
         private ImageSource avatarImage;
@@ -45,6 +45,8 @@ namespace JboxTransfer.Views
 
         private void Page_Loaded(object sender, RoutedEventArgs e)
         {
+            DbService.Init();
+            DbService.db.Execute("UPDATE SyncTaskDbModel SET state = 0 WHERE state = 1;");
             Task.Run(GetAvatar);
         }
 
@@ -80,6 +82,9 @@ namespace JboxTransfer.Views
                     break;
                 case "Settings":
                     navigationService.NavigateTo(nameof(SettingsPage));
+                    break;
+                case "Debug":
+                    navigationService.NavigateTo(nameof(DebugPage));
                     break;
             }
         }
