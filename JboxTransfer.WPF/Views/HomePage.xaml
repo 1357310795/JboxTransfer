@@ -21,15 +21,15 @@
                     Grid.Row="0"
                     Orientation="Horizontal">
             <RadioButton Margin="4"
-                         Content="开始" IsChecked="True"
+                         Content="开始" Checked="RadioButton_Checked" Tag="Start"
                          Style="{StaticResource MaterialDesignTabRadioButton}"
                          BorderBrush="{DynamicResource PrimaryHueMidBrush}" />
             <RadioButton Margin="4"
-                         Content="传输列表" IsChecked="False"
+                         Content="传输列表" Checked="RadioButton_Checked" Tag="List"
                          Style="{StaticResource MaterialDesignTabRadioButton}"
                          BorderBrush="{DynamicResource PrimaryHueMidBrush}" />
             <RadioButton Margin="4"
-                         Content="设置" IsChecked="False"
+                         Content="设置" Checked="RadioButton_Checked" Tag="Settings"
                          Style="{StaticResource MaterialDesignTabRadioButton}"
                          BorderBrush="{DynamicResource PrimaryHueMidBrush}" />
         </StackPanel>
@@ -53,6 +53,6 @@
             </md:PopupBox.ToggleContent>
             <TextBlock Text="44444444" />
         </md:PopupBox>
-        <Frame x:Name="MainFrame" Grid.Row="1" />
+        <Frame x:Name="MainFrame" Grid.Row="1" NavigationUIVisibility="Hidden"/>
     </Grid>
 </Page>

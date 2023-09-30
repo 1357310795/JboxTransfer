@@ -3,6 +3,7 @@ using JboxTransfer.Services.Contracts;
 using System.Diagnostics.CodeAnalysis;
 using System.Windows.Controls;
 using System.Windows.Navigation;
+using static JboxTransfer.Services.TransitionService;
 
 namespace JboxTransfer.Services;
 
@@ -120,6 +121,11 @@ public class NavigationService : INavigationService
             }
 
             Navigated?.Invoke(sender, e);
+
+            if (e.Content != null)
+            {
+                TransitionService.ApplyTransition(e.Content, TransitionType.SlideBottom, 250);
+            }
         }
     }
 }

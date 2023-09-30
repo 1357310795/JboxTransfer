@@ -66,5 +66,22 @@ namespace JboxTransfer.Views
             });
             
         }
+
+        private void RadioButton_Checked(object sender, RoutedEventArgs e)
+        {
+            var tag = (string)((FrameworkElement)sender).Tag;
+            switch(tag)
+            {
+                case "Start":
+                    navigationService.NavigateTo(nameof(StartPage));
+                    break;
+                case "List":
+                    navigationService.NavigateTo(nameof(ListPage));
+                    break;
+                case "Settings":
+                    navigationService.NavigateTo(nameof(SettingsPage));
+                    break;
+            }
+        }
     }
 }
