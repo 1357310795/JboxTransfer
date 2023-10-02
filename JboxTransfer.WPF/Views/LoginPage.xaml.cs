@@ -140,7 +140,10 @@ namespace JboxTransfer.Views
 
             this.Dispatcher.Invoke(() =>
             {
-                navigationService.NavigateTo(nameof(HomePage));
+                var mw = new MainWindow();
+                mw.Show();
+                App.Current.MainWindow.Close();
+                App.Current.MainWindow = mw;
             });
             GlobalCookie.Save();
             //Debug.WriteLine(GlobalCookie.HasJacCookie());

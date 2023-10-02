@@ -206,7 +206,7 @@ namespace JboxTransfer.Views
 
         private void ButtonErrorRestart1_Click(object sender, RoutedEventArgs e)
         {
-            for (int i = ListError.Count; i >= 0; i--)
+            for (int i = ListError.Count - 1; i >= 0; i--)
             {
                 var item = ListError[i];
                 item.Task.Recover(true);
@@ -216,7 +216,7 @@ namespace JboxTransfer.Views
 
         private void ButtonErrorRestart2_Click(object sender, RoutedEventArgs e)
         {
-            for (int i = ListError.Count; i >= 0; i--)
+            for (int i = ListError.Count - 1; i >= 0; i--)
             {
                 var item = ListError[i];
                 item.Task.Recover(false);
