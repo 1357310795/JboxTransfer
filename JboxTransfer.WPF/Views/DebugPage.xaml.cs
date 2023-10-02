@@ -221,6 +221,13 @@ namespace JboxTransfer.Views
             task.Resume();
         }
 
+        private void ButtonGetIcon_Click(object sender, RoutedEventArgs e)
+        {
+            var icon = IconHelper.FindIconForFilename(Path, true);
+            Image = icon;
+
+        }
+
         //private void Ms_OnWrite(long off)
         //{
         //    Progress = (double)off / (double)len;

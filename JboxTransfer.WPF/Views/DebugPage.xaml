@@ -31,6 +31,7 @@
             <TextBlock Text="{Binding Message}" />
             <Button Content="11111" Click="Button_Click"/>
             <Button Content="GetInfo" Click="ButtonGetInfo_Click"/>
+            <Button Content="GetIcon" Click="ButtonGetIcon_Click"/>
             <Image Height="32" Width="32" Source="{Binding Image}" Margin="0,10,0,0"/>
         </StackPanel>
         

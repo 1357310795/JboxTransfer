@@ -159,7 +159,9 @@ namespace JboxTransfer.Views
                 };
                 this.Dispatcher.Invoke(() =>
                 {
-                    vm.Icon = IconHelper.FindIconForFilename(vm.FileName, true);
+                    vm.Icon = item.Type == 0 ?
+                                IconHelper.FindIconForFilename(vm.FileName, true) :
+                                IconHelper.FindIconForFolder(true);
                 });
                 list.Add(vm);
             }

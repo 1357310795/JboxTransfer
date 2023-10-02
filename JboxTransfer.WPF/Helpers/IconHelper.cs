@@ -16,6 +16,7 @@ namespace JboxTransfer.Helpers
     {
         private static readonly Dictionary<string, ImageSource> _smallIconCache = new Dictionary<string, ImageSource>();
         private static readonly Dictionary<string, ImageSource> _largeIconCache = new Dictionary<string, ImageSource>();
+        private static ImageSource _folderIconCache = null;
         /// <summary>
         /// Get an icon for a given filename
         /// </summary>
@@ -31,8 +32,18 @@ namespace JboxTransfer.Helpers
             ImageSource icon;
             if (cache.TryGetValue(extension, out icon))
                 return icon;
-            icon = IconReader.GetFileIcon(fileName, large ? IconReader.IconSize.Large : IconReader.IconSize.Small, false).ToImageSource();
+            icon = IconReader.GetFileIcon(fileName, large ? IconReader.IconSize.Large : IconReader.IconSize.Small, false, false).ToImageSource();
             cache.Add(extension, icon);
+            return icon;
+        }
+
+        public static ImageSource FindIconForFolder(bool large)
+        {
+            ImageSource icon;
+            if (_folderIconCache != null)
+                return _folderIconCache;
+            icon = IconReader.GetFileIcon("folder", large ? IconReader.IconSize.Large : IconReader.IconSize.Small, false, true).ToImageSource();
+            _folderIconCache = icon;
             return icon;
         }
         /// <summary>
@@ -75,7 +86,7 @@ namespace JboxTransfer.Helpers
             /// <param name="size">Large or small</param>
             /// <param name="linkOverlay">Whether to include the link icon</param>
             /// <returns>System.Drawing.Icon</returns>
-            public static Icon GetFileIcon(string name, IconSize size, bool linkOverlay)
+            public static Icon GetFileIcon(string name, IconSize size, bool linkOverlay, bool isDir)
             {
                 var shfi = new Shell32.Shfileinfo();
                 var flags = Shell32.ShgfiIcon | Shell32.ShgfiUsefileattributes;
@@ -86,7 +97,7 @@ namespace JboxTransfer.Helpers
                 else
                     flags += Shell32.ShgfiLargeicon;
                 Shell32.SHGetFileInfo(name,
-                    Shell32.FileAttributeNormal,
+                    isDir ? Shell32.FileAttributeDirectory : Shell32.FileAttributeNormal,
                     ref shfi,
                     (uint)Marshal.SizeOf(shfi),
                     flags);
@@ -120,7 +131,9 @@ namespace JboxTransfer.Helpers
             public const uint ShgfiLargeicon = 0x000000000;     // get large icon
             public const uint ShgfiSmallicon = 0x000000001;     // get small icon
             public const uint ShgfiUsefileattributes = 0x000000010;     // use passed dwFileAttribute
+
             public const uint FileAttributeNormal = 0x00000080;
+            public const uint FileAttributeDirectory = 0x00000010;
             [DllImport("Shell32.dll")]
             public static extern IntPtr SHGetFileInfo(
                 string pszPath,
