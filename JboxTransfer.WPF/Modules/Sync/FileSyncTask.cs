@@ -261,6 +261,7 @@ namespace JboxTransfer.Modules.Sync
                 {
                     tbox.ResetPartNumber(curChunk);
                     State = SyncTaskState.Error;
+                    chunkRes = null;
                     dbModel.State = 2;
                     DbService.db.Update(dbModel);
                     Message = ex.Message;
