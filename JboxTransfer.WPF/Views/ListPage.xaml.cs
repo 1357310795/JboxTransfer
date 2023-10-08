@@ -41,15 +41,14 @@ namespace JboxTransfer.Views
         ObservableCollection<SyncTaskViewModel> listError;
 
         [ObservableProperty]
-        List<SyncTaskViewModel> listPending;
-
-        [ObservableProperty]
         private int index;
 
         [ObservableProperty]
         private bool isBusy;
 
         private ISnackBarService snackBarService;
+
+        private int maxThread = 8;
 
         public ListPage(ISnackBarService snackBarService)
         {
@@ -61,7 +60,6 @@ namespace JboxTransfer.Views
             ListCompleted = new ObservableCollection<SyncTaskViewModel>();
             ListCurrent = new ObservableCollection<SyncTaskViewModel>();
             ListError = new ObservableCollection<SyncTaskViewModel>();
-            ListPending = new List<SyncTaskViewModel>();
 
             checker = new LoopWorker();
             checker.Interval = 1000;
@@ -69,9 +67,17 @@ namespace JboxTransfer.Views
             checker.OnGoAnimation += () => { };
             checker.Go += Checker_Go;
             checker.StartRun();
+
+            checker2 = new LoopWorker();
+            checker2.Interval = 1000;
+            checker2.CanRun += () => true;
+            checker2.OnGoAnimation += () => { };
+            checker2.Go += Checker2_Go;
+            //checker2.StartRun();
         }
 
         LoopWorker checker;
+        LoopWorker checker2;
 
 
         private TaskState Checker_Go()
@@ -79,52 +85,28 @@ namespace JboxTransfer.Views
             UpdateInfo();
             UpdateList();
             if (IsBusy)
-                UpdateNewTask();
-            UpdatePending();
+                UpdateStartNew();
+            UpdateAddTask();
             return TaskState.Started;
         }
 
-        private void UpdateNewTask()
+        private TaskState Checker2_Go()
         {
-            while (ListCurrent.Count < 8)
+            return TaskState.Started;
+        }
+
+        private void UpdateStartNew()
+        {
+            while (ListCurrent.Count(
+                x=>x.Task.State == SyncTaskState.Running || 
+                x.Task.State == SyncTaskState.Error ||
+                x.Task.State == SyncTaskState.Complete
+                ) < maxThread)
             {
-                SyncTaskDbModel item = null;
-                DbService.db.RunInTransaction(() =>
-                {
-                    item = DbService.db.Table<SyncTaskDbModel>().OrderBy(x => x.Order).Where(x => x.State == 0).FirstOrDefault(); //.Where(x => x.State == 0)
-                    if (item == null)
-                        return;
-                    item.State = 1;
-                    DbService.db.Update(item);
-                });
-
-                if (item == null)
-                    break;
-
-                IBaseTask task2;
-                if (item.Type == 0)
-                {
-                    task2 = new FileSyncTask(item);
-                    task2.Start();
-                }
-                else
-                {
-                    task2 = new FolderSyncTask(item);
-                    task2.Start();
-                }
-
-                this.Dispatcher.Invoke(() =>
-                {
-                    SyncTaskViewModel vm;
-                    vm = new SyncTaskViewModel()
-                    {
-                        FileName = task2.GetName(),
-                        ParentPath = task2.GetParentPath(),
-                        Task = task2
-                    };
-                    vm.Icon = IconHelper.FindIconForFilename(vm.FileName, true);
-                    ListCurrent.Add(vm);
-                });
+                var x = ListCurrent.FirstOrDefault(x => x.Task.State == SyncTaskState.Wait);
+                if (x == null)
+                    return;
+                x.Task.Start();
             }
         }
 
@@ -150,27 +132,78 @@ namespace JboxTransfer.Views
             });
         }
 
-        private void UpdatePending()
+        private void UpdateAddTask()
         {
-            var items = DbService.db.Table<SyncTaskDbModel>().OrderBy(x => x.Order).Where(x => x.State == 0).Take(20).ToList();
-            var list = new List<SyncTaskViewModel>();
-            foreach(var item in items)
+            if (ListCurrent.Count < 99)
             {
-                SyncTaskViewModel vm;
-                vm = new SyncTaskViewModel()
+                List<SyncTaskDbModel> items = null;
+                DbService.db.RunInTransaction(() =>
                 {
-                    FileName = item.FileName,
-                    ParentPath = item.FilePath,
-                };
-                this.Dispatcher.Invoke(() =>
-                {
-                    vm.Icon = item.Type == 0 ?
-                                IconHelper.FindIconForFilename(vm.FileName, true) :
-                                IconHelper.FindIconForFolder(true);
+                    items = DbService.db.Table<SyncTaskDbModel>().OrderBy(x => x.Order).Where(x => x.State == 0).Take(99 - ListCurrent.Count).ToList(); //.Where(x => x.State == 0)
+                    if (items == null || items.Count == 0)
+                        return;
+                    foreach(var item in items)
+                    {
+                        item.State = 1;
+                        DbService.db.Update(item);
+                    }
                 });
-                list.Add(vm);
+
+                if (items == null || items.Count == 0)
+                    return;
+
+                foreach(var item in items)
+                {
+                    IBaseTask task2;
+                    if (item.Type == 0)
+                    {
+                        task2 = new FileSyncTask(item);
+                        //task2.Start();
+                    }
+                    else
+                    {
+                        task2 = new FolderSyncTask(item);
+                        //task2.Start();
+                    }
+
+                    this.Dispatcher.Invoke(() =>
+                    {
+                        SyncTaskViewModel vm;
+                        vm = new SyncTaskViewModel()
+                        {
+                            FileName = task2.GetName(),
+                            ParentPath = task2.GetParentPath(),
+                            Task = task2
+                        };
+                        this.Dispatcher.Invoke(() =>
+                        {
+                            vm.Icon = item.Type == 0 ?
+                                        IconHelper.FindIconForFilename(vm.FileName, true) :
+                                        IconHelper.FindIconForFolder(true);
+                        });
+                        ListCurrent.Add(vm);
+                    });
+                }
             }
-            ListPending = list;
+            //var items = DbService.db.Table<SyncTaskDbModel>().OrderBy(x => x.Order).Where(x => x.State == 0).Take(99-).ToList();
+            //var list = new List<SyncTaskViewModel>();
+            //foreach(var item in items)
+            //{
+            //    SyncTaskViewModel vm;
+            //    vm = new SyncTaskViewModel()
+            //    {
+            //        FileName = item.FileName,
+            //        ParentPath = item.FilePath,
+            //    };
+            //    this.Dispatcher.Invoke(() =>
+            //    {
+            //        vm.Icon = item.Type == 0 ?
+            //                    IconHelper.FindIconForFilename(vm.FileName, true) :
+            //                    IconHelper.FindIconForFolder(true);
+            //    });
+            //    list.Add(vm);
+            //}
+            //ListPending = list;
         }
 
         private void UpdateInfo()
@@ -189,9 +222,13 @@ namespace JboxTransfer.Views
         private void ButtonStart_Click(object sender, RoutedEventArgs e)
         {
             IsBusy = true;
+            var t = maxThread;
             foreach (var task in ListCurrent)
             {
+                t--;
                 task.Task.Resume();
+                if (t == 0) 
+                    break;
             }
             //checker.StartRun();
         }
@@ -242,7 +279,7 @@ namespace JboxTransfer.Views
 
         private void ButtonRefreshPending_Click(object sender, RoutedEventArgs e)
         {
-            UpdatePending();
+            UpdateAddTask();
         }
 
         [RelayCommand]

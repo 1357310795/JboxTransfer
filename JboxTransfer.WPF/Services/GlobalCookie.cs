@@ -2,6 +2,7 @@
 using System.Collections;
 using System.IO;
 using System.Net;
+using Teru.Code.Models;
 
 namespace JboxTransfer.Services
 {
@@ -34,6 +35,20 @@ namespace JboxTransfer.Services
                 }
             }
             return CookieContainer;
+        }
+
+        public static CommonResult Clear()
+        {
+            try
+            {
+                File.Delete(_fileName);
+                CookieContainer = new CookieContainer();
+                return new CommonResult(true, "");
+            }
+            catch(Exception ex)
+            {
+                return new CommonResult(false, ex.Message);
+            }
         }
 
         public static bool HasJacCookie()

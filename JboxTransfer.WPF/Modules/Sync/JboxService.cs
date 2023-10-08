@@ -30,35 +30,43 @@ namespace JboxTransfer.Modules.Sync
             req.Headers.AcceptEncoding.ParseAdd("gzip, deflate, br");
             req.Headers.AcceptLanguage.ParseAdd("zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7");
             req.Headers.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36 Edg/116.0.1938.76");
-            var res = client.SendAsync(req).GetAwaiter().GetResult();
 
-            if (!res.IsSuccessStatusCode)
+            try
             {
-                return new CommonResult(false, $"服务器响应{res.StatusCode}");
-            }
+                var res = client.SendAsync(req).GetAwaiter().GetResult();
 
-            if (res.RequestMessage.RequestUri.Host.Contains("jaccount"))
+                if (!res.IsSuccessStatusCode)
+                {
+                    return new CommonResult(false, $"服务器响应{res.StatusCode}");
+                }
+
+                if (res.RequestMessage.RequestUri.Host.Contains("jaccount"))
+                {
+                    return new CommonResult(false, $"未成功认证");
+                }
+
+                var body = res.Content.ReadAsStringAsync().Result;
+
+                if (body.Contains("vpn", StringComparison.OrdinalIgnoreCase))
+                {
+                    return new CommonResult(false, $"校外访问");
+                }
+
+                var cookies = GlobalCookie.CookieContainer.GetCookies(new Uri("https://jbox.sjtu.edu.cn"));
+                var Sc = cookies.FirstOrDefault(x => x.Name == "S");
+                if (Sc != null)
+                {
+                    S = Sc.Value;
+                    Logined = true;
+                }
+                else
+                    return new CommonResult(false, "找不到 Cookie");
+                return new CommonResult(true, "");
+            }
+            catch(Exception ex)
             {
-                return new CommonResult(false, $"未成功认证");
+                return new CommonResult(false, ex.Message);
             }
-
-            var body = res.Content.ReadAsStringAsync().Result;
-
-            if (body.Contains("vpn",StringComparison.OrdinalIgnoreCase))
-            {
-                return new CommonResult(false, $"校外访问");
-            }
-
-            var cookies = GlobalCookie.CookieContainer.GetCookies(new Uri("https://jbox.sjtu.edu.cn"));
-            var Sc = cookies.FirstOrDefault(x => x.Name == "S");
-            if (Sc != null)
-            {
-                S = Sc.Value;
-                Logined = true;
-            }
-            else
-                return new CommonResult(false, "找不到 Cookie");
-            return new CommonResult(true, "");
         }
 
         public static CommonResult<MemoryStream> DownloadChunk(string path, long start, long size, Pack<long> chunkProgress)
@@ -134,22 +142,29 @@ namespace JboxTransfer.Modules.Sync
             req.Headers.AcceptLanguage.ParseAdd("zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7");
             req.Headers.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36 Edg/116.0.1938.76");
 
-            var res = client.SendAsync(req).GetAwaiter().GetResult();
-
-            if (!res.IsSuccessStatusCode)
+            try
             {
-                return new CommonResult<JboxItemInfo>(false, $"服务器响应{res.StatusCode}");
+                var res = client.SendAsync(req).GetAwaiter().GetResult();
+
+                if (!res.IsSuccessStatusCode)
+                {
+                    return new CommonResult<JboxItemInfo>(false, $"服务器响应{res.StatusCode}");
+                }
+
+                var body = res.Content.ReadAsStringAsync().Result;
+                var json = JsonConvert.DeserializeObject<JboxItemInfo>(body);
+
+                if (json.Type == "error")
+                {
+                    return new CommonResult<JboxItemInfo>(false, $"服务器返回失败：{json.Message}");
+                }
+
+                return new CommonResult<JboxItemInfo>(true, "", json);
             }
-
-            var body = res.Content.ReadAsStringAsync().Result;
-            var json = JsonConvert.DeserializeObject<JboxItemInfo>(body);
-
-            if (json.Type == "error")
+            catch (Exception ex)
             {
-                return new CommonResult<JboxItemInfo>(false, $"服务器返回失败：{json.Message}");
+                return new CommonResult<JboxItemInfo>(false, $"{ex.Message}");
             }
-
-            return new CommonResult<JboxItemInfo>(true, "", json);
         }
 
         public static CommonResult<JboxItemInfo> GetJboxFolderInfo(string path, int page)

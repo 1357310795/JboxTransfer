@@ -85,6 +85,11 @@ namespace JboxTransfer.Helpers
                 ScanSuccess += JacFastLoginHelper_ScanSuccess;
 
                 var res1 = await GetUuid();
+                if (res1.Message == "已授权")
+                {
+                    LoginSuccess.Invoke();
+                    return;
+                }
                 if (token.IsCancellationRequested)
                     return;
                 if (!res1.Success)

@@ -61,7 +61,7 @@
                                Text="{Binding NickName}" />
                 </StackPanel>
             </md:PopupBox.ToggleContent>
-            <TextBlock Text="44444444" />
+            <Button Content="退出登录" Click="ButtonLogout_Click"/>
         </md:PopupBox>
         <Frame x:Name="MainFrame"
                Grid.Row="1"

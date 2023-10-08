@@ -106,12 +106,12 @@ namespace JboxTransfer.Views
             var res2 = JboxService.Login();
             if (!res2.success)
             {
-                return new CommonResult(false, $"jbox认证失败：{res.result}\n点击以重试");
+                return new CommonResult(false, $"jbox认证失败：{res2.result}\n点击以重试");
             }
             var res3 = TboxService.Login();
             if (!res3.success)
             {
-                return new CommonResult(false, $"tbox认证失败：{res.result}\n点击以重试");
+                return new CommonResult(false, $"tbox认证失败：{res3.result}\n点击以重试");
             }
             TboxAccessTokenKeeper.Register();
             return new CommonResult(true, "");

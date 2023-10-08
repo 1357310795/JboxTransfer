@@ -41,6 +41,7 @@
                     <ListBox Margin="0,8,0,0"
                              Grid.Row="1"
                              HorizontalContentAlignment="Stretch"
+                             ItemContainerStyle="{StaticResource MyListBoxItem}"
                              SelectionMode="Single"
                              ItemsSource="{Binding ListCurrent}">
                         <ListBox.ItemTemplate>
@@ -67,7 +68,7 @@
                                     </StackPanel>
                                     <StackPanel Width="200"
                                                 VerticalAlignment="Center"
-                                                Margin="0,0,16,0"
+                                                Margin="8,0,16,0"
                                                 Grid.Column="2"
                                                 Orientation="Vertical">
                                         <ProgressBar Height="12"
@@ -110,86 +111,10 @@
                     </ListBox>
                 </Grid>
             </TabItem>
-            <TabItem Header="待传输">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition />
-                    </Grid.RowDefinitions>
-                    <StackPanel HorizontalAlignment="Left"
-                                Margin="0,16,0,0"
-                                Orientation="Horizontal">
-                        <Button Margin="16,0,0,0"
-                                Content="刷新"
-                                Click="ButtonRefreshPending_Click"
-                                Style="{StaticResource MaterialDesignOutlinedButton}" />
-                    </StackPanel>
-                    <ListBox Margin="0,8,0,0"
-                             Grid.Row="1"
-                             HorizontalContentAlignment="Stretch"
-                             ItemsSource="{Binding ListPending}">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <Grid VerticalAlignment="Stretch">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <Image Width="32" Height="32"
-                                           HorizontalAlignment="Center" VerticalAlignment="Center"
-                                           Margin="16,0,0,0"
-                                           Source="{Binding Icon}" />
-                                    <StackPanel VerticalAlignment="Center"
-                                                Margin="10,0,0,0"
-                                                Grid.Column="1"
-                                                Orientation="Vertical">
-                                        <TextBlock Text="{Binding FileName}" />
-                                        <TextBlock Foreground="{DynamicResource MaterialDesignBodyLight}" Text="{Binding ParentPath}" />
-                                    </StackPanel>
-                                    <StackPanel Width="200"
-                                                VerticalAlignment="Center"
-                                                Grid.Column="2"
-                                                Orientation="Vertical">
-                                        <ProgressBar Height="12"
-                                                     materialDesign:TransitionAssist.DisableTransitions="True"
-                                                     Minimum="0" Maximum="1"
-                                                     Value="{Binding Progress}" />
-                                        <TextBlock Margin="0,2,0,0"
-                                                   Foreground="{DynamicResource MaterialDesignBodyLight}"
-                                                   Text="{Binding ProgressStr}" />
-                                    </StackPanel>
-                                    <Button HorizontalAlignment="Center" VerticalAlignment="Center"
-                                            Grid.Column="4"
-                                            Style="{StaticResource MaterialDesignIconForegroundButton}">
-                                        <materialDesign:PackIcon Kind="Close" />
-                                    </Button>
-                                    <Menu HorizontalAlignment="Center" VerticalAlignment="Center"
-                                          Grid.Column="5">
-                                        <MenuItem Icon="{materialDesign:PackIcon Kind=DotsVertical}">
-                                            <MenuItem Command="{Binding OpenInJboxCommand, RelativeSource={RelativeSource AncestorType=Page, Mode=FindAncestor}}"
-                                                      CommandParameter="{Binding}"
-                                                      Header="在 jbox 中打开"
-                                                      Icon="{materialDesign:PackIcon Kind=ContentCut}" />
-                                            <MenuItem Command="{Binding OpenInTboxCommand, RelativeSource={RelativeSource AncestorType=Page, Mode=FindAncestor}}"
-                                                      CommandParameter="{Binding}"
-                                                      Header="在 新云盘 中打开" />
-                                            <MenuItem Command="{Binding CopyPathCommand, RelativeSource={RelativeSource AncestorType=Page, Mode=FindAncestor}}"
-                                                      CommandParameter="{Binding}"
-                                                      Header="复制完整路径" />
-                                        </MenuItem>
-                                    </Menu>
-                                </Grid>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-                </Grid>
-            </TabItem>
             <TabItem Header="已完成">
-                <ListBox HorizontalContentAlignment="Stretch" ItemsSource="{Binding ListCompleted}">
+                <ListBox HorizontalContentAlignment="Stretch"
+                         ItemsSource="{Binding ListCompleted}"
+                         ItemContainerStyle="{StaticResource MyListBoxItem}">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <Grid VerticalAlignment="Stretch">
@@ -269,6 +194,7 @@
                              Grid.Row="1"
                              HorizontalContentAlignment="Stretch"
                              SelectionMode="Single"
+                             ItemContainerStyle="{StaticResource MyListBoxItem}"
                              ItemsSource="{Binding ListError}">
                         <ListBox.ItemTemplate>
                             <DataTemplate>

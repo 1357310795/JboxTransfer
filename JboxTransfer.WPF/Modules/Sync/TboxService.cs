@@ -25,32 +25,41 @@ namespace JboxTransfer.Modules.Sync
         {
             HttpClient client = NetService.Client;
             HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Get, "https://pan.sjtu.edu.cn/user/v1/sign-in/sso-login-redirect/xpw8ou8y");
-            var res = client.SendAsync(req).GetAwaiter().GetResult();
-
-            if (!res.IsSuccessStatusCode)
+            string code = "";
+            try
             {
-                return new CommonResult(false, $"服务器响应{res.StatusCode}");
-            }
+                var res = client.SendAsync(req).GetAwaiter().GetResult();
 
-            if (res.RequestMessage.RequestUri.Host.Contains("jaccount"))
+                if (!res.IsSuccessStatusCode)
+                {
+                    return new CommonResult(false, $"服务器响应{res.StatusCode}");
+                }
+
+                if (res.RequestMessage.RequestUri.Host.Contains("jaccount"))
+                {
+                    return new CommonResult(false, $"未成功认证");
+                }
+
+                var reg = new Regex("code=(.+?)&state=");
+                var match = reg.Match(res.RequestMessage.RequestUri.OriginalString);
+
+                if (!match.Success)
+                {
+                    return new CommonResult(false, $"未找到回调code");
+                }
+                code = match.Groups[1].Value;
+            }
+            catch (Exception ex)
             {
-                return new CommonResult(false, $"未成功认证");
+                return new CommonResult(false, ex.Message);
             }
-
-            var reg = new Regex("code=(.+?)&state=");
-            var match = reg.Match(res.RequestMessage.RequestUri.OriginalString);
-
-            if (!match.Success) {
-                return new CommonResult(false, $"未找到回调code");
-            }
-            var code = match.Groups[1].Value;
 
             ///user/v1/sign-in/verify-account-login/xpw8ou8y
             req = new HttpRequestMessage(HttpMethod.Post, $"https://pan.sjtu.edu.cn/user/v1/sign-in/verify-account-login/xpw8ou8y?device_id=Chrome+116.0.0.0&type=sso&credential={code}");
 
             try
             {
-                res = client.SendAsync(req).GetAwaiter().GetResult();
+                var res = client.SendAsync(req).GetAwaiter().GetResult();
 
                 if (!res.IsSuccessStatusCode)
                 {

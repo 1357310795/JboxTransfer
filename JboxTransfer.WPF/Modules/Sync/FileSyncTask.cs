@@ -47,6 +47,7 @@ namespace JboxTransfer.Modules.Sync
         {
             get
             {
+                if (size == 0) return 0;
                 var up = (succChunk == chunkCount ? size : (succChunk * ChunkSize + tbox.Progress));
                 var all = size;
                 return (double)up / (double)all; 
@@ -127,6 +128,7 @@ namespace JboxTransfer.Modules.Sync
 
         public void Start()
         {
+            State = SyncTaskState.Running;
             Task.Run(internalStart);
         }
 

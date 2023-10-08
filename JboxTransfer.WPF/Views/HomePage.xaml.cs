@@ -88,5 +88,25 @@ namespace JboxTransfer.Views
                     break;
             }
         }
+
+        private void ButtonLogout_Click(object sender, RoutedEventArgs e)
+        {
+            var res = GlobalCookie.Clear();
+            if (!res.success)
+            {
+                MessageBox.Show("cookie.json 删除失败，您需要手动删除本程序所在文件夹内的 cookie.json 文件，然后重启程序");
+                App.Current.Shutdown();
+                return;
+            }
+            TboxAccessTokenKeeper.UnRegister();
+            NetService.Init();
+            this.Dispatcher.Invoke(() =>
+            {
+                var lw = new LoginWindow();
+                lw.Show();
+                App.Current.MainWindow.Close();
+                App.Current.MainWindow = lw;
+            });
+        }
     }
 }

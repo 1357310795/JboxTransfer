@@ -1,4 +1,5 @@
-﻿using JboxTransfer.Services.Contracts;
+﻿using JboxTransfer.Models;
+using JboxTransfer.Services.Contracts;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -24,33 +25,41 @@ namespace JboxTransfer.Services
             req.Headers.AcceptEncoding.ParseAdd("gzip, deflate, br");
             req.Headers.AcceptLanguage.ParseAdd("zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7");
             req.Headers.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36 Edg/116.0.1938.76");
-            var res = client.SendAsync(req).GetAwaiter().GetResult();
 
-            while (res.StatusCode == HttpStatusCode.Found && res.Headers.Location.Scheme == "http")
+            try
             {
-                req = new HttpRequestMessage(HttpMethod.Get, res.Headers.Location.OriginalString.Replace("http", "https"));
-                req.Headers.Accept.ParseAdd("text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
-                req.Headers.AcceptEncoding.ParseAdd("gzip, deflate, br");
-                req.Headers.AcceptLanguage.ParseAdd("zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7");
-                req.Headers.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36 Edg/116.0.1938.76");
-                res = client.SendAsync(req).GetAwaiter().GetResult();
-            }
+                var res = client.SendAsync(req).GetAwaiter().GetResult();
 
-            if (!res.IsSuccessStatusCode)
+                while (res.StatusCode == HttpStatusCode.Found && res.Headers.Location.Scheme == "http")
+                {
+                    req = new HttpRequestMessage(HttpMethod.Get, res.Headers.Location.OriginalString.Replace("http", "https"));
+                    req.Headers.Accept.ParseAdd("text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
+                    req.Headers.AcceptEncoding.ParseAdd("gzip, deflate, br");
+                    req.Headers.AcceptLanguage.ParseAdd("zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7");
+                    req.Headers.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36 Edg/116.0.1938.76");
+                    res = client.SendAsync(req).GetAwaiter().GetResult();
+                }
+
+                if (!res.IsSuccessStatusCode)
+                {
+                    return new CommonResult(false, $"服务器响应{res.StatusCode}");
+                }
+
+                var body = res.Content.ReadAsStringAsync().Result;
+                var json = JsonConvert.DeserializeObject<UserInfoDto>(body);
+
+                if (json.Errno != 0)
+                {
+                    return new CommonResult(false, $"服务器返回错误：{json.Error}");
+                }
+
+                entity = json.Entities;
+                return new CommonResult(true, "");
+            }
+            catch (Exception ex)
             {
-                return new CommonResult(false, $"服务器响应{res.StatusCode}");
+                return new CommonResult(false, ex.Message);
             }
-
-            var body = res.Content.ReadAsStringAsync().Result;
-            var json = JsonConvert.DeserializeObject<UserInfoDto>(body);
-
-            if (json.Errno != 0)
-            {
-                return new CommonResult(false, $"服务器返回错误：{json.Error}");
-            }
-
-            entity = json.Entities;
-            return new CommonResult(true, "");
         }
     }
 

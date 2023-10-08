@@ -11,6 +11,7 @@
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Defaults.xaml" />
                 <ResourceDictionary Source="/Styles/Dictionary1.xaml" />
                 <ResourceDictionary Source="/Styles/MaterialDesignTheme.ProgressBar.xaml" />
+                <ResourceDictionary Source="/Styles/ListBox.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

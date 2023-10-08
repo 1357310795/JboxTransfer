@@ -31,7 +31,7 @@ namespace JboxTransfer
             ioc.AddSingleton<ISnackBarService, SnackBarService>();
 
             ioc.AddSingleton<HomePage>();
-            ioc.AddSingleton<LoginPage>();
+            ioc.AddTransient<LoginPage>();
             ioc.AddSingleton<DebugPage>();
             ioc.AddSingleton<StartPage>();
             ioc.AddSingleton<ListPage>();

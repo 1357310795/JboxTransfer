@@ -32,6 +32,7 @@ namespace JboxTransfer.Modules.Sync
 
         public double Progress { 
             get {
+                if (total == 0) return 0;
                 return (double)succ / (double)total;
             } 
         }
@@ -89,6 +90,7 @@ namespace JboxTransfer.Modules.Sync
 
         public void Start()
         {
+            State = SyncTaskState.Running;
             Task.Run(internalStart);
         }
 
@@ -142,13 +144,16 @@ namespace JboxTransfer.Modules.Sync
 
             //Create Folder in tbox
             var res0 = TboxService.CreateDirectory(path);
-            if (!res0.Success && res0.Result.Code != "SameNameDirectoryOrFileExists" && res0.Result.Code != "RootDirectoryNotAllowed")
+            if (!res0.Success)
             {
-                State = SyncTaskState.Error;
-                Message = $"创建文件夹失败：{res0.Result.Message}";
-                dbModel.State = 2;
-                DbService.db.Update(dbModel);
-                return;
+                if (res0.Result == null || (res0.Result.Code != "SameNameDirectoryOrFileExists" && res0.Result.Code != "RootDirectoryNotAllowed"))
+                {
+                    State = SyncTaskState.Error;
+                    Message = $"创建文件夹失败：{res0.Result.Message}";
+                    dbModel.State = 2;
+                    DbService.db.Update(dbModel);
+                    return;
+                }
             }
 
             while (true)

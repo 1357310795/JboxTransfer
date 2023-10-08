@@ -54,7 +54,7 @@ namespace JboxTransfer.Views
             snackBarService.MessageQueue.Enqueue("添加任务成功！");
             //Todo:开始任务
 
-            IsProgressShow = true;
+            //IsProgressShow = true;
         }
 
         private async void ButtonFull_Click(object sender, RoutedEventArgs e)
