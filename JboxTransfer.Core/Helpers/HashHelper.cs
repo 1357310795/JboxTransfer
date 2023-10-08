@@ -1,11 +1,6 @@
 ﻿using JboxTransfer.Core.Modules;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.Intrinsics.Arm;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
 using MD5 = JboxTransfer.Core.Modules.MD5;
 
 namespace JboxTransfer.Core.Helpers

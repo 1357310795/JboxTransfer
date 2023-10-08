@@ -114,7 +114,7 @@ namespace JboxTransfer.Modules.Sync
         public string GetParentPath()
         {
             var s = path.Split('/');
-            return string.Join('/', s.Take(s.Length - 1));
+            return string.Join("/", s.Take(s.Length - 1));
         }
 
         public string GetProgressStr()

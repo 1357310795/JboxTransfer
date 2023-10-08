@@ -38,7 +38,6 @@ public class NavigationService : INavigationService
         }
     }
 
-    [MemberNotNullWhen(true, nameof(Frame), nameof(_frame))]
     public bool CanGoBack => Frame != null && Frame.CanGoBack;
 
     public NavigationService(IPageService pageService)

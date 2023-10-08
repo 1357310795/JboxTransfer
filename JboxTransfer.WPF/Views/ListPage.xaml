@@ -78,18 +78,32 @@
                                     </StackPanel>
                                     <Button HorizontalAlignment="Center" VerticalAlignment="Center"
                                             Grid.Column="3"
-                                            Command="{Binding ToggleCommand, RelativeSource={RelativeSource AncestorType=Page, Mode=FindAncestor}}"
+                                            Command="{Binding ToggleACommand, RelativeSource={RelativeSource AncestorType=Page, Mode=FindAncestor}}"
                                             CommandParameter="{Binding}"
                                             Style="{StaticResource MaterialDesignIconForegroundButton}">
                                         <materialDesign:PackIcon Kind="{Binding State, Converter={StaticResource SyncTaskStateToPackIconConverter}}" />
                                     </Button>
                                     <Button HorizontalAlignment="Center" VerticalAlignment="Center"
                                             Grid.Column="4"
+                                            Command="{Binding CancelACommand, RelativeSource={RelativeSource AncestorType=Page, Mode=FindAncestor}}"
+                                            CommandParameter="{Binding}"
                                             Style="{StaticResource MaterialDesignIconForegroundButton}">
                                         <materialDesign:PackIcon Kind="Close" />
                                     </Button>
                                     <materialDesign:PopupBox HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                             Grid.Column="5" />
+                                                             Grid.Column="5">
+                                        <StackPanel Orientation="Vertical">
+                                            <Button Content="在 jbox 中打开"
+                                                    Command="{Binding OpenInJboxCommand, RelativeSource={RelativeSource AncestorType=Page, Mode=FindAncestor}}"
+                                                    CommandParameter="{Binding}" />
+                                            <Button Content="在 新云盘 中打开"
+                                                    Command="{Binding OpenInTboxCommand, RelativeSource={RelativeSource AncestorType=Page, Mode=FindAncestor}}"
+                                                    CommandParameter="{Binding}" />
+                                            <Button Content="复制完整路径"
+                                                    Command="{Binding CopyPathCommand, RelativeSource={RelativeSource AncestorType=Page, Mode=FindAncestor}}"
+                                                    CommandParameter="{Binding}" />
+                                        </StackPanel>
+                                    </materialDesign:PopupBox>
                                 </Grid>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
@@ -153,8 +167,21 @@
                                             Style="{StaticResource MaterialDesignIconForegroundButton}">
                                         <materialDesign:PackIcon Kind="Close" />
                                     </Button>
-                                    <materialDesign:PopupBox HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                             Grid.Column="5" />
+                                    <Menu HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          Grid.Column="5">
+                                        <MenuItem Icon="{materialDesign:PackIcon Kind=DotsVertical}">
+                                            <MenuItem Command="{Binding OpenInJboxCommand, RelativeSource={RelativeSource AncestorType=Page, Mode=FindAncestor}}"
+                                                      CommandParameter="{Binding}"
+                                                      Header="在 jbox 中打开"
+                                                      Icon="{materialDesign:PackIcon Kind=ContentCut}" />
+                                            <MenuItem Command="{Binding OpenInTboxCommand, RelativeSource={RelativeSource AncestorType=Page, Mode=FindAncestor}}"
+                                                      CommandParameter="{Binding}"
+                                                      Header="在 新云盘 中打开" />
+                                            <MenuItem Command="{Binding CopyPathCommand, RelativeSource={RelativeSource AncestorType=Page, Mode=FindAncestor}}"
+                                                      CommandParameter="{Binding}"
+                                                      Header="复制完整路径" />
+                                        </MenuItem>
+                                    </Menu>
                                 </Grid>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
@@ -197,12 +224,16 @@
                                 </StackPanel>
                                 <Button HorizontalAlignment="Center" VerticalAlignment="Center"
                                         Grid.Column="3"
-                                        ToolTip="在 jBox 中打开"
+                                        Command="{Binding OpenInJboxCommand, RelativeSource={RelativeSource AncestorType=Page, Mode=FindAncestor}}"
+                                        CommandParameter="{Binding}"
+                                        ToolTip="在 jbox 中打开"
                                         Style="{StaticResource MaterialDesignIconForegroundButton}">
                                     <materialDesign:PackIcon Kind="OpenInBrowser" />
                                 </Button>
                                 <Button HorizontalAlignment="Center" VerticalAlignment="Center"
                                         Grid.Column="4"
+                                        Command="{Binding OpenInTboxCommand, RelativeSource={RelativeSource AncestorType=Page, Mode=FindAncestor}}"
+                                        CommandParameter="{Binding}"
                                         ToolTip="在 新云盘 中打开"
                                         Style="{StaticResource MaterialDesignIconForegroundButton}">
                                     <materialDesign:PackIcon Kind="OpenInBrowser" />
@@ -290,7 +321,19 @@
                                         <materialDesign:PackIcon Kind="Close" />
                                     </Button>
                                     <materialDesign:PopupBox HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                             Grid.Column="6" />
+                                                             Grid.Column="6">
+                                        <StackPanel Orientation="Vertical">
+                                            <Button Content="在 jbox 中打开"
+                                                    Command="{Binding OpenInJboxCommand, RelativeSource={RelativeSource AncestorType=Page, Mode=FindAncestor}}"
+                                                    CommandParameter="{Binding}" />
+                                            <Button Content="在 新云盘 中打开"
+                                                    Command="{Binding OpenInTboxCommand, RelativeSource={RelativeSource AncestorType=Page, Mode=FindAncestor}}"
+                                                    CommandParameter="{Binding}" />
+                                            <Button Content="复制完整路径"
+                                                    Command="{Binding CopyPathCommand, RelativeSource={RelativeSource AncestorType=Page, Mode=FindAncestor}}"
+                                                    CommandParameter="{Binding}" />
+                                        </StackPanel>
+                                    </materialDesign:PopupBox>
                                 </Grid>
                             </DataTemplate>
                         </ListBox.ItemTemplate>

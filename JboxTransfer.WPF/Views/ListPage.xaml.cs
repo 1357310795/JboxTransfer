@@ -4,6 +4,7 @@ using JboxTransfer.Helpers;
 using JboxTransfer.Models;
 using JboxTransfer.Modules.Sync;
 using JboxTransfer.Services;
+using JboxTransfer.Services.Contracts;
 using JboxTransfer.ViewModels;
 using System;
 using System.Collections.Generic;
@@ -48,11 +49,15 @@ namespace JboxTransfer.Views
         [ObservableProperty]
         private bool isBusy;
 
-        public ListPage()
+        private ISnackBarService snackBarService;
+
+        public ListPage(ISnackBarService snackBarService)
         {
             InitializeComponent();
             this.DataContext = this;
-            
+
+            this.snackBarService = snackBarService;
+
             ListCompleted = new ObservableCollection<SyncTaskViewModel>();
             ListCurrent = new ObservableCollection<SyncTaskViewModel>();
             ListError = new ObservableCollection<SyncTaskViewModel>();
@@ -241,7 +246,7 @@ namespace JboxTransfer.Views
         }
 
         [RelayCommand]
-        private void Toggle(object sender)
+        private void ToggleA(object sender)
         {
             SyncTaskViewModel vm = sender as SyncTaskViewModel;
             if (vm == null)
@@ -250,6 +255,40 @@ namespace JboxTransfer.Views
                 vm.Task.Pause();
             else if (vm.Task.State == SyncTaskState.Pause)
                 vm.Task.Resume();
+        }
+
+        [RelayCommand]
+        private void CancelA(object sender)
+        {
+            SyncTaskViewModel vm = sender as SyncTaskViewModel;
+            if (vm == null)
+                return;
+        }
+
+        [RelayCommand]
+        private void OpenInTbox(object sender)
+        {
+            SyncTaskViewModel vm = sender as SyncTaskViewModel;
+            if (vm == null)
+                return;
+        }
+
+        [RelayCommand]
+        private void OpenInJbox(object sender)
+        {
+            SyncTaskViewModel vm = sender as SyncTaskViewModel;
+            if (vm == null)
+                return;
+        }
+
+        [RelayCommand]
+        private void CopyPath(object sender)
+        {
+            SyncTaskViewModel vm = sender as SyncTaskViewModel;
+            if (vm == null)
+                return;
+            Clipboard.SetText(vm.Task.GetPath());
+            snackBarService.MessageQueue.Enqueue("已复制到剪切板");
         }
     }
 }
