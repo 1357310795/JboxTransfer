@@ -9,7 +9,9 @@ using JboxTransfer.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
+using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -21,6 +23,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Teru.Code.Extensions;
 using Teru.Code.Services;
 
 namespace JboxTransfer.Views
@@ -82,12 +85,20 @@ namespace JboxTransfer.Views
 
         private TaskState Checker_Go()
         {
-            UpdateInfo();
-            UpdateList();
-            if (IsBusy)
-                UpdateStartNew();
-            UpdateAddTask();
-            return TaskState.Started;
+            try
+            {
+                UpdateInfo();
+                UpdateList();
+                if (IsBusy)
+                    UpdateStartNew();
+                UpdateAddTask();
+                return TaskState.Started;
+            }
+            catch(Exception ex)
+            {
+                //Todo:log
+                return TaskState.Started;
+            }
         }
 
         private TaskState Checker2_Go()
@@ -292,6 +303,8 @@ namespace JboxTransfer.Views
                 vm.Task.Pause();
             else if (vm.Task.State == SyncTaskState.Pause)
                 vm.Task.Resume();
+            else if (vm.Task.State == SyncTaskState.Wait)
+                vm.Task.Start();
         }
 
         [RelayCommand]
@@ -300,14 +313,9 @@ namespace JboxTransfer.Views
             SyncTaskViewModel vm = sender as SyncTaskViewModel;
             if (vm == null)
                 return;
-        }
-
-        [RelayCommand]
-        private void OpenInTbox(object sender)
-        {
-            SyncTaskViewModel vm = sender as SyncTaskViewModel;
-            if (vm == null)
-                return;
+            vm.Task.Cancel();
+            if (ListCurrent.Contains(vm))
+                ListCurrent.Remove(vm);
         }
 
         [RelayCommand]
@@ -316,6 +324,44 @@ namespace JboxTransfer.Views
             SyncTaskViewModel vm = sender as SyncTaskViewModel;
             if (vm == null)
                 return;
+
+            var path = vm.ParentPath;
+            var res = JboxService.GetJboxFileInfo(path);
+            if (!res.Success)
+            {
+                MessageBox.Show($"获取信息失败：{res.Message}");
+                return;
+            }
+            if (!res.Result.IsDir)
+            {
+                MessageBox.Show($"找不到父文件夹");
+                return;
+            }
+
+            var psi = new ProcessStartInfo
+            {
+                FileName = $"https://jbox.sjtu.edu.cn/v/list/self/{res.Result.Neid}",
+                UseShellExecute = true
+            };
+            Process.Start(psi);
+        }
+
+        [RelayCommand]
+        private void OpenInTbox(object sender)
+        {
+            SyncTaskViewModel vm = sender as SyncTaskViewModel;
+            if (vm == null)
+                return;
+
+            var path = vm.ParentPath;
+            path = path.Substring(1, path.Length - 1).UrlEncodeByParts();
+
+            var psi = new ProcessStartInfo
+            {
+                FileName = $"https://pan.sjtu.edu.cn/web/desktop/personalSpace?path={path}",
+                UseShellExecute = true
+            };
+            Process.Start(psi);
         }
 
         [RelayCommand]
@@ -326,6 +372,36 @@ namespace JboxTransfer.Views
                 return;
             Clipboard.SetText(vm.Task.GetPath());
             snackBarService.MessageQueue.Enqueue("已复制到剪切板");
+        }
+
+        [RelayCommand]
+        private void Retry(object sender)
+        {
+            SyncTaskViewModel vm = sender as SyncTaskViewModel;
+            if (vm == null)
+                return;
+            vm.Task.Recover(true);
+            ListError.Remove(vm);
+        }
+
+        [RelayCommand]
+        private void RetryFromBegin(object sender)
+        {
+            SyncTaskViewModel vm = sender as SyncTaskViewModel;
+            if (vm == null)
+                return;
+            vm.Task.Recover(false);
+            ListError.Remove(vm);
+        }
+
+        [RelayCommand]
+        private void CancelC(object sender)
+        {
+            SyncTaskViewModel vm = sender as SyncTaskViewModel;
+            if (vm == null)
+                return;
+            vm.Task.Cancel();
+            ListError.Remove(vm);
         }
     }
 }

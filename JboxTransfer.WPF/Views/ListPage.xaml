@@ -153,7 +153,8 @@
                                         CommandParameter="{Binding}"
                                         ToolTip="在 jbox 中打开"
                                         Style="{StaticResource MaterialDesignIconForegroundButton}">
-                                    <materialDesign:PackIcon Kind="OpenInBrowser" />
+                                    <Image HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           Source="{StaticResource jbox_newDrawingImage}" Width="28" Height="28"/>
                                 </Button>
                                 <Button HorizontalAlignment="Center" VerticalAlignment="Center"
                                         Grid.Column="4"
@@ -161,7 +162,8 @@
                                         CommandParameter="{Binding}"
                                         ToolTip="在 新云盘 中打开"
                                         Style="{StaticResource MaterialDesignIconForegroundButton}">
-                                    <materialDesign:PackIcon Kind="OpenInBrowser" />
+                                    <Image HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           Source="{StaticResource tboxDrawingImage}" Width="28" Height="28"/>
                                 </Button>
                             </Grid>
                         </DataTemplate>
@@ -230,18 +232,24 @@
                                     </StackPanel>
                                     <Button HorizontalAlignment="Center" VerticalAlignment="Center"
                                             Grid.Column="3"
+                                            Command="{Binding RetryFromBeginCommand, RelativeSource={RelativeSource AncestorType=Page, Mode=FindAncestor}}"
+                                            CommandParameter="{Binding}"
                                             ToolTip="从头开始重试"
                                             Style="{StaticResource MaterialDesignIconForegroundButton}">
                                         <materialDesign:PackIcon Kind="Refresh" />
                                     </Button>
                                     <Button HorizontalAlignment="Center" VerticalAlignment="Center"
                                             Grid.Column="4"
+                                            Command="{Binding RetryCommand, RelativeSource={RelativeSource AncestorType=Page, Mode=FindAncestor}}"
+                                            CommandParameter="{Binding}"
                                             ToolTip="保留进度重试"
                                             Style="{StaticResource MaterialDesignIconForegroundButton}">
                                         <materialDesign:PackIcon Kind="Play" />
                                     </Button>
                                     <Button HorizontalAlignment="Center" VerticalAlignment="Center"
                                             Grid.Column="5"
+                                            Command="{Binding CancelCCommand, RelativeSource={RelativeSource AncestorType=Page, Mode=FindAncestor}}"
+                                            CommandParameter="{Binding}"
                                             ToolTip="取消"
                                             Style="{StaticResource MaterialDesignIconForegroundButton}">
                                         <materialDesign:PackIcon Kind="Close" />
