@@ -46,7 +46,7 @@ namespace JboxTransfer.Views
         private BitmapSource imageSource;
 
         [ObservableProperty]
-        private string message = "请稍后";
+        private string message = "";
 
         private void Page_Loaded(object sender, RoutedEventArgs e)
         {
@@ -194,6 +194,49 @@ namespace JboxTransfer.Views
         private void Page_Unloaded(object sender, RoutedEventArgs e)
         {
             helper.Dispose();
+        }
+
+        private void ButtonWebview_Click(object sender, RoutedEventArgs e)
+        {
+            WebviewWindow ww = new WebviewWindow();
+            var res = ww.ShowDialog();
+            if (res == true)
+            {
+                Task.Run(Webview_LoginSuccess);
+            }
+            else
+            {
+                MessageBox.Show("登录失败");
+            }
+        }
+
+        private void Webview_LoginSuccess()
+        {
+            this.Dispatcher.Invoke(() =>
+            {
+                Message = $"已登录，验证中……";
+            });
+
+            var res = Validate();
+            if (!res.success)
+            {
+                this.Dispatcher.Invoke(() =>
+                {
+                    Message = res.result;
+
+                });
+                return;
+            }
+
+            this.Dispatcher.Invoke(() =>
+            {
+                var mw = new MainWindow();
+                mw.Show();
+                App.Current.MainWindow.Close();
+                App.Current.MainWindow = mw;
+            });
+            GlobalCookie.Save();
+            //Debug.WriteLine(GlobalCookie.HasJacCookie());
         }
     }
 }

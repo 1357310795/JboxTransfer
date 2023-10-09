@@ -153,8 +153,9 @@
                                         CommandParameter="{Binding}"
                                         ToolTip="在 jbox 中打开"
                                         Style="{StaticResource MaterialDesignIconForegroundButton}">
-                                    <Image HorizontalAlignment="Center" VerticalAlignment="Center"
-                                           Source="{StaticResource jbox_newDrawingImage}" Width="28" Height="28"/>
+                                    <Image Width="28" Height="28"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           Source="{StaticResource jbox_newDrawingImage}" />
                                 </Button>
                                 <Button HorizontalAlignment="Center" VerticalAlignment="Center"
                                         Grid.Column="4"
@@ -162,15 +163,23 @@
                                         CommandParameter="{Binding}"
                                         ToolTip="在 新云盘 中打开"
                                         Style="{StaticResource MaterialDesignIconForegroundButton}">
-                                    <Image HorizontalAlignment="Center" VerticalAlignment="Center"
-                                           Source="{StaticResource tboxDrawingImage}" Width="28" Height="28"/>
+                                    <Image Width="28" Height="28"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           Source="{StaticResource tboxDrawingImage}" />
                                 </Button>
                             </Grid>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
             </TabItem>
-            <TabItem Header="已停止">
+            <TabItem>
+                <TabItem.Header>
+                    <materialDesign:Badged Badge="{Binding ErrorNum}" FontWeight="Normal"
+                                           BadgeBackground="{DynamicResource PrimaryHueDarkBrush}"
+                                           BadgeForeground="{DynamicResource PrimaryHueDarkForegroundBrush}">
+                        <TextBlock Text="  已停止  " FontSize="14" />
+                    </materialDesign:Badged>
+                </TabItem.Header>
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />

@@ -63,9 +63,12 @@
                     </Grid>
                 </TabItem>
                 <TabItem Header="账号密码登录">
-                    <TextBlock Margin="8" Text="Filled, centered, required width, tab 2" />
+                    <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Button Content="点击打开 Webview 登录窗口" HorizontalAlignment="Center" Click="ButtonWebview_Click"/>
+                        <TextBlock Text="{Binding Message}" TextAlignment="Center" TextWrapping="Wrap" Margin="0,10,0,0"/>
+                    </StackPanel>
                 </TabItem>
-                <TabItem Header="Cookie 登录">
+                <TabItem Header="Cookie 登录" Visibility="Collapsed">
                     <TextBlock Margin="8" Text="Filled, centered, required width, tab 3" />
                 </TabItem>
             </TabControl>

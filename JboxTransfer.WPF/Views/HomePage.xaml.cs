@@ -45,7 +45,7 @@ namespace JboxTransfer.Views
 
         private void Page_Loaded(object sender, RoutedEventArgs e)
         {
-            DbService.Init();
+            DbService.Init(UserInfoService.entity.AccountNo.Replace(".", "_"));
             DbService.db.Execute("UPDATE SyncTaskDbModel SET state = 0 WHERE state = 1;");
             Task.Run(GetAvatar);
         }

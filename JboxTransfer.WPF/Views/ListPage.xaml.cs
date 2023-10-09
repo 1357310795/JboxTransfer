@@ -49,6 +49,9 @@ namespace JboxTransfer.Views
         [ObservableProperty]
         private bool isBusy;
 
+        [ObservableProperty]
+        private string errorNum;
+
         private ISnackBarService snackBarService;
 
         private int maxThread = 8;
@@ -138,6 +141,7 @@ namespace JboxTransfer.Views
                     {
                         ListCurrent.Remove(task);
                         ListError.Add(task);
+                        ErrorNum = ListError.Count > 99 ? "99+" : ListError.Count.ToString();
                     }
                 }
             });
@@ -256,7 +260,17 @@ namespace JboxTransfer.Views
 
         private void ButtonCancel_Click(object sender, RoutedEventArgs e)
         {
-
+            var res = MessageBox.Show("此操作将删除所有传输中和待传输的项目，是否确定？", "提示", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (res == MessageBoxResult.Yes)
+            {
+                IsBusy = false;
+                foreach (var task in ListCurrent)
+                {
+                    task.Task.Cancel();
+                }
+                DbService.db.Execute("DELETE FROM SyncTaskDbModel;");
+                ListCurrent.Clear();
+            }
         }
 
         private void ButtonErrorRestart1_Click(object sender, RoutedEventArgs e)

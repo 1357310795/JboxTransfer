@@ -60,7 +60,7 @@ namespace JboxTransfer.Views
             worker.CanRun += () => true;
             worker.OnGoAnimation += () => { };
             worker.Go += Worker_Go;
-            DbService.Init();
+            DbService.Init("testuser");
 
             //var icon = System.Drawing.Icon.ExtractAssociatedIcon(@"cccccc.idb");
             //MemoryStream ms = new MemoryStream();

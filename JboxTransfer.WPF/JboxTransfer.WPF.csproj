@@ -24,6 +24,7 @@
 	<PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1" />
 	<PackageReference Include="MaterialDesignThemes" Version="4.9.0" />
 	<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
+	<PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2045.28" />
 	<PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.39" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
