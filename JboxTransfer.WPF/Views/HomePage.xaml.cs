@@ -5,6 +5,7 @@ using JboxTransfer.Services.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -107,6 +108,21 @@ namespace JboxTransfer.Views
                 App.Current.MainWindow.Close();
                 App.Current.MainWindow = lw;
             });
+        }
+
+        private void ButtonAbout_Click(object sender, RoutedEventArgs e)
+        {
+            navigationService.NavigateTo(nameof(AboutPage));
+        }
+
+        private void ButtonHelp_Click(object sender, RoutedEventArgs e)
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = $"https://chat.sjtu.edu.cn/jboxtransfer",
+                UseShellExecute = true
+            };
+            Process.Start(psi);
         }
     }
 }

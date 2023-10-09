@@ -26,6 +26,7 @@ public class PageService : IPageService
         _pages.Add(nameof(StartPage), typeof(StartPage));
         _pages.Add(nameof(ListPage), typeof(ListPage));
         _pages.Add(nameof(SettingsPage), typeof(SettingsPage));
+        _pages.Add(nameof(AboutPage), typeof(AboutPage));
     }
 
     public Type GetPageType(string key)

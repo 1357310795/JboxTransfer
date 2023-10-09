@@ -34,7 +34,7 @@
                          Checked="RadioButton_Checked" Tag="Settings"
                          Style="{StaticResource MaterialDesignTabRadioButton}"
                          BorderBrush="{DynamicResource PrimaryHueMidBrush}" />
-            <RadioButton Margin="4"
+            <RadioButton Margin="4" Visibility="Collapsed"
                          Content="Debug"
                          Checked="RadioButton_Checked" Tag="Debug"
                          Style="{StaticResource MaterialDesignTabRadioButton}"
@@ -61,8 +61,28 @@
                                Text="{Binding NickName}" />
                 </StackPanel>
             </md:PopupBox.ToggleContent>
-            <Button Content="退出登录" Click="ButtonLogout_Click"/>
+            <Button Content="退出登录" Click="ButtonLogout_Click" />
         </md:PopupBox>
+        <StackPanel HorizontalAlignment="Right" VerticalAlignment="Top"
+                    Margin="10"
+                    Orientation="Horizontal">
+            <Button Width="40" Height="40"
+                    Padding="0" Click="ButtonHelp_Click"
+                    Style="{StaticResource MaterialDesignIconButton}"
+                    ToolTip="帮助">
+                <md:PackIcon Width="20" Height="20"
+                             Foreground="{DynamicResource MaterialDesignBody}"
+                             Kind="HelpCircleOutline" />
+            </Button>
+            <Button Width="40" Height="40"
+                    Padding="0" Click="ButtonAbout_Click"
+                    Style="{StaticResource MaterialDesignIconButton}"
+                    ToolTip="关于">
+                <md:PackIcon Width="20" Height="20"
+                             Foreground="{DynamicResource MaterialDesignBody}"
+                             Kind="InformationOutline" />
+            </Button>
+        </StackPanel>
         <Frame x:Name="MainFrame"
                Grid.Row="1"
                NavigationUIVisibility="Hidden" />
