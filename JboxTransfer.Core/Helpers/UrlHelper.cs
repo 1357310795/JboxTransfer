@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -24,6 +25,19 @@ namespace JboxTransfer.Core.Helpers
             }
             sb.Remove(sb.Length - 1, 1);
             return sb.ToString();
+        }
+
+        public static string PathToName(this string path)
+        {
+            var name = path.Split('/').Last();
+            return name == "" ? "根目录" : name;
+        }
+
+        public static string GetParentPath(this string path)
+        {
+            var s = path.Split('/');
+            var p = string.Join("/", s.Take(s.Length - 1));
+            return p == "" ? "/" : p;
         }
     }
 }

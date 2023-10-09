@@ -280,6 +280,7 @@ namespace JboxTransfer.Views
                 var item = ListError[i];
                 item.Task.Recover(true);
                 ListError.Remove(item);
+                ErrorNum = ListError.Count > 99 ? "99+" : ListError.Count.ToString();
             }
         }
 
@@ -290,6 +291,7 @@ namespace JboxTransfer.Views
                 var item = ListError[i];
                 item.Task.Recover(false);
                 ListError.Remove(item);
+                ErrorNum = ListError.Count > 99 ? "99+" : ListError.Count.ToString();
             }
         }
 
@@ -300,6 +302,7 @@ namespace JboxTransfer.Views
                 item.Task.Cancel();
             }
             ListError = new ObservableCollection<SyncTaskViewModel>();
+            ErrorNum = ListError.Count > 99 ? "99+" : ListError.Count.ToString();
         }
 
         private void ButtonRefreshPending_Click(object sender, RoutedEventArgs e)
@@ -396,6 +399,7 @@ namespace JboxTransfer.Views
                 return;
             vm.Task.Recover(true);
             ListError.Remove(vm);
+            ErrorNum = ListError.Count > 99 ? "99+" : ListError.Count.ToString();
         }
 
         [RelayCommand]
@@ -406,6 +410,7 @@ namespace JboxTransfer.Views
                 return;
             vm.Task.Recover(false);
             ListError.Remove(vm);
+            ErrorNum = ListError.Count > 99 ? "99+" : ListError.Count.ToString();
         }
 
         [RelayCommand]
@@ -416,6 +421,7 @@ namespace JboxTransfer.Views
                 return;
             vm.Task.Cancel();
             ListError.Remove(vm);
+            ErrorNum = ListError.Count > 99 ? "99+" : ListError.Count.ToString();
         }
     }
 }

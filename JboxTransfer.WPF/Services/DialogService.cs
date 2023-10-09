@@ -17,5 +17,11 @@ namespace JboxTransfer.Services
             var res = await DialogHost.Show(new QuerySyncPathDialog(), DialogIdentifier);
             return (CommonResult<string>)res;
         }
+
+        public static async Task<CommonResult<string>> SelectSyncPath()
+        {
+            var res = await DialogHost.Show(new SelectJboxItemDialog(), DialogIdentifier);
+            return (CommonResult<string>)res;
+        }
     }
 }

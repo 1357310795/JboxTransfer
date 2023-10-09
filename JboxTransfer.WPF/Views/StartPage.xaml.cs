@@ -59,7 +59,7 @@ namespace JboxTransfer.Views
 
         private async void ButtonFull_Click(object sender, RoutedEventArgs e)
         {
-            var res = await DialogService.QuerySyncPath();
+            var res = await DialogService.SelectSyncPath();
             if (!res.Success)
                 return;
             //this.Dispatcher.Invoke(() => {

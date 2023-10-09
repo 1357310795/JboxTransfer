@@ -3,7 +3,7 @@
                     xmlns:circularProgressBar="clr-namespace:MaterialDesignThemes.Wpf.Converters.CircularProgressBar"
                     xmlns:converters="clr-namespace:MaterialDesignThemes.Wpf.Converters">
 
-    <Style x:Key="MaterialDesignLinearProgressBar" TargetType="{x:Type ProgressBar}">
+    <Style x:Key="MyMaterialDesignLinearProgressBar" TargetType="{x:Type ProgressBar}">
         <Setter Property="Background" Value="{DynamicResource MaterialDesign.Brush.Primary.Light}" />
         <Setter Property="BorderBrush" Value="{DynamicResource MaterialDesign.Brush.Primary.Light}" />
         <Setter Property="BorderThickness" Value="1" />
