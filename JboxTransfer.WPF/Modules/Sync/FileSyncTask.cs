@@ -4,15 +4,9 @@ using JboxTransfer.Extensions;
 using JboxTransfer.Models;
 using JboxTransfer.Services;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Security.Policy;
 using System.Text;
-using System.Threading.Tasks;
 using Teru.Code.Models;
 using MD5 = JboxTransfer.Core.Modules.MD5;
 
@@ -29,7 +23,6 @@ namespace JboxTransfer.Modules.Sync
         private int chunkCount;
         private int succChunk;
         private Exception ex;
-        private CommonResult<MemoryStream> chunkRes;
         public SyncTaskState State { get; set; }
         public string Message { get; set; }
 
@@ -59,10 +52,7 @@ namespace JboxTransfer.Modules.Sync
             this.jboxhash = hash;
             this.size = size;
             this.succChunk = 0;
-            this.chunkCount = (int)(this.size / ChunkSize);
-            this.chunkCount += this.chunkCount * ChunkSize == this.size ? 0 : 1;
-            if (this.size == 0)
-                this.chunkCount = 1;
+            this.chunkCount = size.GetChunkCount();
             jbox = new JboxDownloadSession(path, size);
             tbox = new TboxUploadSession(path, size);
             State = SyncTaskState.Wait;
@@ -77,10 +67,7 @@ namespace JboxTransfer.Modules.Sync
             this.path = dbModel.FilePath;
             this.jboxhash = dbModel.MD5_Ori;
             this.size = dbModel.Size;
-            this.chunkCount = (int)(this.size / ChunkSize);
-            this.chunkCount += this.chunkCount * ChunkSize == this.size ? 0 : 1;
-            if (this.size == 0)
-                this.chunkCount = 1;
+            this.chunkCount = size.GetChunkCount();
             jbox = new JboxDownloadSession(path, size);
 
             if (dbModel.ConfirmKey == null)
@@ -130,7 +117,7 @@ namespace JboxTransfer.Modules.Sync
         public void Start()
         {
             State = SyncTaskState.Running;
-            Task.Run(internalStart);
+            Task.Run(() => { internalStartWrap(pts); });
         }
 
         public void Pause()
@@ -147,7 +134,7 @@ namespace JboxTransfer.Modules.Sync
                 return;
             pts = new PauseTokenSource();
             pts.Resume();
-            Task.Run(internalStart);
+            Task.Run(() => { internalStartWrap(pts); });
         }
 
         public void Cancel()
@@ -177,9 +164,40 @@ namespace JboxTransfer.Modules.Sync
             }
         }
 
-        public void internalStart()
+        private void internalStartWrap(PauseTokenSource inst_pts)
         {
-            var inst_pts = pts;
+            try
+            {
+                Monitor.Enter(this);
+                if (inst_pts.IsPaused)
+                {
+                    Monitor.Exit(this);
+                    State = SyncTaskState.Pause;
+                    return;
+                }
+                internalStart(pts);
+                if (inst_pts.IsPaused)
+                {
+                    Monitor.Exit(this);
+                    State = SyncTaskState.Pause;
+                    return;
+                }
+            }
+            catch(Exception ex)
+            {
+                //log
+                Debug.WriteLine(ex);
+                Message = $"{ex.Message}";
+                State = SyncTaskState.Error;
+                dbModel.State = 2;
+                DbService.db.Update(dbModel);
+            }
+            Monitor.Exit(this);
+        }
+
+        private void internalStart(PauseTokenSource inst_pts)
+        {
+            CommonResult<MemoryStream> chunkRes = null;
             State = SyncTaskState.Running;
             
             if (inst_pts.IsPaused) 
@@ -270,7 +288,11 @@ namespace JboxTransfer.Modules.Sync
                 }
 
                 chunkRes.Result.Position = 0;
-                if (chunkRes.Result.Length > 0) md5.MD5Hash_Proc(Encoding.Default.GetBytes((curChunk.PartNumber == 1 ? "" : ",") + HashHelper.SHA256Hash(chunkRes.Result)));
+                if (chunkRes.Result.Length > 0)
+                {
+                    var sha256 = HashHelper.SHA256Hash(chunkRes.Result);
+                    md5.MD5Hash_Proc(Encoding.Default.GetBytes((curChunk.PartNumber == 1 ? "" : ",") + sha256));
+                }
                 crc64.TransformBlock(chunkRes.Result.ToArray(), 0, (int)chunkRes.Result.Length);
                 tbox.CompletePart(curChunk);
                 succChunk++;

@@ -1,4 +1,5 @@
-﻿using JboxTransfer.Modules.Sync;
+﻿using JboxTransfer.Extensions;
+using JboxTransfer.Modules.Sync;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -29,17 +30,14 @@ namespace JboxTransfer.Modules
         {
             this.path = path;
             this.size = size;
-            this.chunkCount = (int)(this.size / ChunkSize);
-            this.chunkCount += this.chunkCount * ChunkSize == this.size ? 0 : 1;
-            if (this.size == 0)
-                this.chunkCount = 1;
+            this.chunkCount = size.GetChunkCount();
             chunkProgress = new Pack<long>(0);
         }
 
         public CommonResult<MemoryStream> GetChunk(int chunk)
         {
             //Todo : 检查块大小
-            var curchunksize = chunk == chunkCount ? (size % ChunkSize) : (ChunkSize);
+            var curchunksize = chunk == chunkCount ? (size - ChunkSize * (chunk - 1)) : (ChunkSize);
             var res = JboxService.DownloadChunk(path, (chunk - 1) * ChunkSize, curchunksize, chunkProgress);
             if (!res.Success)
                 return res;

@@ -1,4 +1,5 @@
 ﻿using JboxTransfer.Core.Helpers;
+using JboxTransfer.Extensions;
 using JboxTransfer.Models;
 using JboxTransfer.Modules.Sync;
 using JboxTransfer.Services;
@@ -21,7 +22,6 @@ namespace JboxTransfer.Modules
     /// </summary>
     public class TboxUploadSession
     {
-        public const long ChunkSize = 4 * 1024 * 1024;
         private string path;
         private long size;
         private int chunkCount;
@@ -48,10 +48,7 @@ namespace JboxTransfer.Modules
         public TboxUploadSession(string path, long size) {
             this.path = path;
             this.size = size;
-            this.chunkCount = (int)(this.size / ChunkSize);
-            this.chunkCount += this.chunkCount * ChunkSize == this.size ? 0 : 1;
-            if (this.size == 0)
-                this.chunkCount = 1;
+            this.chunkCount = size.GetChunkCount();
             this.remainParts = new List<TboxUploadPartSession>();
             this.chunkProgress = new Pack<long>(0);
             State = TboxUploadState.NotInit;
@@ -61,10 +58,7 @@ namespace JboxTransfer.Modules
         {
             this.path = path;
             this.size = size;
-            this.chunkCount = (int)(this.size / ChunkSize);
-            this.chunkCount += this.chunkCount * ChunkSize == this.size ? 0 : 1;
-            if (this.size == 0)
-                this.chunkCount = 1;
+            this.chunkCount = size.GetChunkCount();
             this.remainParts = remainParts.Select(x => new TboxUploadPartSession(x)).ToList();
             this.confirmKey = confirmKey;
             this.chunkProgress = new Pack<long>(0);
