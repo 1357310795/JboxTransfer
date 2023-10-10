@@ -114,6 +114,18 @@ namespace JboxTransfer.Modules.Sync
             return $"{down} / {up} / {all}";
         }
 
+        public string GetProgressTextTooltip()
+        {
+            var down = (succChunk == chunkCount ? size : (succChunk * ChunkSize + jbox.Progress));
+            var up = (succChunk == chunkCount ? size : (succChunk * ChunkSize + tbox.Progress));
+            var all = size;
+            return $"""
+                已下载：{down.PrettyPrint()} ({down} bytes)
+                已上传：{up.PrettyPrint()} ({up} bytes)
+                总大小：{all.PrettyPrint()} ({all} bytes)
+                """;
+        }
+
         public void Start()
         {
             State = SyncTaskState.Running;

@@ -75,7 +75,7 @@
                                                      materialDesign:TransitionAssist.DisableTransitions="True"
                                                      Minimum="0" Maximum="1"
                                                      Value="{Binding Progress}" />
-                                        <TextBlock Foreground="{DynamicResource MaterialDesignBodyLight}" Text="{Binding ProgressStr}" />
+                                        <TextBlock ToolTip="{Binding ProgressTextTooltip}" Foreground="{DynamicResource MaterialDesignBodyLight}" Text="{Binding ProgressStr}" />
                                     </StackPanel>
                                     <Button HorizontalAlignment="Center" VerticalAlignment="Center"
                                             Grid.Column="3"

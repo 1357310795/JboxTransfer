@@ -90,6 +90,14 @@ namespace JboxTransfer.Modules.Sync
             return $"{succ} / {total}";
         }
 
+        public string GetProgressTextTooltip()
+        {
+            return $"""
+                已处理的子文件/文件夹：{succ}
+                总数：{total}
+                """;
+        }
+
         public void Start()
         {
             State = SyncTaskState.Running;

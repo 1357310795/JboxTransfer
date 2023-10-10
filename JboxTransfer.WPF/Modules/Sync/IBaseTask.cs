@@ -10,6 +10,7 @@ namespace JboxTransfer.Modules.Sync
     public interface IBaseTask
     {
         public string GetProgressStr();
+        public string GetProgressTextTooltip();
         public void Start();
         public void Pause();
         public void Resume();

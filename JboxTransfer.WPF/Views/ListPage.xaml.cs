@@ -228,9 +228,15 @@ namespace JboxTransfer.Views
                 task.Progress = task.Task.Progress;
                 task.State = task.Task.State;
                 if (task.State == SyncTaskState.Error)
+                {
                     task.ProgressStr = task.Task.Message;
+                    task.ProgressTextTooltip = null;
+                }
                 else
+                {
                     task.ProgressStr = task.Task.GetProgressStr();
+                    task.ProgressTextTooltip = task.Task.GetProgressTextTooltip();
+                }
             }
         }
 

@@ -30,6 +30,9 @@ namespace JboxTransfer.ViewModels
         [ObservableProperty]
         public SyncTaskState state;
 
+        [ObservableProperty]
+        public string progressTextTooltip;
+
         public IBaseTask Task;
     }
 }
