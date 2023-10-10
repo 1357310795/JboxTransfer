@@ -58,7 +58,6 @@ namespace JboxTransfer.Views
             worker = new LoopWorker();
             worker.Interval = 1000;
             worker.CanRun += () => true;
-            worker.OnGoAnimation += () => { };
             worker.Go += Worker_Go;
             DbService.Init("testuser");
 
@@ -85,7 +84,7 @@ namespace JboxTransfer.Views
             //Debug.WriteLine(sub.ToString());
         }
 
-        private TaskState Worker_Go()
+        private TaskState Worker_Go(CancellationTokenSource cts)
         {
             Thread.Sleep(1000);
             Text = task.GetProgressStr();

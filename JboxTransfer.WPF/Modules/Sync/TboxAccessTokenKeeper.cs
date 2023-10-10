@@ -24,12 +24,11 @@ namespace JboxTransfer.Modules.Sync
             PauseTokenSource.Pause();
             worker = new LoopWorker();
             worker.Interval = 60 * 1000;
-            worker.OnGoAnimation += () => { };
             worker.CanRun += () => true;
             worker.Go += Worker_Go;
         }
 
-        private static TaskState Worker_Go()
+        private static TaskState Worker_Go(CancellationTokenSource cts)
         {
             try
             {

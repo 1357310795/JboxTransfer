@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using JboxTransfer.Helpers;
 using JboxTransfer.Models;
 using JboxTransfer.Modules.Sync;
@@ -32,7 +33,7 @@ namespace JboxTransfer.Views
     /// ListPage.xaml 的交互逻辑
     /// </summary>
     [INotifyPropertyChanged]
-    public partial class ListPage : Page
+    public partial class ListPage : Page, IRecipient<UserLogoutMessage>
     {
         [ObservableProperty]
         ObservableCollection<SyncTaskViewModel> listCurrent;
@@ -70,23 +71,22 @@ namespace JboxTransfer.Views
             checker = new LoopWorker();
             checker.Interval = 1000;
             checker.CanRun += () => true;
-            checker.OnGoAnimation += () => { };
             checker.Go += Checker_Go;
             checker.StartRun();
 
             checker2 = new LoopWorker();
             checker2.Interval = 1000;
             checker2.CanRun += () => true;
-            checker2.OnGoAnimation += () => { };
             checker2.Go += Checker2_Go;
             //checker2.StartRun();
+            WeakReferenceMessenger.Default.Register<UserLogoutMessage>(this);
         }
 
         LoopWorker checker;
         LoopWorker checker2;
 
 
-        private TaskState Checker_Go()
+        private TaskState Checker_Go(CancellationTokenSource cts)
         {
             try
             {
@@ -104,7 +104,7 @@ namespace JboxTransfer.Views
             }
         }
 
-        private TaskState Checker2_Go()
+        private TaskState Checker2_Go(CancellationTokenSource cts)
         {
             return TaskState.Started;
         }
@@ -422,6 +422,11 @@ namespace JboxTransfer.Views
             vm.Task.Cancel();
             ListError.Remove(vm);
             ErrorNum = ListError.Count > 99 ? "99+" : ListError.Count.ToString();
+        }
+
+        public void Receive(UserLogoutMessage message)
+        {
+            ButtonPause_Click(null, null);
         }
     }
 }

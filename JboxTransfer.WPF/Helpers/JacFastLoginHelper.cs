@@ -75,7 +75,6 @@ namespace JboxTransfer.Helpers
                 worker = new LoopWorker();
                 worker.Interval = 50 * 1000;
                 worker.CanRun += () => true;
-                worker.OnGoAnimation += () => { };
                 worker.Go += Worker_Go;
                 ws = new ClientWebSocket();
                 tokensource = new CancellationTokenSource();
@@ -316,7 +315,7 @@ namespace JboxTransfer.Helpers
             }
         }
 
-        private TaskState Worker_Go()
+        private TaskState Worker_Go(CancellationTokenSource cts)
         {
             try
             {

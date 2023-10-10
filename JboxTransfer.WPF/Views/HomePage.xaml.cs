@@ -1,4 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Messaging;
+using JboxTransfer.Models;
 using JboxTransfer.Modules.Sync;
 using JboxTransfer.Services;
 using JboxTransfer.Services.Contracts;
@@ -92,6 +94,7 @@ namespace JboxTransfer.Views
 
         private void ButtonLogout_Click(object sender, RoutedEventArgs e)
         {
+            WeakReferenceMessenger.Default.Send(new UserLogoutMessage(0));
             var res = GlobalCookie.Clear();
             if (!res.success)
             {
