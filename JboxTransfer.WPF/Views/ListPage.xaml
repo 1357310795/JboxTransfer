@@ -7,6 +7,7 @@
       xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
       xmlns:converters="clr-namespace:JboxTransfer.Converters"
       Title="ListPage"
+      Foreground="{DynamicResource MaterialDesignBody}"
       d:Background="AliceBlue" d:DesignHeight="450"
       d:DesignWidth="800"
       mc:Ignorable="d">
@@ -75,7 +76,9 @@
                                                      materialDesign:TransitionAssist.DisableTransitions="True"
                                                      Minimum="0" Maximum="1"
                                                      Value="{Binding Progress}" />
-                                        <TextBlock ToolTip="{Binding ProgressTextTooltip}" Foreground="{DynamicResource MaterialDesignBodyLight}" Text="{Binding ProgressStr}" />
+                                        <TextBlock Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                                   Text="{Binding ProgressStr}"
+                                                   ToolTip="{Binding ProgressTextTooltip}" />
                                     </StackPanel>
                                     <Button HorizontalAlignment="Center" VerticalAlignment="Center"
                                             Grid.Column="3"
@@ -174,7 +177,8 @@
             </TabItem>
             <TabItem>
                 <TabItem.Header>
-                    <materialDesign:Badged Badge="{Binding ErrorNum}" FontWeight="Normal"
+                    <materialDesign:Badged Badge="{Binding ErrorNum}"
+                                           FontWeight="Normal"
                                            BadgeBackground="{DynamicResource PrimaryHueDarkBrush}"
                                            BadgeForeground="{DynamicResource PrimaryHueDarkForegroundBrush}">
                         <TextBlock Text="  已停止  " FontSize="14" />

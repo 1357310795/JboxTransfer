@@ -1,4 +1,5 @@
 ﻿using JboxTransfer.Core;
+using JboxTransfer.Helpers;
 using JboxTransfer.Services;
 using JboxTransfer.Services.Contracts;
 using JboxTransfer.Views;
@@ -20,6 +21,9 @@ namespace JboxTransfer
             GlobalCookie.Read();
             GlobalSyncInfoService.Read();
             NetService.Init();
+            GlobalSettings.Read();
+            ThemeHelper.ApplyBase(GlobalSettings.Model.ThemeMode == 1);
+            ThemeHelper.ChangeHue(GlobalSettings.Model.ThemeColor);
             base.OnStartup(e);
         }
 

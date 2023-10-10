@@ -7,16 +7,17 @@
       xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
       xmlns:converters="clr-namespace:JboxTransfer.Converters"
       Title="StartPage"
+      Foreground="{DynamicResource MaterialDesignBody}"
       d:Background="AliceBlue" d:DesignHeight="450"
       d:DesignWidth="800"
       mc:Ignorable="d">
     <Page.Resources>
-        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
-        <converters:RevBoolToVisibilityConverter x:Key="RevBoolToVisibilityConverter"/>
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+        <converters:RevBoolToVisibilityConverter x:Key="RevBoolToVisibilityConverter" />
     </Page.Resources>
 
     <Grid>
-        <Grid Visibility="{Binding IsProgressShow, Converter={StaticResource BoolToVisibilityConverter}}" d:Visibility="Collapsed">
+        <Grid d:Visibility="Collapsed" Visibility="{Binding IsProgressShow, Converter={StaticResource BoolToVisibilityConverter}}">
             <ProgressBar Width="200" Height="200"
                          Foreground="{DynamicResource PrimaryHueMidBrush}"
                          IsIndeterminate="False"
@@ -34,15 +35,20 @@
         <Grid Visibility="{Binding IsProgressShow, Converter={StaticResource RevBoolToVisibilityConverter}}">
             <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition/>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition />
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="24" />
                     <ColumnDefinition />
                 </Grid.ColumnDefinitions>
-                <TextBlock Text="请选择转移方式" Margin="0,0,0,24" FontWeight="Black" FontSize="24" Grid.ColumnSpan="3" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
+                           Margin="0,0,0,24"
+                           Grid.ColumnSpan="3"
+                           Text="请选择转移方式"
+                           FontWeight="Black"
+                           FontSize="24" />
                 <Button Width="140" Height="140"
                         Padding="10"
                         Grid.Row="1" Grid.Column="0"

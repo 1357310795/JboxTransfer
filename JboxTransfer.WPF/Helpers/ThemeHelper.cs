@@ -48,6 +48,7 @@ namespace JboxTransfer.Helpers
 
         public static void ChangeHue(object c)
         {
+            if (c == null) return;
             var hue = StringToColor(c.ToString());
             _paletteHelper = new PaletteHelper();
             ITheme theme = _paletteHelper.GetTheme();
@@ -81,13 +82,18 @@ namespace JboxTransfer.Helpers
             _paletteHelper.SetTheme(theme);
         }
 
-        public static Color StringToColor(string colorStr)
+        public static Color StringToColor(this string colorStr)
         {
             TypeConverter cc = TypeDescriptor.GetConverter(typeof(Color));
             var result = (Color)cc.ConvertFromString(colorStr);
             return result;
         }
 
+        public static string ColorToHex(this Color color)
+        {
+            string hex = string.Format("#{0:X2}{1:X2}{2:X2}", color.R, color.G, color.B);
+            return hex;
+        }
     }
     public static class PaletteHelperExtensions
     {

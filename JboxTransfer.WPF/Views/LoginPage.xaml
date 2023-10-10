@@ -35,7 +35,7 @@
                    Text="版权所有 © 2023 上海交通大学网络信息中心&#x0D;JboxTransfer 由 ChatSJTU 学生开发团队 提供技术支持"
                    Opacity="0.6" TextAlignment="Center" />
         <md:Card Margin="0,36,36,56"
-                 Grid.Column="1" 
+                 Grid.Column="1"  Background="White" Foreground="Black"
                  Opacity="0.95">
             <TabControl HorizontalContentAlignment="Center">
                 <TabItem Header="快捷登录">

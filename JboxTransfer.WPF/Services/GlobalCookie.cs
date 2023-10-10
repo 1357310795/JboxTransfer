@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using JboxTransfer.Core.Helpers;
+using Newtonsoft.Json;
 using System.Collections;
 using System.IO;
 using System.Net;
@@ -19,6 +20,7 @@ namespace JboxTransfer.Services
 
         public static void Save()
         {
+            Directory.CreateDirectory(PathHelper.AppDataPath);
             File.WriteAllText(_fileName, JsonConvert.SerializeObject(CookieContainer.GetAllCookies().Select(i => new CookieInfo(i))));
         }
 

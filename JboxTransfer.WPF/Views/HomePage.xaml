@@ -34,20 +34,18 @@
                          Checked="RadioButton_Checked" Tag="Settings"
                          Style="{StaticResource MaterialDesignTabRadioButton}"
                          BorderBrush="{DynamicResource PrimaryHueMidBrush}" />
-            <RadioButton Margin="4" Visibility="Collapsed"
+            <RadioButton Margin="4"
                          Content="Debug"
-                         Checked="RadioButton_Checked" Tag="Debug"
+                         Visibility="Collapsed" Checked="RadioButton_Checked"
+                         Tag="Debug"
                          Style="{StaticResource MaterialDesignTabRadioButton}"
                          BorderBrush="{DynamicResource PrimaryHueMidBrush}" />
         </StackPanel>
         <md:PopupBox HorizontalAlignment="Left" VerticalAlignment="Center"
                      Padding="0"
-                     PlacementMode="{Binding ElementName=PopupBoxPlacementModeComboBox, Path=SelectedItem}"
-                     PopupElevation="Dp2"
-                     PopupHorizontalOffset="{Binding ElementName=HorizontalOffsetComboBox, Path=SelectedItem}"
-                     PopupUniformCornerRadius="{Binding ElementName=UniformCornerRadiusComboBox, Path=SelectedItem}"
-                     PopupVerticalOffset="{Binding ElementName=VerticalOffsetComboBox, Path=SelectedItem}"
-                     SnapsToDevicePixels="True">
+                     Background="{DynamicResource MaterialDesignPaper}"
+                     Foreground="{DynamicResource MaterialDesignBody}"
+                     PopupElevation="Dp2" SnapsToDevicePixels="True">
             <md:PopupBox.ToggleContent>
                 <StackPanel Margin="16,0,0,0" Orientation="Horizontal">
                     <Border Width="32" Height="32"
@@ -58,6 +56,7 @@
                     <TextBlock MaxWidth="300"
                                VerticalAlignment="Center"
                                Margin="8,0,0,0"
+                               Foreground="{DynamicResource MaterialDesignBody}"
                                Text="{Binding NickName}" />
                 </StackPanel>
             </md:PopupBox.ToggleContent>
@@ -67,7 +66,8 @@
                     Margin="10"
                     Orientation="Horizontal">
             <Button Width="40" Height="40"
-                    Padding="0" Click="ButtonHelp_Click"
+                    Padding="0"
+                    Click="ButtonHelp_Click"
                     Style="{StaticResource MaterialDesignIconButton}"
                     ToolTip="帮助">
                 <md:PackIcon Width="20" Height="20"
@@ -75,7 +75,8 @@
                              Kind="HelpCircleOutline" />
             </Button>
             <Button Width="40" Height="40"
-                    Padding="0" Click="ButtonAbout_Click"
+                    Padding="0"
+                    Click="ButtonAbout_Click"
                     Style="{StaticResource MaterialDesignIconButton}"
                     ToolTip="关于">
                 <md:PackIcon Width="20" Height="20"

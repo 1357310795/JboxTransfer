@@ -55,7 +55,7 @@ namespace JboxTransfer.Views
 
         private ISnackBarService snackBarService;
 
-        private int maxThread = 8;
+        //private int maxThread = 8;
 
         public ListPage(ISnackBarService snackBarService)
         {
@@ -112,10 +112,10 @@ namespace JboxTransfer.Views
         private void UpdateStartNew()
         {
             while (ListCurrent.Count(
-                x=>x.Task.State == SyncTaskState.Running || 
+                x => x.Task.State == SyncTaskState.Running ||
                 x.Task.State == SyncTaskState.Error ||
                 x.Task.State == SyncTaskState.Complete
-                ) < maxThread)
+                ) < GlobalSettings.Model.WorkThreads)
             {
                 var x = ListCurrent.FirstOrDefault(x => x.Task.State == SyncTaskState.Wait);
                 if (x == null)
@@ -243,7 +243,7 @@ namespace JboxTransfer.Views
         private void ButtonStart_Click(object sender, RoutedEventArgs e)
         {
             IsBusy = true;
-            var t = maxThread;
+            var t = GlobalSettings.Model.WorkThreads;
             foreach (var task in ListCurrent)
             {
                 t--;

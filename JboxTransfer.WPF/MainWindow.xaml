@@ -7,10 +7,12 @@
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         Title="MainWindow"
         Width="800" Height="600"
+        Background="{DynamicResource MaterialDesignPaper}"
+        Foreground="{DynamicResource MaterialDesignBody}"
         Loaded="Window_Loaded" WindowStartupLocation="CenterScreen"
         mc:Ignorable="d">
     <!--<Frame x:Name="MainFrame" NavigationUIVisibility="Hidden"/>-->
-    <materialDesign:DialogHost Identifier="MainDialogHost" >
+    <materialDesign:DialogHost Identifier="MainDialogHost">
         <Grid>
             <!--  simplest form  -->
             <materialDesign:Snackbar x:Name="SnackbarOne"

@@ -17,6 +17,7 @@ namespace JboxTransfer.Services
         public static void Init(string username)
         {
             dbpath = Path.Combine(PathHelper.AppPath, $"{username}.db");
+            Directory.CreateDirectory(PathHelper.AppDataPath);
             db = new SQLiteConnection(dbpath);
             db.CreateTable<SyncTaskDbModel>();
         }
