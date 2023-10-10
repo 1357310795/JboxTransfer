@@ -5,6 +5,7 @@ using JboxTransfer.Services;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -92,7 +93,7 @@ namespace JboxTransfer.Modules.Sync
         public void Start()
         {
             State = SyncTaskState.Running;
-            Task.Run(internalStart);
+            Task.Run(() => { internalStartWrap(pts); });
         }
 
         public void Pause()
@@ -107,7 +108,7 @@ namespace JboxTransfer.Modules.Sync
                 return;
             pts = new PauseTokenSource();
             pts.Resume();
-            Task.Run(internalStart);
+            Task.Run(() => { internalStartWrap(pts); });
         }
 
         public void Cancel()
@@ -135,9 +136,39 @@ namespace JboxTransfer.Modules.Sync
             }
         }
 
-        public void internalStart()
+        private void internalStartWrap(PauseTokenSource inst_pts)
         {
-            var inst_pts = pts;
+            try
+            {
+                Monitor.Enter(this);
+                if (inst_pts.IsPaused)
+                {
+                    Monitor.Exit(this);
+                    State = SyncTaskState.Pause;
+                    return;
+                }
+                internalStart(pts);
+                if (inst_pts.IsPaused)
+                {
+                    Monitor.Exit(this);
+                    State = SyncTaskState.Pause;
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                //log
+                Debug.WriteLine(ex);
+                Message = $"{ex.Message}";
+                State = SyncTaskState.Error;
+                dbModel.State = 2;
+                DbService.db.Update(dbModel);
+            }
+            Monitor.Exit(this);
+        }
+
+        public void internalStart(PauseTokenSource inst_pts)
+        {
             State = SyncTaskState.Running;
 
             if (inst_pts.IsPaused)
@@ -179,14 +210,15 @@ namespace JboxTransfer.Modules.Sync
                             break;
 
                         var order = DbService.GetMinOrder() - 1;
-                        DbService.db.BeginTransaction();
-                        foreach (var item in info.Content.Where(x => x.IsDir == true))
-                            DbService.db.Insert(new SyncTaskDbModel(1, item.Path, 0, order));
-                        foreach (var item in info.Content.Where(x => x.IsDir == false))
-                            DbService.db.Insert(new SyncTaskDbModel(0, item.Path, item.Bytes, order) { MD5_Ori = item.Hash});
-                        dbModel.RemainParts = page.ToString();
-                        DbService.db.Update(dbModel);
-                        DbService.db.Commit();
+                        DbService.db.RunInTransaction(() =>
+                        {
+                            foreach (var item in info.Content.Where(x => x.IsDir == true))
+                                DbService.db.Insert(new SyncTaskDbModel(1, item.Path, 0, order));
+                            foreach (var item in info.Content.Where(x => x.IsDir == false))
+                                DbService.db.Insert(new SyncTaskDbModel(0, item.Path, item.Bytes, order) { MD5_Ori = item.Hash });
+                            dbModel.RemainParts = page.ToString();
+                            DbService.db.Update(dbModel);
+                        });
 
                         succ += info.Content.Length;
                         page++;
