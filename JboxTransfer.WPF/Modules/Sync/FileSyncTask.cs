@@ -24,7 +24,14 @@ namespace JboxTransfer.Modules.Sync
         private int succChunk;
         private Exception ex;
         public SyncTaskState State { get; set; }
-        public string Message { get; set; }
+        private string message;
+
+        public string Message
+        {
+            get { return message; }
+            set { message = value; dbModel.Message = value; }
+        }
+
 
         private JboxDownloadSession jbox;
         private TboxUploadSession tbox;
@@ -47,19 +54,19 @@ namespace JboxTransfer.Modules.Sync
             }
         }
 
-        public FileSyncTask(string path, string hash, long size) {
-            this.path = path;
-            this.jboxhash = hash;
-            this.size = size;
-            this.succChunk = 0;
-            this.chunkCount = size.GetChunkCount();
-            jbox = new JboxDownloadSession(path, size);
-            tbox = new TboxUploadSession(path, size);
-            State = SyncTaskState.Wait;
-            md5 = new MD5();
-            crc64 = new CRC64();
-            pts = new PauseTokenSource();
-        }
+        //public FileSyncTask(string path, string hash, long size) {
+        //    this.path = path;
+        //    this.jboxhash = hash;
+        //    this.size = size;
+        //    this.succChunk = 0;
+        //    this.chunkCount = size.GetChunkCount();
+        //    jbox = new JboxDownloadSession(path, size);
+        //    tbox = new TboxUploadSession(path, size);
+        //    State = SyncTaskState.Wait;
+        //    md5 = new MD5();
+        //    crc64 = new CRC64();
+        //    pts = new PauseTokenSource();
+        //}
 
         public FileSyncTask(SyncTaskDbModel dbModel)
         {
@@ -85,7 +92,7 @@ namespace JboxTransfer.Modules.Sync
                 md5 = MD5.Create(JsonConvert.DeserializeObject<MD5StateStorage>(dbModel.MD5_Part));
                 this.succChunk = this.chunkCount - remain.Count;
             }
-            State = SyncTaskState.Wait;
+            State = dbModel.State == 2 ? SyncTaskState.Error : SyncTaskState.Wait;
             pts = new PauseTokenSource();
         }
         public string GetName()
@@ -156,8 +163,8 @@ namespace JboxTransfer.Modules.Sync
             if (curChunk != null)
                 curChunk.Uploading = false;
             dbModel.State = 4;
-            DbService.db.Update(dbModel);
             Message = "已取消";
+            DbService.db.Update(dbModel);
         }
 
         public void Recover(bool keepProgress)
@@ -220,8 +227,8 @@ namespace JboxTransfer.Modules.Sync
             {
                 State = SyncTaskState.Error;
                 dbModel.State = 2;
-                DbService.db.Update(dbModel);
                 Message = res1.result;
+                DbService.db.Update(dbModel);
                 return;
             }
 
@@ -233,8 +240,8 @@ namespace JboxTransfer.Modules.Sync
             {
                 State = SyncTaskState.Error;
                 dbModel.State = 2;
-                DbService.db.Update(dbModel);
                 Message = res2.Message;
+                DbService.db.Update(dbModel);
                 return;
             }
             curChunk = res2.Result;
@@ -294,8 +301,8 @@ namespace JboxTransfer.Modules.Sync
                     State = SyncTaskState.Error;
                     chunkRes = null;
                     dbModel.State = 2;
-                    DbService.db.Update(dbModel);
                     Message = ex.Message;
+                    DbService.db.Update(dbModel);
                     return;
                 }
 
@@ -356,9 +363,9 @@ namespace JboxTransfer.Modules.Sync
                     return;
                 }
                 dbModel.State = 3;
-                DbService.db.Update(dbModel);
-                State = SyncTaskState.Complete;
                 Message = "同步完成";
+                State = SyncTaskState.Complete;
+                DbService.db.Update(dbModel);
             }
         }
 

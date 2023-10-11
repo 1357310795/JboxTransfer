@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
+using JboxTransfer.Core.Helpers;
 using JboxTransfer.Helpers;
 using JboxTransfer.Models;
 using JboxTransfer.Modules.Sync;
@@ -80,12 +81,73 @@ namespace JboxTransfer.Views
             checker2.Go += Checker2_Go;
             //checker2.StartRun();
             WeakReferenceMessenger.Default.Register<UserLogoutMessage>(this);
+            Task.Run(LoadErrorFromDb);
         }
 
         LoopWorker checker;
         LoopWorker checker2;
 
 
+        private void Page_Loaded(object sender, RoutedEventArgs e)
+        {
+            
+        }
+
+        private void UpdateErrorNum()
+        {
+            if (ListError.Count == 0)
+                ErrorNum = null;
+            else if (ListError.Count > 99)
+                ErrorNum = "99+";
+            else
+                ErrorNum = ListError.Count.ToString();
+        }
+
+        private void LoadErrorFromDb()
+        {
+            try
+            {
+                var res = DbService.db.Table<SyncTaskDbModel>().Where(x => x.State == 2);
+                if (res.Count() == 0)
+                    return;
+                foreach (var item in res)
+                {
+                    this.Dispatcher.Invoke(() =>
+                    {
+                        IBaseTask task2;
+                        if (item.Type == 0)
+                        {
+                            task2 = new FileSyncTask(item);
+                            //task2.Start();
+                        }
+                        else
+                        {
+                            task2 = new FolderSyncTask(item);
+                            //task2.Start();
+                        }
+
+                        SyncTaskViewModel vm;
+                        vm = new SyncTaskViewModel()
+                        {
+                            FileName = item.FileName,
+                            ParentPath = item.FilePath.GetParentPath(),
+                            ProgressStr = item.Message,
+                            Task = task2
+                        };
+                        vm.Icon = item.Type == 0 ?
+                                        IconHelper.FindIconForFilename(vm.FileName, true) :
+                                        IconHelper.FindIconForFolder(true);
+                        ListError.Add(vm);
+                        UpdateErrorNum();
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                //log
+                Debug.WriteLine(ex);
+            }
+        }
         private TaskState Checker_Go(CancellationTokenSource cts)
         {
             try
@@ -134,14 +196,14 @@ namespace JboxTransfer.Views
                     if (task.State == Models.SyncTaskState.Complete)
                     {
                         ListCurrent.Remove(task);
-                        ListCompleted.Add(task);
+                        ListCompleted.Insert(0, task);
                         task.Task = null;
                     }
                     else if (task.State == Models.SyncTaskState.Error)
                     {
                         ListCurrent.Remove(task);
-                        ListError.Add(task);
-                        ErrorNum = ListError.Count > 99 ? "99+" : ListError.Count.ToString();
+                        ListError.Insert(0, task);
+                        UpdateErrorNum();
                     }
                 }
             });
@@ -286,7 +348,7 @@ namespace JboxTransfer.Views
                 var item = ListError[i];
                 item.Task.Recover(true);
                 ListError.Remove(item);
-                ErrorNum = ListError.Count > 99 ? "99+" : ListError.Count.ToString();
+                UpdateErrorNum();
             }
         }
 
@@ -297,7 +359,7 @@ namespace JboxTransfer.Views
                 var item = ListError[i];
                 item.Task.Recover(false);
                 ListError.Remove(item);
-                ErrorNum = ListError.Count > 99 ? "99+" : ListError.Count.ToString();
+                UpdateErrorNum();
             }
         }
 
@@ -308,7 +370,7 @@ namespace JboxTransfer.Views
                 item.Task.Cancel();
             }
             ListError = new ObservableCollection<SyncTaskViewModel>();
-            ErrorNum = ListError.Count > 99 ? "99+" : ListError.Count.ToString();
+            UpdateErrorNum();
         }
 
         private void ButtonRefreshPending_Click(object sender, RoutedEventArgs e)
@@ -405,7 +467,7 @@ namespace JboxTransfer.Views
                 return;
             vm.Task.Recover(true);
             ListError.Remove(vm);
-            ErrorNum = ListError.Count > 99 ? "99+" : ListError.Count.ToString();
+            UpdateErrorNum();
         }
 
         [RelayCommand]
@@ -416,7 +478,7 @@ namespace JboxTransfer.Views
                 return;
             vm.Task.Recover(false);
             ListError.Remove(vm);
-            ErrorNum = ListError.Count > 99 ? "99+" : ListError.Count.ToString();
+            UpdateErrorNum();
         }
 
         [RelayCommand]
@@ -427,12 +489,13 @@ namespace JboxTransfer.Views
                 return;
             vm.Task.Cancel();
             ListError.Remove(vm);
-            ErrorNum = ListError.Count > 99 ? "99+" : ListError.Count.ToString();
+            UpdateErrorNum();
         }
 
         public void Receive(UserLogoutMessage message)
         {
             ButtonPause_Click(null, null);
         }
+
     }
 }

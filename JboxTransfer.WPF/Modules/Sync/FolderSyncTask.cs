@@ -25,7 +25,13 @@ namespace JboxTransfer.Modules.Sync
         private int page;
         private JboxItemInfo info;
         public SyncTaskState State { get; set; }
-        public string Message { get; set; }
+        private string message;
+
+        public string Message
+        {
+            get { return message; }
+            set { message = value; dbModel.Message = value; }
+        }
 
         private SyncTaskDbModel dbModel;
 
@@ -63,7 +69,7 @@ namespace JboxTransfer.Modules.Sync
             }
             this.total = 0;
             this.path = dbModel.FilePath;
-            State = SyncTaskState.Wait;
+            State = dbModel.State == 2 ? SyncTaskState.Error : SyncTaskState.Wait;
             pts = new PauseTokenSource();
         }
 
@@ -124,8 +130,8 @@ namespace JboxTransfer.Modules.Sync
             pts.Pause();
             State = SyncTaskState.Wait;
             dbModel.State = 4;
-            DbService.db.Update(dbModel);
             Message = "已取消";
+            DbService.db.Update(dbModel);
         }
 
         public void Recover(bool keepProgress)
@@ -241,17 +247,17 @@ namespace JboxTransfer.Modules.Sync
                 {
                     State = SyncTaskState.Error;
                     dbModel.State = 2;
-                    DbService.db.Update(dbModel);
                     Message = ex.Message;
+                    DbService.db.Update(dbModel);
                     return;
                 }
                 if (info.Content.Length == 0)
                     break;
             }
             dbModel.State = 3;
-            DbService.db.Update(dbModel);
             State = SyncTaskState.Complete;
             Message = "同步完成";
+            DbService.db.Update(dbModel);
         }
     }
 }

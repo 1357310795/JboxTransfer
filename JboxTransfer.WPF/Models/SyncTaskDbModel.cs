@@ -50,5 +50,6 @@ namespace JboxTransfer.Models
         public string MD5_Ori { get; set; }
         public long CRC64_Part { get; set; }
         public string RemainParts { get; set; }
+        public string Message { get; set; }
     }
 }

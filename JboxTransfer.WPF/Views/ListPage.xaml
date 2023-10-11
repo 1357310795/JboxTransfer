@@ -6,7 +6,7 @@
       xmlns:local="clr-namespace:JboxTransfer.Views"
       xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
       xmlns:converters="clr-namespace:JboxTransfer.Converters"
-      Title="ListPage"
+      Title="ListPage" Loaded="Page_Loaded"
       Foreground="{DynamicResource MaterialDesignBody}"
       d:Background="AliceBlue" d:DesignHeight="450"
       d:DesignWidth="800"
@@ -220,7 +220,7 @@
                                 <Grid VerticalAlignment="Stretch">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="0.6*" />
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="Auto" />
@@ -236,8 +236,8 @@
                                                 Margin="10,0,0,0"
                                                 Grid.Column="1"
                                                 Orientation="Vertical">
-                                        <TextBlock Text="{Binding FileName}" />
-                                        <TextBlock Foreground="{DynamicResource MaterialDesignBodyLight}" Text="{Binding ParentPath}" />
+                                        <TextBlock Text="{Binding FileName}" ToolTip="{Binding FileName}"/>
+                                        <TextBlock Foreground="{DynamicResource MaterialDesignBodyLight}" ToolTip="{Binding ParentPath}" Text="{Binding ParentPath}" />
                                     </StackPanel>
                                     <StackPanel MinWidth="210"
                                                 VerticalAlignment="Center"
