@@ -64,8 +64,10 @@
                                                 Margin="10,0,0,0"
                                                 Grid.Column="1"
                                                 Orientation="Vertical">
-                                        <TextBlock Text="{Binding FileName}" />
-                                        <TextBlock Foreground="{DynamicResource MaterialDesignBodyLight}" Text="{Binding ParentPath}" />
+                                        <TextBlock Text="{Binding FileName}" ToolTip="{Binding FileName}" />
+                                        <TextBlock Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                                   Text="{Binding ParentPath}"
+                                                   ToolTip="{Binding ParentPath}" />
                                     </StackPanel>
                                     <StackPanel Width="210"
                                                 VerticalAlignment="Center"
@@ -137,8 +139,10 @@
                                             Margin="10,0,0,0"
                                             Grid.Column="1"
                                             Orientation="Vertical">
-                                    <TextBlock Text="{Binding FileName}" />
-                                    <TextBlock Foreground="{DynamicResource MaterialDesignBodyLight}" Text="{Binding ParentPath}" />
+                                    <TextBlock Text="{Binding FileName}" ToolTip="{Binding FileName}" />
+                                    <TextBlock Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                               Text="{Binding ParentPath}"
+                                               ToolTip="{Binding ParentPath}" />
                                 </StackPanel>
                                 <StackPanel Width="210"
                                             VerticalAlignment="Center"
@@ -216,8 +220,8 @@
                                 <Grid VerticalAlignment="Stretch">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="Auto" />
@@ -227,7 +231,8 @@
                                            HorizontalAlignment="Center" VerticalAlignment="Center"
                                            Margin="16,0,0,0"
                                            Source="{Binding Icon}" />
-                                    <StackPanel VerticalAlignment="Center"
+                                    <StackPanel MinWidth="120" MaxWidth="200"
+                                                VerticalAlignment="Center"
                                                 Margin="10,0,0,0"
                                                 Grid.Column="1"
                                                 Orientation="Vertical">
