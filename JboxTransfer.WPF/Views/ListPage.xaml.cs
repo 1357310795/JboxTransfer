@@ -98,7 +98,11 @@ namespace JboxTransfer.Views
             if (ListError.Count == 0)
                 ErrorNum = null;
             else if (ListError.Count > 99)
+            {
                 ErrorNum = "99+";
+                IsBusy = false;
+                snackBarService.MessageQueue.Enqueue("错误过多，队列被迫终止。请先处理出错的项目。");
+            }
             else
                 ErrorNum = ListError.Count.ToString();
         }
@@ -179,10 +183,14 @@ namespace JboxTransfer.Views
                 x.Task.State == SyncTaskState.Complete
                 ) < GlobalSettings.Model.WorkThreads)
             {
-                var x = ListCurrent.FirstOrDefault(x => x.Task.State == SyncTaskState.Wait);
+                Debug.WriteLine("begin start new");
+                var x = ListCurrent.FirstOrDefault(x => (x.Task.State == SyncTaskState.Wait || x.Task.State == SyncTaskState.Pause) && (x.IsUserPause == false));
                 if (x == null)
                     return;
-                x.Task.Start();
+                if (x.Task.State == SyncTaskState.Wait)
+                    x.Task.Start();
+                else
+                    x.Task.Resume();
             }
         }
 
@@ -262,25 +270,6 @@ namespace JboxTransfer.Views
                     });
                 }
             }
-            //var items = DbService.db.Table<SyncTaskDbModel>().OrderBy(x => x.Order).Where(x => x.State == 0).Take(99-).ToList();
-            //var list = new List<SyncTaskViewModel>();
-            //foreach(var item in items)
-            //{
-            //    SyncTaskViewModel vm;
-            //    vm = new SyncTaskViewModel()
-            //    {
-            //        FileName = item.FileName,
-            //        ParentPath = item.FilePath,
-            //    };
-            //    this.Dispatcher.Invoke(() =>
-            //    {
-            //        vm.Icon = item.Type == 0 ?
-            //                    IconHelper.FindIconForFilename(vm.FileName, true) :
-            //                    IconHelper.FindIconForFolder(true);
-            //    });
-            //    list.Add(vm);
-            //}
-            //ListPending = list;
         }
 
         private void UpdateInfo()
@@ -304,12 +293,23 @@ namespace JboxTransfer.Views
 
         private void ButtonStart_Click(object sender, RoutedEventArgs e)
         {
+            if (ListError.Count > 99)
+            {
+                MessageBox.Show("错误过多，无法启动队列。请先前往“已停止”选项卡处理出错的项目。", "错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
             IsBusy = true;
             var t = GlobalSettings.Model.WorkThreads;
-            foreach (var task in ListCurrent)
+            foreach (var vm in ListCurrent)
+            {
+                vm.IsUserPause = false;
+            }
+            foreach (var vm in ListCurrent)
             {
                 t--;
-                task.Task.Resume();
+                if (vm.Task.State == SyncTaskState.Running)
+                    continue;
+                vm.Task.Resume();
                 if (t == 0) 
                     break;
             }
@@ -320,21 +320,22 @@ namespace JboxTransfer.Views
         {
             //checker.StopRun();
             IsBusy = false;
-            foreach (var task in ListCurrent)
+            foreach (var vm in ListCurrent)
             {
-                task.Task.Pause();
+                vm.Task.Pause();
+                vm.IsUserPause = true;
             }
         }
 
         private void ButtonCancel_Click(object sender, RoutedEventArgs e)
         {
-            var res = MessageBox.Show("此操作将删除所有传输中和待传输的项目，是否确定？", "提示", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            var res = MessageBox.Show("此操作将删除所有传输中、待传输和出错的项目，是否确定？", "提示", MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (res == MessageBoxResult.Yes)
             {
                 IsBusy = false;
-                foreach (var task in ListCurrent)
+                foreach (var vm in ListCurrent)
                 {
-                    task.Task.Cancel();
+                    vm.Task.Cancel();
                 }
                 DbService.db.Execute("DELETE FROM SyncTaskDbModel;");
                 ListCurrent.Clear();
@@ -365,9 +366,9 @@ namespace JboxTransfer.Views
 
         private void ButtonErrorCancel_Click(object sender, RoutedEventArgs e)
         {
-            foreach(var item in ListError)
+            foreach(var vm in ListError)
             {
-                item.Task.Cancel();
+                vm.Task.Cancel();
             }
             ListError = new ObservableCollection<SyncTaskViewModel>();
             UpdateErrorNum();
@@ -385,9 +386,15 @@ namespace JboxTransfer.Views
             if (vm == null)
                 return;
             if (vm.Task.State == SyncTaskState.Running)
+            {
                 vm.Task.Pause();
+                vm.IsUserPause = true;
+            }
             else if (vm.Task.State == SyncTaskState.Pause)
+            {
                 vm.Task.Resume();
+                vm.IsUserPause = false;
+            }
             else if (vm.Task.State == SyncTaskState.Wait)
                 vm.Task.Start();
         }

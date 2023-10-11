@@ -122,6 +122,7 @@ namespace JboxTransfer.Modules.Sync
                 return;
             pts = new PauseTokenSource();
             pts.Resume();
+            State = SyncTaskState.Running;
             Task.Run(() => { internalStartWrap(pts); });
         }
 

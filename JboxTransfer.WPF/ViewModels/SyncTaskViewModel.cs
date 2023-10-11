@@ -34,5 +34,6 @@ namespace JboxTransfer.ViewModels
         public string progressTextTooltip;
 
         public IBaseTask Task;
+        public bool IsUserPause;
     }
 }
