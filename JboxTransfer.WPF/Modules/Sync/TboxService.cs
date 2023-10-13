@@ -240,7 +240,7 @@ namespace JboxTransfer.Modules.Sync
             }
         }
 
-        public static CommonResult<TboxConfirmChunkUploadResDto> ConfirmChunkUpload(string confirmKey)
+        public static CommonResult<TboxConfirmChunkUploadResDto> ConfirmChunkUpload(string confirmKey, ulong crc64)
         {
             if (!Logined)
                 return new CommonResult<TboxConfirmChunkUploadResDto>(false, $"未登录，请先登录");
@@ -252,6 +252,10 @@ namespace JboxTransfer.Modules.Sync
 
             HttpClient client = NetService.Client;
             HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Post, baseUrl + $"/api/v1/file/{TboxAccessTokenKeeper.Cred.LibraryId}/{TboxAccessTokenKeeper.Cred.SpaceId}/{confirmKey}" + UrlHelper.BuildQuery(query));
+            req.Headers.TryAddWithoutValidation("Content-Type", "application/json");
+            req.Content = new StringContent($$"""
+                {"crc64":"{{crc64}}"}
+                """);
 
             try
             {

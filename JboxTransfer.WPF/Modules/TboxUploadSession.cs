@@ -191,10 +191,10 @@ namespace JboxTransfer.Modules
             }
         }
 
-        public CommonResult<TboxConfirmChunkUploadResDto> Confirm()
+        public CommonResult<TboxConfirmChunkUploadResDto> Confirm(ulong crc64)
         {
             //Todo:再次请求检查是否有未上传
-            var res = TboxService.ConfirmChunkUpload(confirmKey);
+            var res = TboxService.ConfirmChunkUpload(confirmKey, crc64);
             if (!res.Success)
                 return new CommonResult<TboxConfirmChunkUploadResDto>(false, $"确认上传出错：{res.Message}");
             return res;

@@ -346,18 +346,18 @@ namespace JboxTransfer.Modules.Sync
 
             if (succChunk == chunkCount && curChunk.PartNumber == 0)//&& 
             {
-                var res4 = tbox.Confirm();
-                if (!res4.Success)
+                if (jboxhash != actualHash)
                 {
-                    Message = $"{res4.Message}";
+                    Message = $"下载流校验值不匹配";
                     State = SyncTaskState.Error;
                     dbModel.State = 2;
                     DbService.db.Update(dbModel);
                     return;
                 }
-                if (actualcrc64.ToString() != res4.Result.Crc64 || jboxhash != actualHash)
+                var res4 = tbox.Confirm(actualcrc64);
+                if (!res4.Success)
                 {
-                    Message = $"校验值不匹配";
+                    Message = $"{res4.Message}";
                     State = SyncTaskState.Error;
                     dbModel.State = 2;
                     DbService.db.Update(dbModel);
