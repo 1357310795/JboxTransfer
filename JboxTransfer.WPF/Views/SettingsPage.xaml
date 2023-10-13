@@ -14,8 +14,9 @@
 
     <Grid>
         <ScrollViewer>
-            <StackPanel MinWidth="400" MaxWidth="800"
+            <StackPanel MinWidth="400" MaxWidth="500"
                         HorizontalAlignment="Center"
+                        Margin="0,0,0,60"
                         Orientation="Vertical">
                 <StackPanel Margin="16,16,16,0" Orientation="Vertical">
                     <StackPanel Orientation="Horizontal">
@@ -166,6 +167,45 @@
                                 </ItemsPanelTemplate>
                             </ItemsControl.ItemsPanel>
                         </ItemsControl>
+                    </Grid>
+                </StackPanel>
+                <StackPanel Margin="16,16,16,0" Orientation="Vertical">
+                    <StackPanel Orientation="Horizontal">
+                        <Border Width="4" Height="20"
+                                VerticalAlignment="Center"
+                                Background="{DynamicResource PrimaryHueMidBrush}" />
+                        <TextBlock VerticalAlignment="Center"
+                                   Margin="8,0,0,0"
+                                   Text="高级"
+                                   FontWeight="Bold"
+                                   FontSize="20" />
+                    </StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <StackPanel HorizontalAlignment="Left" VerticalAlignment="Center"
+                                    Margin="4,16,4,0"
+                                    Grid.Row="0" Grid.Column="0"
+                                    Orientation="Vertical">
+                            <TextBlock Text="数据库操作" FontSize="14" />
+                            <TextBlock TextWrapping="Wrap"
+                                       Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                       Text="查询待传输项目、查询已完成项目，优先传输指定项目，删除指定待传输项目等"
+                                       FontSize="12" />
+                        </StackPanel>
+                        <Button MinWidth="60"
+                                HorizontalAlignment="Right" VerticalAlignment="Center"
+                                Margin="4,16,4,0" Padding="2,2"
+                                Grid.Row="0" Grid.Column="1"
+                                Content="打开数据库操作页面"
+                                Click="ButtonDbOperation_Click"
+                                Style="{StaticResource MaterialDesignFlatButton}"
+                                FontSize="14" />
                     </Grid>
                 </StackPanel>
             </StackPanel>

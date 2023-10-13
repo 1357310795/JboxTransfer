@@ -1,0 +1,62 @@
+﻿<Page x:Class="JboxTransfer.Views.DbOpPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:local="clr-namespace:JboxTransfer.Views"
+      xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+      xmlns:converters="clr-namespace:JboxTransfer.Converters"
+      xmlns:styles="clr-namespace:JboxTransfer.Styles"
+      Title="DbOpPage"
+      d:Background="AliceBlue" d:DesignHeight="450"
+      d:DesignWidth="800"
+      mc:Ignorable="d">
+    <Page.Resources>
+        <converters:SyncTaskStateToPackIconConverter x:Key="SyncTaskStateToPackIconConverter" />
+        <converters:SyncTaskStateToStringConverter x:Key="SyncTaskStateToStringConverter" />
+    </Page.Resources>
+    <Grid Margin="0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition />
+        </Grid.RowDefinitions>
+        <Grid Margin="8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <ComboBox Width="140"
+                      Padding="8"
+                      materialDesign:HintAssist.Hint="查询类型"
+                      DisplayMemberPath="Name"
+                      ItemsSource="{Binding QueryTypes}"
+                      SelectedItem="{Binding SelectedQueryType}"
+                      Style="{StaticResource MaterialDesignOutlinedComboBox}" />
+            <TextBox Margin="4,0,0,0" Padding="8"
+                     Grid.Column="1"
+                     Text="{Binding QueryText}"
+                     materialDesign:HintAssist.Hint="{Binding Hint}"
+                     Style="{StaticResource MaterialDesignOutlinedTextBox}" />
+            <Button Width="72" Height="33.24"
+                    VerticalAlignment="Center"
+                    Margin="4,0,0,0"
+                    Grid.Column="2"
+                    Content="查询"
+                    Click="ButtonQuery_Click"
+                    Style="{StaticResource MaterialDesignFlatMidBgButton}" />
+        </Grid>
+        <ListBox Margin="0,0,0,0"
+                 Grid.Row="1"
+                 HorizontalContentAlignment="Stretch"
+                 ItemContainerStyle="{StaticResource MyListBoxItem}"
+                 SelectionMode="Single"
+                 ItemsSource="{Binding ListResult}">
+            <ListBox.ItemTemplateSelector>
+                <styles:ListQueryTemplateSelector QueryWait="{StaticResource QueryWaitListItemTemplate}"
+                                                  QueryCompleted="{StaticResource QueryCompletedListItemTemplate}"
+                                                  QuerySql="{StaticResource QuerySqlListItemTemplate}" />
+            </ListBox.ItemTemplateSelector>
+        </ListBox>
+    </Grid>
+</Page>

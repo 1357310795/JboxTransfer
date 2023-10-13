@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using JboxTransfer.Core.Helpers;
 using JboxTransfer.Helpers;
 using JboxTransfer.Services;
+using JboxTransfer.Services.Contracts;
 using MaterialDesignColors;
 using System;
 using System.Collections.Generic;
@@ -29,7 +30,8 @@ namespace JboxTransfer.Views
     [INotifyPropertyChanged]
     public partial class SettingsPage : Page
     {
-        public SettingsPage()
+        INavigationService navigationService;
+        public SettingsPage(INavigationService navigationService)
         {
             InitializeComponent();
             ThemeModes = new List<string>() { "浅色模式", "深色模式" };
@@ -38,6 +40,7 @@ namespace JboxTransfer.Views
             WorkThreads = new List<int>();
             for (int i = 1; i <= 12; i++)
                 WorkThreads.Add(i);
+            this.navigationService = navigationService;
             this.DataContext = this;
         }
 
@@ -94,6 +97,11 @@ namespace JboxTransfer.Views
         private void Page_Unloaded(object sender, RoutedEventArgs e)
         {
             GlobalSettings.Save();
+        }
+
+        private void ButtonDbOperation_Click(object sender, RoutedEventArgs e)
+        {
+            navigationService.NavigateTo(nameof(DbOpPage));
         }
     }
 }

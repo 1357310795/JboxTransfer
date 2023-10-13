@@ -61,6 +61,7 @@ namespace JboxTransfer.Views
             //worker.Go += Worker_Go;
             //DbService.Init("testuser");
             var file = EmbedResHelper.GetELUA();
+            //DbService.db.Query<SyncTaskDbModel>()
 
             //var icon = System.Drawing.Icon.ExtractAssociatedIcon(@"cccccc.idb");
             //MemoryStream ms = new MemoryStream();

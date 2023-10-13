@@ -12,6 +12,7 @@
                 <ResourceDictionary Source="/Styles/Dictionary1.xaml" />
                 <!--<ResourceDictionary Source="/Styles/MaterialDesignTheme.ProgressBar.xaml" />-->
                 <ResourceDictionary Source="/Styles/ListBox.xaml" />
+                <ResourceDictionary Source="/Styles/TaskListItemTemplates.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

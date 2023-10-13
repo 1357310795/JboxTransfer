@@ -14,11 +14,10 @@
     <!--<Frame x:Name="MainFrame" NavigationUIVisibility="Hidden"/>-->
     <materialDesign:DialogHost Identifier="MainDialogHost">
         <Grid>
+            <local:HomePage />
             <!--  simplest form  -->
             <materialDesign:Snackbar x:Name="SnackbarOne"
                                      IsActive="False" Message="hello 1" />
-
-            <local:HomePage />
         </Grid>
     </materialDesign:DialogHost>
 </Window>

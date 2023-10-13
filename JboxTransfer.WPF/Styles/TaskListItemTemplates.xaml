@@ -1,0 +1,206 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+                    xmlns:converters="clr-namespace:JboxTransfer.Converters">
+    <converters:SyncTaskStateToPackIconConverter x:Key="SyncTaskStateToPackIconConverter" />
+    <converters:SyncTaskStateToStringConverter x:Key="SyncTaskStateToStringConverter" />
+    <DataTemplate x:Key="QueryWaitListItemTemplate">
+        <Grid VerticalAlignment="Stretch">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Image Width="32" Height="32"
+                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                   Margin="16,0,0,0"
+                   Source="{Binding Icon}" />
+            <StackPanel VerticalAlignment="Center"
+                        Margin="10,0,0,0"
+                        Grid.Column="1"
+                        Orientation="Vertical">
+                <TextBlock Text="{Binding FileName}" ToolTip="{Binding FileName}" />
+                <TextBlock Foreground="{DynamicResource MaterialDesignBodyLight}"
+                           Text="{Binding ParentPath}"
+                           ToolTip="{Binding ParentPath}" />
+            </StackPanel>
+            <StackPanel Width="100"
+                        VerticalAlignment="Center"
+                        Margin="8,0,16,0"
+                        Grid.Column="2"
+                        Orientation="Vertical">
+                <TextBlock Text="{Binding State, Converter={StaticResource SyncTaskStateToStringConverter}}" />
+                <TextBlock Text="{Binding Size}" />
+            </StackPanel>
+            <Button HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Grid.Column="3"
+                    Command="{Binding OpenInJboxCommand, RelativeSource={RelativeSource AncestorType=Page, Mode=FindAncestor}}"
+                    CommandParameter="{Binding}"
+                    ToolTip="在 jbox 中打开"
+                    Style="{StaticResource MaterialDesignIconForegroundButton}">
+                <Image Width="28" Height="28"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                       Source="{StaticResource jbox_newDrawingImage}" />
+            </Button>
+            <Button HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Grid.Column="4"
+                    Command="{Binding SetTopCommand, RelativeSource={RelativeSource AncestorType=Page, Mode=FindAncestor}}"
+                    CommandParameter="{Binding}"
+                    ToolTip="优先传输"
+                    Style="{StaticResource MaterialDesignIconForegroundButton}">
+                <materialDesign:PackIcon Kind="ArrowUpBoldBoxOutline" />
+            </Button>
+            <Button HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Grid.Column="5"
+                    Command="{Binding CancelCommand, RelativeSource={RelativeSource AncestorType=Page, Mode=FindAncestor}}"
+                    CommandParameter="{Binding}"
+                    ToolTip="取消传输"
+                    Style="{StaticResource MaterialDesignIconForegroundButton}">
+                <materialDesign:PackIcon Kind="Close" />
+            </Button>
+            <materialDesign:PopupBox HorizontalAlignment="Center" VerticalAlignment="Center"
+                                     Grid.Column="6">
+                <StackPanel Orientation="Vertical">
+                    <Button Content="复制完整路径"
+                            Command="{Binding CopyPathCommand, RelativeSource={RelativeSource AncestorType=Page, Mode=FindAncestor}}"
+                            CommandParameter="{Binding}" />
+                    <Button Content="查看原始数据"
+                            Command="{Binding ViewJsonCommand, RelativeSource={RelativeSource AncestorType=Page, Mode=FindAncestor}}"
+                            CommandParameter="{Binding}" />
+                </StackPanel>
+            </materialDesign:PopupBox>
+        </Grid>
+    </DataTemplate>
+    <DataTemplate x:Key="QueryCompletedListItemTemplate">
+        <Grid VerticalAlignment="Stretch">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Image Width="32" Height="32"
+                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                   Margin="16,0,0,0"
+                   Source="{Binding Icon}" />
+            <StackPanel VerticalAlignment="Center"
+                        Margin="10,0,0,0"
+                        Grid.Column="1"
+                        Orientation="Vertical">
+                <TextBlock Text="{Binding FileName}" ToolTip="{Binding FileName}" />
+                <TextBlock Foreground="{DynamicResource MaterialDesignBodyLight}"
+                           Text="{Binding ParentPath}"
+                           ToolTip="{Binding ParentPath}" />
+            </StackPanel>
+            <StackPanel Width="100"
+                        VerticalAlignment="Center"
+                        Margin="8,0,16,0"
+                        Grid.Column="2"
+                        Orientation="Vertical">
+                <TextBlock Text="{Binding State, Converter={StaticResource SyncTaskStateToStringConverter}}" />
+                <TextBlock Text="{Binding Size}" />
+            </StackPanel>
+            <Button HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Grid.Column="3"
+                    Command="{Binding OpenInJboxCommand, RelativeSource={RelativeSource AncestorType=Page, Mode=FindAncestor}}"
+                    CommandParameter="{Binding}"
+                    ToolTip="在 jbox 中打开"
+                    Style="{StaticResource MaterialDesignIconForegroundButton}">
+                <Image Width="28" Height="28"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                       Source="{StaticResource jbox_newDrawingImage}" />
+            </Button>
+            <Button HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Grid.Column="4"
+                    Command="{Binding OpenInTboxCommand, RelativeSource={RelativeSource AncestorType=Page, Mode=FindAncestor}}"
+                    CommandParameter="{Binding}"
+                    ToolTip="在 新云盘 中打开"
+                    Style="{StaticResource MaterialDesignIconForegroundButton}">
+                <Image Width="28" Height="28"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                       Source="{StaticResource tboxDrawingImage}" />
+            </Button>
+            <materialDesign:PopupBox HorizontalAlignment="Center" VerticalAlignment="Center"
+                                     Grid.Column="5">
+                <StackPanel Orientation="Vertical">
+                    <Button Content="复制完整路径"
+                            Command="{Binding CopyPathCommand, RelativeSource={RelativeSource AncestorType=Page, Mode=FindAncestor}}"
+                            CommandParameter="{Binding}" />
+                    <Button Content="查看原始数据"
+                            Command="{Binding ViewJsonCommand, RelativeSource={RelativeSource AncestorType=Page, Mode=FindAncestor}}"
+                            CommandParameter="{Binding}" />
+                </StackPanel>
+            </materialDesign:PopupBox>
+        </Grid>
+    </DataTemplate>
+    <DataTemplate x:Key="QuerySqlListItemTemplate">
+        <Grid VerticalAlignment="Stretch">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <Image Width="32" Height="32"
+                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                   Margin="16,0,0,0"
+                   Source="{Binding Icon}" />
+            <StackPanel VerticalAlignment="Center"
+                        Margin="10,0,0,0"
+                        Grid.Column="1"
+                        Orientation="Vertical">
+                <TextBlock Text="{Binding FileName}" ToolTip="{Binding FileName}" />
+                <TextBlock Foreground="{DynamicResource MaterialDesignBodyLight}"
+                           Text="{Binding ParentPath}"
+                           ToolTip="{Binding ParentPath}" />
+            </StackPanel>
+            <StackPanel Width="100"
+                        VerticalAlignment="Center"
+                        Margin="8,0,16,0"
+                        Grid.Column="2"
+                        Orientation="Vertical">
+                <TextBlock Text="{Binding State, Converter={StaticResource SyncTaskStateToStringConverter}}" />
+                <TextBlock Text="{Binding Size}" />
+            </StackPanel>
+            <Button HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Grid.Column="3"
+                    Command="{Binding OpenInJboxCommand, RelativeSource={RelativeSource AncestorType=Page, Mode=FindAncestor}}"
+                    CommandParameter="{Binding}"
+                    ToolTip="在 jbox 中打开"
+                    Style="{StaticResource MaterialDesignIconForegroundButton}">
+                <Image Width="28" Height="28"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                       Source="{StaticResource jbox_newDrawingImage}" />
+            </Button>
+            <Button HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Grid.Column="4"
+                    Command="{Binding OpenInTboxCommand, RelativeSource={RelativeSource AncestorType=Page, Mode=FindAncestor}}"
+                    CommandParameter="{Binding}"
+                    ToolTip="在 新云盘 中打开"
+                    Style="{StaticResource MaterialDesignIconForegroundButton}">
+                <Image Width="28" Height="28"
+                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                       Source="{StaticResource tboxDrawingImage}" />
+            </Button>
+            <materialDesign:PopupBox HorizontalAlignment="Center" VerticalAlignment="Center"
+                                     Grid.Column="5">
+                <StackPanel Orientation="Vertical">
+                    <Button Content="复制完整路径"
+                            Command="{Binding CopyPathCommand, RelativeSource={RelativeSource AncestorType=Page, Mode=FindAncestor}}"
+                            CommandParameter="{Binding}" />
+                    <Button Content="查看原始数据"
+                            Command="{Binding ViewJsonCommand, RelativeSource={RelativeSource AncestorType=Page, Mode=FindAncestor}}"
+                            CommandParameter="{Binding}" />
+                </StackPanel>
+            </materialDesign:PopupBox>
+        </Grid>
+    </DataTemplate>
+</ResourceDictionary>
