@@ -36,7 +36,7 @@
                          BorderBrush="{DynamicResource PrimaryHueMidBrush}" />
             <RadioButton Margin="4"
                          Content="Debug"
-                         Visibility="Collapsed" Checked="RadioButton_Checked"
+                         Visibility="Visible" Checked="RadioButton_Checked"
                          Tag="Debug"
                          Style="{StaticResource MaterialDesignTabRadioButton}"
                          BorderBrush="{DynamicResource PrimaryHueMidBrush}" />

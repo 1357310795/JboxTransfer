@@ -2,6 +2,7 @@
 using MaterialDesignThemes.Wpf;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -22,6 +23,12 @@ namespace JboxTransfer.Services
         {
             var res = await DialogHost.Show(new SelectJboxItemDialog(), DialogIdentifier);
             return (CommonResult<string>)res;
+        }
+
+        public static async Task<CommonResult> ShowRichText(MemoryStream ms)
+        {
+            var res = await DialogHost.Show(new RichTextDialog(ms), DialogIdentifier);
+            return (CommonResult)res;
         }
     }
 }

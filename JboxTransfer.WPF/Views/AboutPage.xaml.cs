@@ -1,5 +1,9 @@
-﻿using System;
+﻿using JboxTransfer.Helpers;
+using JboxTransfer.Services;
+using JboxTransfer.Views.Dialogs;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,6 +27,41 @@ namespace JboxTransfer.Views
         public AboutPage()
         {
             InitializeComponent();
+        }
+
+        private void ButtonHome_Click(object sender, RoutedEventArgs e)
+        {
+            LaunchHelper.OpenURL("https://chat.sjtu.edu.cn/jboxwebdav");
+        }
+
+        private void ButtonDocs_Click(object sender, RoutedEventArgs e)
+        {
+            LaunchHelper.OpenURL("https://chat.sjtu.edu.cn/jboxwebdav");
+        }
+
+        private void ButtonGithub_Click(object sender, RoutedEventArgs e)
+        {
+            LaunchHelper.OpenURL("https://github.com/1357310795/JboxTransfer");
+        }
+
+        private void LinkContact_Click(object sender, RoutedEventArgs e)
+        {
+            LaunchHelper.OpenURL("mailto://gpt@sjtu.edu.cn");
+        }
+
+        private async void LinkEULA_Click(object sender, RoutedEventArgs e)
+        {
+            await DialogService.ShowRichText(new MemoryStream(EmbedResHelper.GetELUA().ToArray()));
+        }
+
+        private async void LinkPrivacy_Click(object sender, RoutedEventArgs e)
+        {
+            await DialogService.ShowRichText(new MemoryStream(EmbedResHelper.GetPrivacy().ToArray()));
+        }
+
+        private async void LinkOpenSource_Click(object sender, RoutedEventArgs e)
+        {
+            await DialogService.ShowRichText(new MemoryStream(EmbedResHelper.GetOpenSource().ToArray()));
         }
     }
 }

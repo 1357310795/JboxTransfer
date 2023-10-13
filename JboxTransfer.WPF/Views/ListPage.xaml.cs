@@ -437,12 +437,7 @@ namespace JboxTransfer.Views
                 return;
             }
 
-            var psi = new ProcessStartInfo
-            {
-                FileName = $"https://jbox.sjtu.edu.cn/v/list/self/{res.Result.Neid}",
-                UseShellExecute = true
-            };
-            Process.Start(psi);
+            LaunchHelper.OpenURL($"https://jbox.sjtu.edu.cn/v/list/self/{res.Result.Neid}");
         }
 
         [RelayCommand]
@@ -455,12 +450,7 @@ namespace JboxTransfer.Views
             var path = vm.ParentPath;
             path = path.Substring(1, path.Length - 1).UrlEncodeByParts();
 
-            var psi = new ProcessStartInfo
-            {
-                FileName = $"https://pan.sjtu.edu.cn/web/desktop/personalSpace?path={path}",
-                UseShellExecute = true
-            };
-            Process.Start(psi);
+            LaunchHelper.OpenURL($"https://pan.sjtu.edu.cn/web/desktop/personalSpace?path={path}");
         }
 
         [RelayCommand]

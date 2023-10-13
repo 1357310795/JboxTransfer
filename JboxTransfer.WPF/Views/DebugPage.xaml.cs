@@ -55,11 +55,12 @@ namespace JboxTransfer.Views
 
         private void Page_Loaded(object sender, RoutedEventArgs e)
         {
-            worker = new LoopWorker();
-            worker.Interval = 1000;
-            worker.CanRun += () => true;
-            worker.Go += Worker_Go;
-            DbService.Init("testuser");
+            //worker = new LoopWorker();
+            //worker.Interval = 1000;
+            //worker.CanRun += () => true;
+            //worker.Go += Worker_Go;
+            //DbService.Init("testuser");
+            var file = EmbedResHelper.GetELUA();
 
             //var icon = System.Drawing.Icon.ExtractAssociatedIcon(@"cccccc.idb");
             //MemoryStream ms = new MemoryStream();

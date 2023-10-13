@@ -4,13 +4,99 @@
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:local="clr-namespace:JboxTransfer.Views"
+      xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
       Title="AboutPage"
       Foreground="{DynamicResource MaterialDesignBody}"
       d:Background="AliceBlue" d:DesignHeight="450"
       d:DesignWidth="800"
       mc:Ignorable="d">
     <Grid>
-        <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
-                   Text="AboutPage" />
+        <Grid HorizontalAlignment="Right" VerticalAlignment="Bottom" Width="400" Height="400" Margin="0,0,-80,-80">
+            <Image IsHitTestVisible="False" Source="{StaticResource _sjtu_DrawingImage}" Opacity="0.03"/>
+        </Grid>
+        <Grid HorizontalAlignment="Left" VerticalAlignment="Top" Width="360" Height="360" Margin="-40,-40,0,0">
+            <Image IsHitTestVisible="False" Source="{StaticResource _nic_DrawingImage}" Opacity="0.02"/>
+        </Grid>
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Margin="0,-32,0,0">
+            <Image Width="120" Source="/Resources/jboxtransfer.png" />
+            <TextBlock HorizontalAlignment="Center"
+                       Text="JboxTransfer"
+                       FontSize="36"
+                       FontFamily="pack://application:,,,/Resources/#Comfortaa Medium" />
+            <TextBlock HorizontalAlignment="Center"
+           Text="Version 1.0.0"
+           FontSize="20" Margin="0,8,0,0"
+           FontFamily="/Resources/Comfortaa.ttf#Comfortaa" />
+            <TextBlock HorizontalAlignment="Center"
+                       Margin="0,8,0,0"
+                       Text="高效、安全、便捷地转移您的文件"
+                       FontSize="24" />
+            <StackPanel HorizontalAlignment="Center"
+                        Margin="0,16,0,0"
+                        Orientation="Horizontal">
+                <Button Height="40"
+                        Padding="6" Click="ButtonHome_Click"
+                        Foreground="{DynamicResource MaterialDesignBodyLight}"
+                        Style="{StaticResource MaterialDesignFlatButton}">
+                    <StackPanel Orientation="Horizontal">
+                        <md:PackIcon Width="28" Height="28"
+                                     Kind="Home" />
+                        <TextBlock VerticalAlignment="Center"
+                                   Margin="4,0,0,0"
+                                   Text="主页"
+                                   FontSize="18" />
+                    </StackPanel>
+                </Button>
+                <Border Width="1"
+                        Margin="10,12"
+                        Background="{DynamicResource MaterialDesignBodyLight}"
+                        Opacity="0.6" />
+                <Button Height="40"
+                        Padding="6" Click="ButtonDocs_Click"
+                        Foreground="{DynamicResource MaterialDesignBodyLight}"
+                        Style="{StaticResource MaterialDesignFlatButton}">
+                    <StackPanel Orientation="Horizontal">
+                        <md:PackIcon Width="28" Height="28"
+                                     Kind="BookOpenBlankVariant" />
+                        <TextBlock VerticalAlignment="Center"
+                                   Margin="4,0,0,0"
+                                   Text="文档"
+                                   FontSize="18" />
+                    </StackPanel>
+                </Button>
+                <Border Width="1"
+                        Margin="10,12"
+                        Background="{DynamicResource MaterialDesignBodyLight}"
+                        Opacity="0.6" />
+                <Button Height="40"
+                        Padding="6" Click="ButtonGithub_Click"
+                        Foreground="{DynamicResource MaterialDesignBodyLight}"
+                        Style="{StaticResource MaterialDesignFlatButton}">
+                    <StackPanel Orientation="Horizontal">
+                        <md:PackIcon Width="28" Height="28"
+                                     Kind="Github" />
+                        <TextBlock VerticalAlignment="Center"
+                                   Margin="4,0,0,0"
+                                   Text="仓库"
+                                   FontSize="18" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </StackPanel>
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,8">
+            <TextBlock Text="版权所有 © 2023 上海交通大学网络信息中心" HorizontalAlignment="Center"/>
+            <TextBlock Text="技术支持：ChatSJTU 学生开发团队" HorizontalAlignment="Center"/>
+            <TextBlock HorizontalAlignment="Center">
+                <Hyperlink Click="LinkContact_Click">联系我们</Hyperlink>
+                <Run Text="·"/>
+                <Hyperlink Click="LinkEULA_Click">用户协议</Hyperlink>
+                <Run Text="·"/>
+                <Hyperlink Click="LinkPrivacy_Click">隐私政策</Hyperlink>
+                <Run Text="·"/>
+                <Hyperlink Click="LinkOpenSource_Click">开放源代码许可</Hyperlink>
+            </TextBlock>
+        </StackPanel>
+        
     </Grid>
 </Page>

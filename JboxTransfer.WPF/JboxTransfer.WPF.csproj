@@ -10,10 +10,31 @@
     <RootNamespace>JboxTransfer</RootNamespace>
     <Platforms>AnyCPU;x86;x64</Platforms>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Resources\jboxtransfer.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Resources\Comfortaa.ttf" />
+    <None Remove="Resources\EULA.rtf" />
+    <None Remove="Resources\jboxtransfer.png" />
+    <None Remove="Resources\OpenSource.rtf" />
+    <None Remove="Resources\Privacy.rtf" />
     <None Remove="Resources\privateBackground.e551aecc.jpg" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\EULA.rtf" />
+    <EmbeddedResource Include="Resources\OpenSource.rtf" />
+    <EmbeddedResource Include="Resources\Privacy.rtf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\jboxtransfer.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\Comfortaa.ttf" />
+    <Resource Include="Resources\jboxtransfer.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -22,6 +43,10 @@
 
   <ItemGroup>
 	<PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1" />
+	<PackageReference Include="EmbedResourceCSharp" Version="1.1.3">
+	  <PrivateAssets>all</PrivateAssets>
+	  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+	</PackageReference>
 	<PackageReference Include="MaterialDesignThemes" Version="4.9.0" />
 	<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
 	<PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2045.28" />
