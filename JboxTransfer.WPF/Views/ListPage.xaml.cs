@@ -100,11 +100,19 @@ namespace JboxTransfer.Views
             else if (ListError.Count > 99)
             {
                 ErrorNum = "99+";
-                IsBusy = false;
-                snackBarService.MessageQueue.Enqueue("错误过多，队列被迫终止。请先处理出错的项目。");
             }
             else
                 ErrorNum = ListError.Count.ToString();
+        }
+
+        private void CheckTooManyErrors()
+        {
+            if (ListError.Count > 99)
+            {
+                ErrorNum = "99+";
+                IsBusy = false;
+                snackBarService.MessageQueue.Enqueue("错误过多，队列被迫终止。请先处理出错的项目。");
+            }
         }
 
         private void LoadErrorFromDb()
@@ -212,6 +220,7 @@ namespace JboxTransfer.Views
                         ListCurrent.Remove(task);
                         ListError.Insert(0, task);
                         UpdateErrorNum();
+                        CheckTooManyErrors();
                     }
                 }
             });

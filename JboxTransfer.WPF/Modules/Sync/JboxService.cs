@@ -107,6 +107,10 @@ namespace JboxTransfer.Modules.Sync
             //req.Content = new FormUrlEncodedContent(form);
 
             var resp = req.GetResponse();
+            if (resp.ContentType == "text/html" && resp.ContentLength == 867)
+            {
+                return new CommonResult<MemoryStream>(false, "下载时返回数据类型错误，您可能未登录或者在非校园网环境下");
+            }
             var body = resp.GetResponseStream();
 
             MemoryStream ms = new MemoryStream();

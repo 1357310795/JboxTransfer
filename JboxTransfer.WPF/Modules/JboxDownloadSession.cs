@@ -42,7 +42,7 @@ namespace JboxTransfer.Modules
             if (!res.Success)
                 return res;
             if (res.Result.Length != curchunksize)
-                return new CommonResult<MemoryStream>(false, $"下载时发生块大小错误：got {res.Result.Length}, expected {curchunksize}");
+                return new CommonResult<MemoryStream>(false, $"块大小错误：got {res.Result.Length}, expected {curchunksize}");
             return res;
         }
 
