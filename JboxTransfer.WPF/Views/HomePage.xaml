@@ -5,10 +5,13 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:JboxTransfer.Views"
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:converters="clr-namespace:JboxTransfer.Converters"
              d:Background="AliceBlue" d:DesignHeight="450"
              d:DesignWidth="800" Loaded="Page_Loaded"
              mc:Ignorable="d">
-
+    <UserControl.Resources>
+        <converters:EqualConverter x:Key="EqualConverter" />
+    </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="auto" />
@@ -21,22 +24,26 @@
                     Orientation="Horizontal">
             <RadioButton Margin="4"
                          Content="开始"
+                         IsChecked="{Binding SelectedPage, Converter={StaticResource EqualConverter}, ConverterParameter=StartPage, Mode=OneWay}"
                          Checked="RadioButton_Checked" Tag="Start"
                          Style="{StaticResource MaterialDesignTabRadioButton}"
                          BorderBrush="{DynamicResource PrimaryHueMidBrush}" />
             <RadioButton Margin="4"
                          Content="传输列表"
+                         IsChecked="{Binding SelectedPage, Converter={StaticResource EqualConverter}, ConverterParameter=ListPage, Mode=OneWay}"
                          Checked="RadioButton_Checked" Tag="List"
                          Style="{StaticResource MaterialDesignTabRadioButton}"
                          BorderBrush="{DynamicResource PrimaryHueMidBrush}" />
             <RadioButton Margin="4"
                          Content="设置"
+                         IsChecked="{Binding SelectedPage, Converter={StaticResource EqualConverter}, ConverterParameter=SettingsPage, Mode=OneWay}"
                          Checked="RadioButton_Checked" Tag="Settings"
                          Style="{StaticResource MaterialDesignTabRadioButton}"
                          BorderBrush="{DynamicResource PrimaryHueMidBrush}" />
             <RadioButton Margin="4"
                          Content="Debug"
-                         Visibility="Visible" Checked="RadioButton_Checked"
+                         IsChecked="{Binding SelectedPage, Converter={StaticResource EqualConverter}, ConverterParameter=DebugPage, Mode=OneWay}"
+                         Visibility="Collapsed" Checked="RadioButton_Checked"
                          Tag="Debug"
                          Style="{StaticResource MaterialDesignTabRadioButton}"
                          BorderBrush="{DynamicResource PrimaryHueMidBrush}" />

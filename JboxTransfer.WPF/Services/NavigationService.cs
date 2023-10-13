@@ -1,4 +1,6 @@
-﻿using JboxTransfer.Extensions;
+﻿using CommunityToolkit.Mvvm.Messaging;
+using JboxTransfer.Extensions;
+using JboxTransfer.Models;
 using JboxTransfer.Services.Contracts;
 using System.Diagnostics.CodeAnalysis;
 using System.Windows.Controls;
@@ -90,6 +92,7 @@ public class NavigationService : INavigationService
             var navigated = _frame.Navigate(inst, parameter);
             if (navigated)
             {
+                WeakReferenceMessenger.Default.Send(new PageChangedMessage(pageKey));
                 _lastParameterUsed = parameter;
                 if (vmBeforeNavigation is INavigationAware navigationAware)
                 {

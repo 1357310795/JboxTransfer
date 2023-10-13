@@ -28,13 +28,16 @@ namespace JboxTransfer.Views
     /// HomePage.xaml 的交互逻辑
     /// </summary>
     [INotifyPropertyChanged]
-    public partial class HomePage : UserControl
+    public partial class HomePage : UserControl, IRecipient<PageChangedMessage>
     {
         [ObservableProperty]
         private ImageSource avatarImage;
 
         [ObservableProperty]
         private string nickName;
+
+        [ObservableProperty]
+        private string selectedPage;
 
         INavigationService navigationService;
 
@@ -44,6 +47,7 @@ namespace JboxTransfer.Views
             this.DataContext = this;
             navigationService = ServiceProvider.Current.GetService<INavigationService>();
             navigationService.Frame = this.MainFrame;
+            WeakReferenceMessenger.Default.Register<PageChangedMessage>(this);
         }
 
         private void Page_Loaded(object sender, RoutedEventArgs e)
@@ -70,6 +74,16 @@ namespace JboxTransfer.Views
                 NickName = res.Result.First().OrgUser.Nickname;
             });
             
+        }
+
+        partial void OnSelectedPageChanged(string value)
+        {
+
+        }
+
+        public void Receive(PageChangedMessage message)
+        {
+            SelectedPage = message.Value;
         }
 
         private void RadioButton_Checked(object sender, RoutedEventArgs e)
@@ -127,5 +141,6 @@ namespace JboxTransfer.Views
             };
             Process.Start(psi);
         }
+
     }
 }
