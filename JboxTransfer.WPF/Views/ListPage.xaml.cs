@@ -222,17 +222,15 @@ namespace JboxTransfer.Views
             if (ListCurrent.Count < 99)
             {
                 List<SyncTaskDbModel> items = null;
-                DbService.db.RunInTransaction(() =>
+                //此处应该不需要transaction，因为只有这里会AddTask
+                items = DbService.db.Table<SyncTaskDbModel>().OrderBy(x => x.Order).Where(x => x.State == 0).Take(99 - ListCurrent.Count).ToList(); //.Where(x => x.State == 0)
+                if (items == null || items.Count == 0)
+                    return;
+                foreach (var item in items)
                 {
-                    items = DbService.db.Table<SyncTaskDbModel>().OrderBy(x => x.Order).Where(x => x.State == 0).Take(99 - ListCurrent.Count).ToList(); //.Where(x => x.State == 0)
-                    if (items == null || items.Count == 0)
-                        return;
-                    foreach(var item in items)
-                    {
-                        item.State = 1;
-                        DbService.db.Update(item);
-                    }
-                });
+                    item.State = 1;
+                    DbService.db.Update(item);
+                }
 
                 if (items == null || items.Count == 0)
                     return;

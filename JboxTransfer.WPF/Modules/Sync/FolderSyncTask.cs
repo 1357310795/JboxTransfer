@@ -224,6 +224,12 @@ namespace JboxTransfer.Modules.Sync
                         if (info.Content.Length == 0)
                             break;
 
+                        Monitor.Enter(DbService.db);
+                        if (inst_pts.IsPaused)
+                        {
+                            Monitor.Exit(DbService.db);
+                            return;
+                        }
                         var order = DbService.GetMinOrder() - 1;
                         DbService.db.RunInTransaction(() =>
                         {
@@ -234,6 +240,7 @@ namespace JboxTransfer.Modules.Sync
                             dbModel.RemainParts = page.ToString();
                             DbService.db.Update(dbModel);
                         });
+                        Monitor.Exit(DbService.db);
 
                         succ += info.Content.Length;
                         page++;
