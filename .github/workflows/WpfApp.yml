@@ -52,19 +52,7 @@ jobs:
 
     - name: Build Self-Contained
       run: dotnet publish JboxTransfer.WPF/JboxTransfer.WPF.csproj -c Release -f net7.0-windows --self-contained
-    - name: Delete Extra Files
-      run: |
-          Remove-Item -Force -Recurse -Path "./JboxTransfer.WPF/bin/Release/net7.0-windows/publish/win-x64/cs"
-          Remove-Item -Force -Recurse -Path "./JboxTransfer.WPF/bin/Release/net7.0-windows/publish/win-x64/de"
-          Remove-Item -Force -Recurse -Path "./JboxTransfer.WPF/bin/Release/net7.0-windows/publish/win-x64/es"
-          Remove-Item -Force -Recurse -Path "./JboxTransfer.WPF/bin/Release/net7.0-windows/publish/win-x64/fr"
-          Remove-Item -Force -Recurse -Path "./JboxTransfer.WPF/bin/Release/net7.0-windows/publish/win-x64/it"
-          Remove-Item -Force -Recurse -Path "./JboxTransfer.WPF/bin/Release/net7.0-windows/publish/win-x64/ja"
-          Remove-Item -Force -Recurse -Path "./JboxTransfer.WPF/bin/Release/net7.0-windows/publish/win-x64/ko"
-          Remove-Item -Force -Recurse -Path "./JboxTransfer.WPF/bin/Release/net7.0-windows/publish/win-x64/pl"
-          Remove-Item -Force -Recurse -Path "./JboxTransfer.WPF/bin/Release/net7.0-windows/publish/win-x64/pt-BR"
-          Remove-Item -Force -Recurse -Path "./JboxTransfer.WPF/bin/Release/net7.0-windows/publish/win-x64/ru"
-          Remove-Item -Force -Recurse -Path "./JboxTransfer.WPF/bin/Release/net7.0-windows/publish/win-x64/tr"
+
     - name: Pack
       run: iscc ./Installer/jboxtransfer-noruntime.iss
 
