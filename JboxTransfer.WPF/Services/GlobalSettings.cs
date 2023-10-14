@@ -34,7 +34,7 @@ namespace JboxTransfer.Services
 
         public static SettingsModel Read()
         {
-            Model = new SettingsModel();
+            Model = new SettingsModel() { WorkThreads = 4 };
             if (File.Exists(_fileName))
             {
                 var json = File.ReadAllText(_fileName);

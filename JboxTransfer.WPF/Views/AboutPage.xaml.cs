@@ -31,12 +31,12 @@ namespace JboxTransfer.Views
 
         private void ButtonHome_Click(object sender, RoutedEventArgs e)
         {
-            LaunchHelper.OpenURL("https://chat.sjtu.edu.cn/jboxwebdav");
+            LaunchHelper.OpenURL("https://chat.sjtu.edu.cn/JboxTransfer");
         }
 
         private void ButtonDocs_Click(object sender, RoutedEventArgs e)
         {
-            LaunchHelper.OpenURL("https://chat.sjtu.edu.cn/jboxwebdav");
+            LaunchHelper.OpenURL("https://chat.sjtu.edu.cn/JboxTransfer");
         }
 
         private void ButtonGithub_Click(object sender, RoutedEventArgs e)
