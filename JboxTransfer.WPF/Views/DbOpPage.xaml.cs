@@ -89,6 +89,11 @@ namespace JboxTransfer.Views
             switch (SelectedQueryType.Type)
             {
                 case QueryType.QueryWait:
+                    //你说什么？你看见了sql字符串拼接？
+                    //对上暗号，确定你是学网安的了
+                    //但是teru也是学网安的
+                    //为什么会犯这么“低级的错误”呢
+                    //为什么呢？
                     DoQuery($"Select * From SyncTaskDbModel Where FilePath like '%{QueryText}%' And State = 0");
                     break;
                 case QueryType.QueryCompleted:
