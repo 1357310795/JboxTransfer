@@ -23,7 +23,7 @@ jobs:
     - name: Build
       run: dotnet build JboxTransfer.WPF/JboxTransfer.WPF.csproj -c Release -f net7.0-windows
     - name: Pack
-      run iscc ./Installer/jboxtransfer.iss
+      run: iscc ./Installer/jboxtransfer.iss
     - name: Upload Build Artifacts
       uses: actions/upload-artifact@v3.1.0
       with:
