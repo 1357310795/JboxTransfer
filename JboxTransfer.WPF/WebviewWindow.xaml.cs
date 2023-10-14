@@ -1,7 +1,9 @@
-﻿using JboxTransfer.Services;
+﻿using JboxTransfer.Core.Helpers;
+using JboxTransfer.Services;
 using Microsoft.Web.WebView2.Core;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Security.Policy;
 using System.Text;
@@ -12,8 +14,6 @@ using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace JboxTransfer
 {
@@ -66,7 +66,7 @@ namespace JboxTransfer
         {
             try
             {
-                await webView.EnsureCoreWebView2Async(await CoreWebView2Environment.CreateAsync());
+                await webView.EnsureCoreWebView2Async(await CoreWebView2Environment.CreateAsync(null, PathHelper.AppDataPath));
                 
             }
             catch (WebView2RuntimeNotFoundException)

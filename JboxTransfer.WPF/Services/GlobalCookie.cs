@@ -13,7 +13,7 @@ namespace JboxTransfer.Services
 
         static GlobalCookie()
         {
-            _fileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "cookie.json");
+            _fileName = Path.Combine(PathHelper.AppDataPath, "cookie.json");
         }
 
         private static string _fileName;
