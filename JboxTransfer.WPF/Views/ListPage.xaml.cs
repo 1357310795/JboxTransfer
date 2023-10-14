@@ -68,6 +68,7 @@ namespace JboxTransfer.Views
             checker2.Go += Checker2_Go;
             //checker2.StartRun();
             WeakReferenceMessenger.Default.Register<UserLogoutMessage>(this);
+            WeakReferenceMessenger.Default.Register<SetTopMessage>(this);
             Task.Run(LoadErrorFromDb);
         }
 

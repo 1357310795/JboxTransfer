@@ -223,12 +223,25 @@ namespace JboxTransfer.Modules.Sync
             if (inst_pts.IsPaused) 
                 return;
 
-            var res1 = tbox.PrepareForUpload();
-            if (!res1.success)
+            var res0 = tbox.EnsureDirectoryExists();
+            if (!res0.success)
             {
                 State = SyncTaskState.Error;
                 dbModel.State = 2;
-                Message = res1.result;
+                Message = res0.result;
+                DbService.db.Update(dbModel);
+                return;
+            }
+
+            if (inst_pts.IsPaused)
+                return;
+
+            var res1 = tbox.PrepareForUpload();
+            if (!res1.Success)
+            {
+                State = SyncTaskState.Error;
+                dbModel.State = 2;
+                Message = res1.Message;
                 DbService.db.Update(dbModel);
                 return;
             }
@@ -268,9 +281,9 @@ namespace JboxTransfer.Modules.Sync
                         if (inst_pts.IsPaused)
                             return;
 
-                        res1 = tbox.EnsureNoExpire(curChunk.PartNumber);
-                        if (!res1.success)
-                            throw new Exception($"{res1.result}");
+                        var res3 = tbox.EnsureNoExpire(curChunk.PartNumber);
+                        if (!res3.success)
+                            throw new Exception($"{res3.result}");
 
                         if (inst_pts.IsPaused)
                             return;
@@ -283,8 +296,8 @@ namespace JboxTransfer.Modules.Sync
                             return;
 
                         chunkRes.Result.Position = 0;
-                        var res3 = tbox.Upload(chunkRes.Result, curChunk.PartNumber);
-                        if (res3.success)
+                        var res4 = tbox.Upload(chunkRes.Result, curChunk.PartNumber);
+                        if (res4.success)
                             break;
                         else
                             throw new Exception($"上传块 {curChunk.PartNumber} 发生错误：{res3.result}");

@@ -65,16 +65,21 @@ namespace JboxTransfer.Modules
             State = TboxUploadState.ConfirmKeyInit;
         }
 
-        public CommonResult PrepareForUpload()
+        public CommonResult<TboxErrorMessageDto> PrepareForUpload()
         {
             if (State == TboxUploadState.Ready || State == TboxUploadState.Uploading || State == TboxUploadState.Done)
-                return new CommonResult(true, "");
+                return new CommonResult<TboxErrorMessageDto>(true, "");
 
             if (State == TboxUploadState.NotInit || State == TboxUploadState.Error)
             {
                 var res = TboxService.StartChunkUpload(path, chunkCount);
                 if (!res.Success)
-                    return new CommonResult(false, $"开始分块上传出错：{res.Message}");
+                {
+                    if (res.Result != null)
+                        return new CommonResult<TboxErrorMessageDto>(false, $"开始分块上传出错：{res.Message}", new TboxErrorMessageDto() { Code = res.Result?.Code, Message = res.Result?.Message, Status = res.Result.Status });
+                    else
+                        return new CommonResult<TboxErrorMessageDto>(false, $"开始分块上传出错：{res.Message}");
+                }
                 uploadContext = res.Result;
                 confirmKey = uploadContext.ConfirmKey;
                 for (int i = 1; i <= chunkCount; i++) remainParts.Add(new TboxUploadPartSession(i));
@@ -86,12 +91,17 @@ namespace JboxTransfer.Modules
                 {
                     var res = TboxService.RenewChunkUpload(confirmKey, GetRefreshPartNumberList());
                     if (!res.Success)
-                        return new CommonResult(false, $"刷新分块凭据出错：{res.Message}");
+                    {
+                        if (res.Result != null)
+                            return new CommonResult<TboxErrorMessageDto>(false, $"刷新分块凭据出错：{res.Message}", new TboxErrorMessageDto() { Code = res.Result?.Code, Message = res.Result?.Message, Status = res.Result.Status });
+                        else
+                            return new CommonResult<TboxErrorMessageDto>(false, $"刷新分块凭据出错：{res.Message}");
+                    }
                     uploadContext = res.Result;
                 }
                 State = TboxUploadState.Ready;
             }
-            return new CommonResult(true, "");
+            return new CommonResult<TboxErrorMessageDto>(true, "");
         }
 
         public CommonResult<TboxUploadPartSession> GetNextPartNumber() 
@@ -114,6 +124,26 @@ namespace JboxTransfer.Modules
         public void ResetPartNumber(TboxUploadPartSession part)
         {
             part.Uploading = false;
+        }
+
+        public CommonResult EnsureDirectoryExists()
+        {
+            if (State == TboxUploadState.Ready || State == TboxUploadState.Uploading || State == TboxUploadState.Done || State == TboxUploadState.ConfirmKeyInit)
+                return new CommonResult(true, "");
+
+            var p = path.GetParentPath();
+            if (p == "" || p == "/")
+            {
+                return new CommonResult(true, "");
+            }
+            var res = TboxService.CreateDirectory(p);
+            if (res.Success)
+                return new CommonResult(true, "");
+            if (res.Result == null)
+                return new CommonResult(false, $"创建文件夹出错：{res.Message}");
+            if (res.Result.Code == "SameNameDirectoryOrFileExists")
+                return new CommonResult(true, "");
+            return new CommonResult(false, $"创建文件夹出错：{res.Message}");
         }
 
         public CommonResult EnsureNoExpire(int partNumber)
@@ -209,6 +239,7 @@ namespace JboxTransfer.Modules
         {
             return remainParts.Take(50).Select(x => x.PartNumber).ToList();
         }
+
     }
 
     public class TboxUploadPartSession

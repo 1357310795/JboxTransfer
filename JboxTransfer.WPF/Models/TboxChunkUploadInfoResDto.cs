@@ -33,6 +33,9 @@ namespace JboxTransfer.Models
         [JsonProperty("uploadId")]
         public string UploadId { get; set; }
 
+        [JsonProperty("code")]
+        public string Code { get; set; }
+
         [JsonProperty("status")]
         public long Status { get; set; }
 
