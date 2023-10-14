@@ -17,6 +17,7 @@ namespace JboxTransfer
     {
         protected override void OnStartup(StartupEventArgs e)
         {
+            this.DispatcherUnhandledException += App_DispatcherUnhandledException;
             InitIoC();
             GlobalCookie.Read();
             GlobalSyncInfoService.Read();
@@ -25,6 +26,12 @@ namespace JboxTransfer
             ThemeHelper.ApplyBase(GlobalSettings.Model.ThemeMode == 1);
             ThemeHelper.ChangeHue(GlobalSettings.Model.ThemeColor);
             base.OnStartup(e);
+        }
+
+        private void App_DispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
+        {
+            MessageBox.Show($"出现未经处理的异常，为保护您的数据，程序将自动关闭。\n{e.Exception}");
+            this.Shutdown();
         }
 
         public void InitIoC()

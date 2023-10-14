@@ -179,7 +179,6 @@ namespace JboxTransfer.Views
             };
 
             var bitmap = writer.Write(sContent);
-            bitmap.Save("D:\\qr.png");
             return bitmap.ToBitmapSource();
         }
 
