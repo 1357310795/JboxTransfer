@@ -21,7 +21,7 @@ namespace JboxTransfer.Views
     /// ListPage.xaml 的交互逻辑
     /// </summary>
     [INotifyPropertyChanged]
-    public partial class ListPage : Page, IRecipient<UserLogoutMessage>
+    public partial class ListPage : Page, IRecipient<UserLogoutMessage>, IRecipient<SetTopMessage>
     {
         [ObservableProperty]
         ObservableCollection<SyncTaskViewModel> listCurrent;
@@ -42,7 +42,7 @@ namespace JboxTransfer.Views
         private string errorNum;
 
         private ISnackBarService snackBarService;
-
+        private object addTaskLock = new object();
         //private int maxThread = 8;
 
         public ListPage(ISnackBarService snackBarService)
@@ -215,55 +215,75 @@ namespace JboxTransfer.Views
 
         private void UpdateAddTask()
         {
-            if (ListCurrent.Count < 99)
+            Monitor.Enter(addTaskLock);
+            try
             {
-                List<SyncTaskDbModel> items = null;
-                //此处应该不需要transaction，因为只有这里会AddTask
-                items = DbService.db.Table<SyncTaskDbModel>().OrderBy(x => x.Order).Where(x => x.State == 0).Take(99 - ListCurrent.Count).ToList(); //.Where(x => x.State == 0)
-                if (items == null || items.Count == 0)
-                    return;
-                foreach (var item in items)
+                if (ListCurrent.Count < 99)
                 {
-                    item.State = 1;
-                    DbService.db.Update(item);
-                }
-
-                if (items == null || items.Count == 0)
-                    return;
-
-                foreach(var item in items)
-                {
-                    IBaseTask task2;
-                    if (item.Type == 0)
+                    List<SyncTaskDbModel> items = null;
+                    //此处应该不需要transaction，因为只有这里会AddTask
+                    items = DbService.db.Table<SyncTaskDbModel>().OrderBy(x => x.Order).Where(x => x.State == 0).Take(99 - ListCurrent.Count).ToList(); //.Where(x => x.State == 0)
+                    if (items == null || items.Count == 0)
+                        return;
+                    foreach (var item in items)
                     {
-                        task2 = new FileSyncTask(item);
-                        //task2.Start();
-                    }
-                    else
-                    {
-                        task2 = new FolderSyncTask(item);
-                        //task2.Start();
+                        item.State = 1;
+                        DbService.db.Update(item);
                     }
 
-                    this.Dispatcher.Invoke(() =>
+                    if (items == null || items.Count == 0)
+                        return;
+
+                    foreach (var item in items)
                     {
-                        SyncTaskViewModel vm;
-                        vm = new SyncTaskViewModel()
-                        {
-                            FileName = task2.GetName(),
-                            ParentPath = task2.GetParentPath(),
-                            Task = task2
-                        };
-                        this.Dispatcher.Invoke(() =>
-                        {
-                            vm.Icon = item.Type == 0 ?
-                                        IconHelper.FindIconForFilename(vm.FileName, true) :
-                                        IconHelper.FindIconForFolder(true);
-                        });
-                        ListCurrent.Add(vm);
-                    });
+                        AddToCurrentInternal(item, false);
+                    }
                 }
             }
+            catch (Exception ex)
+            {
+                throw;
+            }
+            finally
+            {
+                Monitor.Exit(addTaskLock);
+            }
+        }
+
+        private void AddToCurrentInternal(SyncTaskDbModel item, bool setTop)
+        {
+            IBaseTask task2;
+            if (item.Type == 0)
+            {
+                task2 = new FileSyncTask(item);
+                //task2.Start();
+            }
+            else
+            {
+                task2 = new FolderSyncTask(item);
+                //task2.Start();
+            }
+
+            this.Dispatcher.Invoke(() =>
+            {
+                SyncTaskViewModel vm;
+                vm = new SyncTaskViewModel()
+                {
+                    FileName = task2.GetName(),
+                    ParentPath = task2.GetParentPath(),
+                    Task = task2
+                };
+                this.Dispatcher.Invoke(() =>
+                {
+                    vm.Icon = item.Type == 0 ?
+                                IconHelper.FindIconForFilename(vm.FileName, true) :
+                                IconHelper.FindIconForFolder(true);
+                });
+                if (setTop)
+                    ListCurrent.Insert(0, vm);
+                else
+                    ListCurrent.Add(vm);
+            });
         }
 
         private void UpdateInfo()
@@ -483,10 +503,45 @@ namespace JboxTransfer.Views
             UpdateErrorNum();
         }
 
+        [RelayCommand]
+        private void SetTop(object sender)
+        {
+            SyncTaskViewModel vm = sender as SyncTaskViewModel;
+            if (vm == null)
+                return;
+            ListCurrent.Remove(vm);
+            ListCurrent.Insert(0, vm);
+        }
+
         public void Receive(UserLogoutMessage message)
         {
             ButtonPause_Click(null, null);
         }
 
+        public void Receive(SetTopMessage message)
+        {
+            var dbModel = message.DbModel;
+            try
+            {
+                Monitor.Enter(addTaskLock);
+                dbModel = DbService.db.Get<SyncTaskDbModel>(dbModel.Id);
+                if (dbModel.State != 0)
+                {
+                    MessageBox.Show("状态错误！传输任务可能已经在队列中");
+                    return;
+                }
+                dbModel.State = 1;
+                DbService.db.Update(dbModel);
+                AddToCurrentInternal(dbModel, true);
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+            finally
+            {
+                Monitor.Exit(addTaskLock);
+            }
+        }
     }
 }

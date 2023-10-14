@@ -6,10 +6,10 @@
       xmlns:local="clr-namespace:JboxTransfer.Views"
       xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
       xmlns:converters="clr-namespace:JboxTransfer.Converters"
-      Title="ListPage" Loaded="Page_Loaded"
+      Title="ListPage"
       Foreground="{DynamicResource MaterialDesignBody}"
       d:Background="AliceBlue" d:DesignHeight="450"
-      d:DesignWidth="800"
+      d:DesignWidth="800" Loaded="Page_Loaded"
       mc:Ignorable="d">
     <Page.Resources>
         <converters:SyncTaskStateToPackIconConverter x:Key="SyncTaskStateToPackIconConverter" />
@@ -99,6 +99,9 @@
                                     <materialDesign:PopupBox HorizontalAlignment="Center" VerticalAlignment="Center"
                                                              Grid.Column="5">
                                         <StackPanel Orientation="Vertical">
+                                            <Button Content="优先传输"
+                                                    Command="{Binding SetTopCommand, RelativeSource={RelativeSource AncestorType=Page, Mode=FindAncestor}}"
+                                                    CommandParameter="{Binding}" />
                                             <Button Content="在 jbox 中打开"
                                                     Command="{Binding OpenInJboxCommand, RelativeSource={RelativeSource AncestorType=Page, Mode=FindAncestor}}"
                                                     CommandParameter="{Binding}" />
@@ -236,8 +239,10 @@
                                                 Margin="10,0,0,0"
                                                 Grid.Column="1"
                                                 Orientation="Vertical">
-                                        <TextBlock Text="{Binding FileName}" ToolTip="{Binding FileName}"/>
-                                        <TextBlock Foreground="{DynamicResource MaterialDesignBodyLight}" ToolTip="{Binding ParentPath}" Text="{Binding ParentPath}" />
+                                        <TextBlock Text="{Binding FileName}" ToolTip="{Binding FileName}" />
+                                        <TextBlock Foreground="{DynamicResource MaterialDesignBodyLight}"
+                                                   Text="{Binding ParentPath}"
+                                                   ToolTip="{Binding ParentPath}" />
                                     </StackPanel>
                                     <StackPanel MinWidth="210"
                                                 VerticalAlignment="Center"

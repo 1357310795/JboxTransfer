@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using JboxTransfer.Helpers;
 using JboxTransfer.Models;
 using JboxTransfer.Modules.Sync;
@@ -9,6 +10,7 @@ using JboxTransfer.ViewModels;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -44,7 +46,7 @@ namespace JboxTransfer.Views
         private string queryText;
 
         [ObservableProperty]
-        private List<SyncTaskQueryViewModel> listResult;
+        private ObservableCollection<SyncTaskQueryViewModel> listResult;
 
         static string[] HintList = { "请输入要查询的项目的路径（支持模糊搜索）", "请输入要查询的项目的路径（支持模糊搜索）", "请输入完整的SQL语句进行查询（Select * From SyncTaskDbModel Where ……）" };
 
@@ -111,14 +113,13 @@ namespace JboxTransfer.Views
                     snackBarService.MessageQueue.Enqueue($"操作执行成功，但是查询结果为空");
                     return;
                 }
-                List<SyncTaskQueryViewModel> list = new List<SyncTaskQueryViewModel>();
+                ListResult = new ObservableCollection<SyncTaskQueryViewModel>();
                 foreach(var item in res)
                 {
-                    list.Add(new SyncTaskQueryViewModel(item) { queryType = SelectedQueryType.Type });
-                    if (list.Count >= 1000)
+                    ListResult.Add(new SyncTaskQueryViewModel(item) { queryType = SelectedQueryType.Type });
+                    if (ListResult.Count >= 1000)
                         break;
                 }
-                ListResult = list;
             }
             catch(Exception ex)
             {
@@ -180,6 +181,30 @@ namespace JboxTransfer.Views
                 return;
             EditDbModelWindow w = new EditDbModelWindow(vm.dbModel);
             w.Show();
+        }
+
+        [RelayCommand]
+        private void SetTop(object sender)
+        {
+            SyncTaskQueryViewModel vm = sender as SyncTaskQueryViewModel;
+            if (vm == null)
+                return;
+            vm.dbModel.Order = DbService.GetMinOrder() - 1;
+            DbService.db.Update(vm.dbModel);
+            SetTopMessage message = new SetTopMessage(vm.dbModel);
+            WeakReferenceMessenger.Default.Send(message);
+            ListResult.Remove(vm);
+        }
+
+        [RelayCommand]
+        private void Cancel(object sender)
+        {
+            SyncTaskQueryViewModel vm = sender as SyncTaskQueryViewModel;
+            if (vm == null)
+                return;
+            vm.dbModel.State = 4;
+            DbService.db.Update(vm.dbModel);
+            ListResult.Remove(vm);
         }
     }
 
