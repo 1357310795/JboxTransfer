@@ -142,5 +142,9 @@ namespace JboxTransfer.Views
             Process.Start(psi);
         }
 
+        private void ButtonNoti_Click(object sender, RoutedEventArgs e)
+        {
+            navigationService.NavigateTo(nameof(NotiPage));
+        }
     }
 }

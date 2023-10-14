@@ -74,6 +74,17 @@
                     Orientation="Horizontal">
             <Button Width="40" Height="40"
                     Padding="0"
+                    Click="ButtonNoti_Click"
+                    Style="{StaticResource MaterialDesignIconButton}"
+                    ToolTip="通知">
+                <md:Badged Badge="." Style="{StaticResource MaterialDesignMiniBadge}">
+                    <md:PackIcon Width="20" Height="20" 
+                                 Foreground="{DynamicResource MaterialDesignBody}"
+                                 Kind="Bell" />
+                </md:Badged>
+            </Button>
+            <Button Width="40" Height="40"
+                    Padding="0"
                     Click="ButtonHelp_Click"
                     Style="{StaticResource MaterialDesignIconButton}"
                     ToolTip="帮助">

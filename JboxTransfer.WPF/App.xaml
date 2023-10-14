@@ -9,6 +9,7 @@
             <ResourceDictionary.MergedDictionaries>
                 <materialDesign:BundledTheme BaseTheme="Light" PrimaryColor="DeepPurple" SecondaryColor="Lime" />
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Defaults.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Badged.xaml" />
                 <ResourceDictionary Source="/Styles/Dictionary1.xaml" />
                 <!--<ResourceDictionary Source="/Styles/MaterialDesignTheme.ProgressBar.xaml" />-->
                 <ResourceDictionary Source="/Styles/ListBox.xaml" />

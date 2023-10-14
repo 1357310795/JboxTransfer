@@ -42,6 +42,7 @@ namespace JboxTransfer
             ioc.AddSingleton<SettingsPage>();
             ioc.AddSingleton<AboutPage>();
             ioc.AddSingleton<DbOpPage>();
+            ioc.AddSingleton<NotiPage>();
 
             var serviceProvider = ioc.BuildServiceProvider();
 
