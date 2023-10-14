@@ -22,10 +22,60 @@ jobs:
 
     - name: Build
       run: dotnet build JboxTransfer.WPF/JboxTransfer.WPF.csproj -c Release -f net7.0-windows
+    - name: Delete Extra Files
+      run: |
+          Remove-Item -Force -Recurse -Path "./JboxTransfer.WPF/bin/Release/net7.0-windows/runtimes/alpine-x64"
+          Remove-Item -Force -Recurse -Path "./JboxTransfer.WPF/bin/Release/net7.0-windows/runtimes/linux-arm"
+          Remove-Item -Force -Recurse -Path "./JboxTransfer.WPF/bin/Release/net7.0-windows/runtimes/linux-arm64"
+          Remove-Item -Force -Recurse -Path "./JboxTransfer.WPF/bin/Release/net7.0-windows/runtimes/linux-armel"
+          Remove-Item -Force -Recurse -Path "./JboxTransfer.WPF/bin/Release/net7.0-windows/runtimes/linux-mips64"
+          Remove-Item -Force -Recurse -Path "./JboxTransfer.WPF/bin/Release/net7.0-windows/runtimes/linux-musl-x64"
+          Remove-Item -Force -Recurse -Path "./JboxTransfer.WPF/bin/Release/net7.0-windows/runtimes/linux-x64"
+          Remove-Item -Force -Recurse -Path "./JboxTransfer.WPF/bin/Release/net7.0-windows/runtimes/linux-x86"
+          Remove-Item -Force -Recurse -Path "./JboxTransfer.WPF/bin/Release/net7.0-windows/runtimes/osx-x64"
+          Remove-Item -Force -Recurse -Path "./JboxTransfer.WPF/bin/Release/net7.0-windows/runtimes/win-arm"
+          Remove-Item -Force -Recurse -Path "./JboxTransfer.WPF/bin/Release/net7.0-windows/runtimes/win-arm64"
     - name: Pack
       run: iscc ./Installer/jboxtransfer.iss
-    - name: Upload Build Artifacts
-      uses: actions/upload-artifact@v3.1.0
+
+    - name: Upload jboxtransfer-x64-installer-online
+      uses: actions/upload-artifact@v3
       with:
-        name: jboxtransfer-x64-installer
-        path: ./Installer/mysetup.exe
+        name: jboxtransfer-x64-installer-online
+        path: ./Installer/jboxtransfer-x64-installer-online.exe
+
+    - name: Upload jboxtransfer-x64-portable-no-runtime
+      uses: actions/upload-artifact@v3
+      with:
+        name: jboxtransfer-x64-portable-no-runtime
+        path: ./JboxTransfer.WPF/bin/Release/net7.0-windows/
+
+    - name: Build Self-Contained
+      run: dotnet publish JboxTransfer.WPF/JboxTransfer.WPF.csproj -c Release -f net7.0-windows --self-contained
+    - name: Delete Extra Files
+      run: |
+          Remove-Item -Force -Recurse -Path "./JboxTransfer.WPF/bin/Release/net7.0-windows/publish/win-x64/cs"
+          Remove-Item -Force -Recurse -Path "./JboxTransfer.WPF/bin/Release/net7.0-windows/publish/win-x64/de"
+          Remove-Item -Force -Recurse -Path "./JboxTransfer.WPF/bin/Release/net7.0-windows/publish/win-x64/es"
+          Remove-Item -Force -Recurse -Path "./JboxTransfer.WPF/bin/Release/net7.0-windows/publish/win-x64/fr"
+          Remove-Item -Force -Recurse -Path "./JboxTransfer.WPF/bin/Release/net7.0-windows/publish/win-x64/it"
+          Remove-Item -Force -Recurse -Path "./JboxTransfer.WPF/bin/Release/net7.0-windows/publish/win-x64/ja"
+          Remove-Item -Force -Recurse -Path "./JboxTransfer.WPF/bin/Release/net7.0-windows/publish/win-x64/ko"
+          Remove-Item -Force -Recurse -Path "./JboxTransfer.WPF/bin/Release/net7.0-windows/publish/win-x64/pl"
+          Remove-Item -Force -Recurse -Path "./JboxTransfer.WPF/bin/Release/net7.0-windows/publish/win-x64/pt-BR"
+          Remove-Item -Force -Recurse -Path "./JboxTransfer.WPF/bin/Release/net7.0-windows/publish/win-x64/ru"
+          Remove-Item -Force -Recurse -Path "./JboxTransfer.WPF/bin/Release/net7.0-windows/publish/win-x64/tr"
+    - name: Pack
+      run: iscc ./Installer/jboxtransfer-noruntime.iss
+
+    - name: Upload jboxtransfer-x64-installer-offline
+      uses: actions/upload-artifact@v3
+      with:
+        name: jboxtransfer-x64-installer-offline
+        path: ./Installer/jboxtransfer-x64-installer-offline.exe
+
+    - name: Upload jboxtransfer-x64-portable-with-runtime
+      uses: actions/upload-artifact@v3
+      with:
+        name: jboxtransfer-x64-portable-with-runtime
+        path: ./JboxTransfer.WPF/bin/Release/net7.0-windows/publish/win-x64/
