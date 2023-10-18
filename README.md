@@ -17,7 +17,9 @@
 |![](https://s2.loli.net/2023/10/16/1KeoLdl9DpOByfi.png)|![](https://s2.loli.net/2023/10/16/5XHylnPGTcuzbqk.png)|
 
 ## 下载&安装
-详见[说明文档](https://chat.sjtu.edu.cn/jboxtransfer/)
+详见[说明文档](https://pan.sjtu.edu.cn/jboxtransfer/)
+
+本项目仅支持在 Windows 平台下使用，如需在其他系统下运行，请使用 [Okabe-Rintarou-0/JboxTransferCLI](https://github.com/Okabe-Rintarou-0/JboxTransferCLI/)
 
 ## 致谢
 - 感谢上海交通大学网络信息中心计算业务部对本项目的支持
