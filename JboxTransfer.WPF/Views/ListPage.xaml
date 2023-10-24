@@ -198,22 +198,43 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition />
                     </Grid.RowDefinitions>
-                    <StackPanel HorizontalAlignment="Left"
-                                Margin="0,16,0,0"
-                                Orientation="Horizontal">
+                    <Grid HorizontalAlignment="Stretch" Margin="0,16,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
                         <Button Margin="16,0,0,0"
+                                Grid.Column="0"
                                 Content="全部重试（保留进度）"
                                 Click="ButtonErrorRestart1_Click"
                                 Style="{StaticResource MaterialDesignOutlinedButton}" />
                         <Button Margin="8,0,0,0"
+                                Grid.Column="1"
                                 Content="全部重试（从头开始）"
                                 Click="ButtonErrorRestart2_Click"
                                 Style="{StaticResource MaterialDesignOutlinedButton}" />
                         <Button Margin="8,0,0,0"
+                                Grid.Column="2"
                                 Content="全部取消"
                                 Click="ButtonErrorCancel_Click"
                                 Style="{StaticResource MaterialDesignOutlinedButton}" />
-                    </StackPanel>
+                        <Button Width="40" Height="40"
+                                HorizontalAlignment="Center" VerticalAlignment="Center"
+                                Padding="0"
+                                Grid.Column="3"
+                                Click="ButtonStopHelp_Click"
+                                Style="{StaticResource MaterialDesignIconButton}"
+                                ToolTip="我该如何处理错误？">
+                            <materialDesign:PackIcon Width="20" Height="20"
+                                                     Foreground="{DynamicResource PrimaryHueDarkBrush}"
+                                                     Kind="CommentQuestionOutline" />
+                        </Button>
+                    </Grid>
                     <ListBox Margin="0,8,0,0"
                              Grid.Row="1"
                              HorizontalContentAlignment="Stretch"

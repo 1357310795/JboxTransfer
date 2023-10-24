@@ -544,5 +544,10 @@ namespace JboxTransfer.Views
                 Monitor.Exit(addTaskLock);
             }
         }
+
+        private void ButtonStopHelp_Click(object sender, RoutedEventArgs e)
+        {
+            LaunchHelper.OpenURL("https://pan.sjtu.edu.cn/jboxtransfer/error-dealing.html");
+        }
     }
 }
