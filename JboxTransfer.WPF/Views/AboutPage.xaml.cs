@@ -31,12 +31,12 @@ namespace JboxTransfer.Views
 
         private void ButtonHome_Click(object sender, RoutedEventArgs e)
         {
-            LaunchHelper.OpenURL("https://chat.sjtu.edu.cn/jboxtransfer");
+            LaunchHelper.OpenURL("https://pan.sjtu.edu.cn/jboxtransfer");
         }
 
         private void ButtonDocs_Click(object sender, RoutedEventArgs e)
         {
-            LaunchHelper.OpenURL("https://chat.sjtu.edu.cn/jboxtransfer");
+            LaunchHelper.OpenURL("https://pan.sjtu.edu.cn/jboxtransfer");
         }
 
         private void ButtonGithub_Click(object sender, RoutedEventArgs e)
@@ -46,7 +46,7 @@ namespace JboxTransfer.Views
 
         private void LinkContact_Click(object sender, RoutedEventArgs e)
         {
-            LaunchHelper.OpenURL("mailto://gpt@sjtu.edu.cn");
+            LaunchHelper.OpenURL("mailto://jbox@sjtu.edu.cn");
         }
 
         private async void LinkEULA_Click(object sender, RoutedEventArgs e)
