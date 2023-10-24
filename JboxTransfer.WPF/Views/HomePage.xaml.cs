@@ -67,12 +67,22 @@ namespace JboxTransfer.Views
                 return;
             }
             this.Dispatcher.Invoke(() => {
-                var avatarurl = "https:" + res.Result.First().OrgUser.Avatar;
-                if (!Uri.TryCreate(avatarurl, UriKind.RelativeOrAbsolute, out var uri))
-                    AvatarImage = (DrawingImage)App.Current.Resources["userDrawingImage"];
-                else
-                    AvatarImage = new BitmapImage(uri);
-                NickName = res.Result.First().OrgUser.Nickname;
+                try
+                {
+                    NickName = res.Result.First().OrgUser.Nickname;
+                    if (res.Result.First().OrgUser.Avatar == null || res.Result.First().OrgUser.Avatar == "")
+                        AvatarImage = (DrawingImage)App.Current.Resources["userDrawingImage"];
+                    else
+                    {
+                        var avatarurl = "https:" + res.Result.First().OrgUser.Avatar;
+                        Uri.TryCreate(avatarurl, UriKind.RelativeOrAbsolute, out var uri);
+                        AvatarImage = new BitmapImage(uri);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    //Todo:log
+                }
             });
             
         }
