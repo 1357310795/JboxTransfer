@@ -72,28 +72,12 @@ namespace JboxTransfer.Modules.Sync
         public static CommonResult<MemoryStream> DownloadChunk(string path, long start, long size, Pack<long> chunkProgress)
         {
             if (size == 0) return new CommonResult<MemoryStream>(true, "", new MemoryStream());
-            Dictionary<string, string> form = new Dictionary<string, string>();
-            form.Add("path_type", "self");
-            form.Add("S", S);
+            Dictionary<string, string> query = new Dictionary<string, string>();
+            query.Add("path_type", "self");
+            query.Add("S", S);
+            query.Add("target_path", path.UrlEncodeByParts());
 
-            string url = "https://jbox.sjtu.edu.cn:10081/v2/files/databox";
-            url += path.UrlEncodeByParts();
-            StringBuilder sb = new StringBuilder();
-            sb.Append(url);
-
-            if (form.Count > 0)
-            {
-                sb.Append("?");
-                int i = 0;
-                foreach (var item in form)
-                {
-                    if (i > 0)
-                        sb.Append("&");
-                    sb.AppendFormat("{0}={1}", item.Key, item.Value);
-                    i++;
-                }
-            }
-            url = sb.ToString();
+            string url = "https://jbox.sjtu.edu.cn:10081/v2/files/databox" + UrlHelper.BuildQuery(query);
 
             HttpWebRequest req = HttpWebRequest.CreateHttp(url);
             req.Method = "GET";
@@ -140,7 +124,11 @@ namespace JboxTransfer.Modules.Sync
                 return new CommonResult<JboxItemInfo>(false, $"未登录，请先登录");
 
             HttpClient client = NetService.Client;
-            HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Get, baseUrl + $"/v2/metadata_page/databox" + path.UrlEncodeByParts() + $"?S={S}");
+
+            Dictionary<string, string> query = new Dictionary<string, string>();
+            query.Add("S", S);
+            query.Add("target_path", path.UrlEncodeByParts());
+            HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Get, baseUrl + $"/v2/metadata_page/databox" + UrlHelper.BuildQuery(query));
             req.Headers.Accept.ParseAdd("text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
             req.Headers.AcceptEncoding.ParseAdd("gzip, deflate, br");
             req.Headers.AcceptLanguage.ParseAdd("zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7");

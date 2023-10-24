@@ -348,7 +348,7 @@ namespace JboxTransfer.Modules.Sync
             query.Add("access_token", TboxAccessTokenKeeper.Cred.AccessToken);
 
             HttpClient client = NetService.Client;
-            HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Put, baseUrl + $"/api/v1/directory/{TboxAccessTokenKeeper.Cred.LibraryId}/{TboxAccessTokenKeeper.Cred.SpaceId}/{dirpath}" + UrlHelper.BuildQuery(query));
+            HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Put, baseUrl + $"/api/v1/directory/{TboxAccessTokenKeeper.Cred.LibraryId}/{TboxAccessTokenKeeper.Cred.SpaceId}/{dirpath.UrlEncodeByParts()}" + UrlHelper.BuildQuery(query));
 
             try
             {
