@@ -25,7 +25,7 @@
                        FontSize="36"
                        FontFamily="pack://application:,,,/Resources/#Comfortaa Medium" />
             <TextBlock HorizontalAlignment="Center"
-           Text="Version 1.0.0"
+           Text="Version 1.0.1"
            FontSize="20" Margin="0,8,0,0"
            FontFamily="/Resources/Comfortaa.ttf#Comfortaa" />
             <TextBlock HorizontalAlignment="Center"

@@ -11,6 +11,7 @@
     <Platforms>AnyCPU;x86;x64</Platforms>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Resources\jboxtransfer.ico</ApplicationIcon>
+	<Version>1.0.1</Version>
   </PropertyGroup>
 
   <ItemGroup>
