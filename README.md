@@ -1,4 +1,4 @@
-![](https://s2.loli.net/2023/10/16/IWabzNsLHw9Zpmg.png)
+![](https://s2.loli.net/2023/11/17/oAhHsQP6N2VLD78.png)
 <p align="center">
   <img align="center" src="https://img.shields.io/github/license/1357310795/JboxTransfer" /> 
   <img align="center" src="https://img.shields.io/github/forks/1357310795/JboxTransfer" /> 
