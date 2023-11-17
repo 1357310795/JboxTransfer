@@ -51,12 +51,12 @@ namespace JboxTransfer.Views
         private void Page_Loaded(object sender, RoutedEventArgs e)
         {
             ImageSource = CreateQRCode("Loading...");
-            helper = new JacFastLoginHelper(GlobalCookie.CookieContainer, "https://my.sjtu.edu.cn/ui/appmyinfo");
+            helper = new JacFastLoginHelper(GlobalCookie.Default.CookieContainer, "https://my.sjtu.edu.cn/ui/appmyinfo");
             helper.Prepared += Helper_Prepared;
             helper.LoginFail += Helper_LoginFail;
             helper.LoginSuccess += Helper_LoginSuccess;
 
-            if (GlobalCookie.HasJacCookie())
+            if (GlobalCookie.Default.HasJacCookie())
                 Task.Run(AutoLogin);
             else
                 helper.Start();
@@ -92,7 +92,7 @@ namespace JboxTransfer.Views
                     App.Current.MainWindow = mw;
                     //navigationService.NavigateTo(nameof(HomePage));
                 });
-                GlobalCookie.Save();
+                GlobalCookie.Default.Save();
             }
         }
 
@@ -145,7 +145,7 @@ namespace JboxTransfer.Views
                 App.Current.MainWindow.Close();
                 App.Current.MainWindow = mw;
             });
-            GlobalCookie.Save();
+            GlobalCookie.Default.Save();
             //Debug.WriteLine(GlobalCookie.HasJacCookie());
         }
 
@@ -234,7 +234,7 @@ namespace JboxTransfer.Views
                 App.Current.MainWindow.Close();
                 App.Current.MainWindow = mw;
             });
-            GlobalCookie.Save();
+            GlobalCookie.Default.Save();
             //Debug.WriteLine(GlobalCookie.HasJacCookie());
         }
     }

@@ -19,12 +19,12 @@ namespace JboxTransfer
         {
             this.DispatcherUnhandledException += App_DispatcherUnhandledException;
             InitIoC();
-            GlobalCookie.Read();
-            GlobalSyncInfoService.Read();
+            GlobalCookie.Default.Read();
+            GlobalSyncInfoService.Default.Read();
             NetService.Init();
-            GlobalSettings.Read();
-            ThemeHelper.ApplyBase(GlobalSettings.Model.ThemeMode == 1);
-            ThemeHelper.ChangeHue(GlobalSettings.Model.ThemeColor);
+            GlobalSettings.Default.Read();
+            ThemeHelper.ApplyBase(GlobalSettings.Default.Model.ThemeMode == 1);
+            ThemeHelper.ChangeHue(GlobalSettings.Default.Model.ThemeColor);
             base.OnStartup(e);
         }
 

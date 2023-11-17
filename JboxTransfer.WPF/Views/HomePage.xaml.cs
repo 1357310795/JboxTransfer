@@ -120,7 +120,7 @@ namespace JboxTransfer.Views
         private void ButtonLogout_Click(object sender, RoutedEventArgs e)
         {
             WeakReferenceMessenger.Default.Send(new UserLogoutMessage(0));
-            var res = GlobalCookie.Clear();
+            var res = GlobalCookie.Default.Clear();
             if (!res.success)
             {
                 MessageBox.Show("cookie.json 删除失败，您需要手动删除本程序所在文件夹内的 cookie.json 文件，然后重启程序");

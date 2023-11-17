@@ -45,7 +45,7 @@ namespace JboxTransfer
                             var ja = cookieObj.FirstOrDefault(x => x.Name == "JAAuthCookie");
                             if (ja != null)
                             {
-                                GlobalCookie.CookieContainer.Add(ja.ToSystemNetCookie());
+                                GlobalCookie.Default.CookieContainer.Add(ja.ToSystemNetCookie());
                                 this.DialogResult = true;
                                 this.Close();
                                 return;

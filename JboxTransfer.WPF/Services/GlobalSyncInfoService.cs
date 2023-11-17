@@ -1,4 +1,5 @@
 ﻿using JboxTransfer.Models;
+using JboxTransfer.Modules;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -10,32 +11,31 @@ using System.Threading.Tasks;
 
 namespace JboxTransfer.Services
 {
-    public class GlobalSyncInfoService
+    public class GlobalSyncInfoService : StorageableBase
     {
-        public static GlobalSyncInfo Info { get; set; }
+        public static GlobalSyncInfoService Default = new GlobalSyncInfoService();
+        public override string FileName => "syncinfo.json";
+        public override StorageMode Mode => StorageMode.AppdataFolder;
+        public GlobalSyncInfo Info { get; set; }
 
-        static GlobalSyncInfoService()
+        public void Save()
         {
-            _fileName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "syncinfo.json");
+            base.Save(JsonConvert.SerializeObject(Info));
         }
 
-        private static string _fileName;
-
-        public static void Save()
-        {
-            File.WriteAllText(_fileName, JsonConvert.SerializeObject(Info));
-        }
-
-        public static GlobalSyncInfo Read()
+        public GlobalSyncInfo Read()
         {
             Info = new GlobalSyncInfo();
-            if (File.Exists(_fileName))
+            try
             {
-                var json = File.ReadAllText(_fileName);
-                var Info = JsonConvert.DeserializeObject<GlobalSyncInfo>(json);
+                var json = base.Read();
+                Info = JsonConvert.DeserializeObject<GlobalSyncInfo>(json);
+            }
+            catch (Exception ex)
+            {
+
             }
             return Info;
         }
-
     }
 }

@@ -52,7 +52,7 @@ namespace JboxTransfer.Modules.Sync
                     return new CommonResult(false, $"校外访问");
                 }
 
-                var cookies = GlobalCookie.CookieContainer.GetCookies(new Uri("https://jbox.sjtu.edu.cn"));
+                var cookies = GlobalCookie.Default.CookieContainer.GetCookies(new Uri("https://jbox.sjtu.edu.cn"));
                 var Sc = cookies.FirstOrDefault(x => x.Name == "S");
                 if (Sc != null)
                 {
@@ -87,7 +87,7 @@ namespace JboxTransfer.Modules.Sync
             req.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36 Edg/116.0.1938.76";
             req.Referer = "https://jbox.sjtu.edu.cn/";
             req.AddRange(start, start + size - 1);
-            req.CookieContainer = GlobalCookie.CookieContainer;
+            req.CookieContainer = GlobalCookie.Default.CookieContainer;
             //req.Content = new FormUrlEncodedContent(form);
 
             var resp = req.GetResponse();

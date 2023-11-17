@@ -1,4 +1,5 @@
 ﻿using JboxTransfer.Core.Helpers;
+using JboxTransfer.Modules;
 using Newtonsoft.Json;
 using System.Collections;
 using System.IO;
@@ -16,29 +17,29 @@ namespace JboxTransfer.Services
         public string ThemeColor { get; set; }
         public int WorkThreads { get; set; }
     }
-    public static class GlobalSettings
+    public class GlobalSettings : StorageableBase
     {
-        public static SettingsModel Model { get; set; }
-        static GlobalSettings()
+        public static GlobalSettings Default = new GlobalSettings();
+        public override string FileName => "settings.json";
+        public override StorageMode Mode => StorageMode.AppdataFolder;
+        public SettingsModel Model { get; set; }
+
+        public void Save()
         {
-            _fileName = Path.Combine(PathHelper.AppDataPath, "settings.json");
+            base.Save(JsonConvert.SerializeObject(Model));
         }
 
-        private static string _fileName;
-
-        public static void Save()
-        {
-            Directory.CreateDirectory(PathHelper.AppDataPath);
-            File.WriteAllText(_fileName, JsonConvert.SerializeObject(Model));
-        }
-
-        public static SettingsModel Read()
+        public SettingsModel Read()
         {
             Model = new SettingsModel() { WorkThreads = 4 };
-            if (File.Exists(_fileName))
+            try
             {
-                var json = File.ReadAllText(_fileName);
+                var json = base.Read();
                 Model = JsonConvert.DeserializeObject<SettingsModel>(json);
+            }
+            catch (Exception ex)
+            {
+
             }
             return Model;
         }

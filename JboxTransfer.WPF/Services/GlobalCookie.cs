@@ -1,49 +1,52 @@
 ﻿using JboxTransfer.Core.Helpers;
+using JboxTransfer.Models;
+using JboxTransfer.Modules;
 using Newtonsoft.Json;
 using System.Collections;
 using System.IO;
 using System.Net;
+using System.Security.Cryptography;
 using Teru.Code.Models;
+using static JboxTransfer.Modules.StorageableBase;
 
 namespace JboxTransfer.Services
 {
-    public static class GlobalCookie
+    public class GlobalCookie : StorageableBase
     {
-        public static CookieContainer CookieContainer { get; set; }
+        public static GlobalCookie Default = new GlobalCookie();
+        public override string FileName => "cookie.json";
+        public override StorageMode Mode => StorageMode.AppdataFolder;
+        public CookieContainer CookieContainer { get; set; }
 
-        static GlobalCookie()
+        public void Save()
         {
-            _fileName = Path.Combine(PathHelper.AppDataPath, "cookie.json");
+            base.Save(JsonConvert.SerializeObject(CookieContainer.GetAllCookies().Select(i => new CookieInfo(i))));
         }
 
-        private static string _fileName;
-
-        public static void Save()
-        {
-            Directory.CreateDirectory(PathHelper.AppDataPath);
-            File.WriteAllText(_fileName, JsonConvert.SerializeObject(CookieContainer.GetAllCookies().Select(i => new CookieInfo(i))));
-        }
-
-        public static CookieContainer Read()
+        public CookieContainer Read()
         {
             CookieContainer = new CookieContainer();
-            if (File.Exists(_fileName))
+            try
             {
-                var json = File.ReadAllText(_fileName);
+                var json = base.Read();
                 var result = JsonConvert.DeserializeObject<List<CookieInfo>>(json);
                 foreach (var cookie in result)
                 {
                     CookieContainer.Add(cookie.ToCookie());
                 }
             }
+            catch (Exception ex)
+            {
+
+            }
             return CookieContainer;
         }
 
-        public static CommonResult Clear()
+        public CommonResult Clear()
         {
             try
             {
-                File.Delete(_fileName);
+                base.Clear();
                 CookieContainer = new CookieContainer();
                 return new CommonResult(true, "");
             }
@@ -53,7 +56,7 @@ namespace JboxTransfer.Services
             }
         }
 
-        public static bool HasJacCookie()
+        public bool HasJacCookie()
         {
             return CookieContainer.GetAllCookies().Any(x => x.Name == "JAAuthCookie");
         }

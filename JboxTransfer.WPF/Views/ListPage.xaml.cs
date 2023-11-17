@@ -177,7 +177,7 @@ namespace JboxTransfer.Views
                 x => x.Task.State == SyncTaskState.Running ||
                 x.Task.State == SyncTaskState.Error ||
                 x.Task.State == SyncTaskState.Complete
-                ) < GlobalSettings.Model.WorkThreads)
+                ) < GlobalSettings.Default.Model.WorkThreads)
             {
                 Debug.WriteLine("begin start new");
                 var x = ListCurrent.FirstOrDefault(x => (x.Task.State == SyncTaskState.Wait || x.Task.State == SyncTaskState.Pause) && (x.IsUserPause == false));
@@ -314,7 +314,7 @@ namespace JboxTransfer.Views
                 return;
             }
             IsBusy = true;
-            var t = GlobalSettings.Model.WorkThreads;
+            var t = GlobalSettings.Default.Model.WorkThreads;
             foreach (var vm in ListCurrent)
             {
                 vm.IsUserPause = false;
