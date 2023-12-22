@@ -7,8 +7,10 @@ using JboxTransfer.Modules.Sync;
 using JboxTransfer.Services;
 using JboxTransfer.Services.Contracts;
 using JboxTransfer.ViewModels;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -109,7 +111,8 @@ namespace JboxTransfer.Views
         {
             try
             {
-                var res = DbService.db.Query<SyncTaskDbModel>(sql);
+                var cmd = DbService.db.CreateCommand(sql);
+                var res = cmd.ExecuteDeferredGenericQuery().ToList();
                 if (res == null) {
                     snackBarService.MessageQueue.Enqueue($"查询结果为空");
                     return;
@@ -118,12 +121,22 @@ namespace JboxTransfer.Views
                     snackBarService.MessageQueue.Enqueue($"操作执行成功，但是查询结果为空");
                     return;
                 }
-                ListResult = new ObservableCollection<SyncTaskQueryViewModel>();
-                foreach(var item in res)
+
+                if (res.First().ContainsKey("Id") && res.First().ContainsKey("Type"))
                 {
-                    ListResult.Add(new SyncTaskQueryViewModel(item) { queryType = SelectedQueryType.Type });
-                    if (ListResult.Count >= 1000)
-                        break;
+                    ListResult = new ObservableCollection<SyncTaskQueryViewModel>();
+                    foreach (var item in res)
+                    {
+                        ListResult.Add(SyncTaskQueryViewModel.Create(item, SelectedQueryType.Type));
+                        if (ListResult.Count >= 1000)
+                            break;
+                    }
+                }
+                else
+                {
+                    var json = JsonConvert.SerializeObject(res, Formatting.Indented);
+                    DbQueryResWindow w = new DbQueryResWindow(json);
+                    w.Show();
                 }
             }
             catch(Exception ex)
