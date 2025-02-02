@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JboxTransfer.Console", "Jbo
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JboxTransfer.Core", "JboxTransfer.Core\JboxTransfer.Core.csproj", "{91F5FE87-BE3A-4F5F-BBF0-EF4BB340B2D6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JboxTransfer.Server", "JboxTransfer.Server\JboxTransfer.Server.csproj", "{10DAD0C0-4DFB-4F0B-956A-DFC3DAFC572D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,6 +57,18 @@ Global
 		{91F5FE87-BE3A-4F5F-BBF0-EF4BB340B2D6}.Release|x64.Build.0 = Release|x64
 		{91F5FE87-BE3A-4F5F-BBF0-EF4BB340B2D6}.Release|x86.ActiveCfg = Release|x86
 		{91F5FE87-BE3A-4F5F-BBF0-EF4BB340B2D6}.Release|x86.Build.0 = Release|x86
+		{10DAD0C0-4DFB-4F0B-956A-DFC3DAFC572D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10DAD0C0-4DFB-4F0B-956A-DFC3DAFC572D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10DAD0C0-4DFB-4F0B-956A-DFC3DAFC572D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{10DAD0C0-4DFB-4F0B-956A-DFC3DAFC572D}.Debug|x64.Build.0 = Debug|Any CPU
+		{10DAD0C0-4DFB-4F0B-956A-DFC3DAFC572D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{10DAD0C0-4DFB-4F0B-956A-DFC3DAFC572D}.Debug|x86.Build.0 = Debug|Any CPU
+		{10DAD0C0-4DFB-4F0B-956A-DFC3DAFC572D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10DAD0C0-4DFB-4F0B-956A-DFC3DAFC572D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10DAD0C0-4DFB-4F0B-956A-DFC3DAFC572D}.Release|x64.ActiveCfg = Release|Any CPU
+		{10DAD0C0-4DFB-4F0B-956A-DFC3DAFC572D}.Release|x64.Build.0 = Release|Any CPU
+		{10DAD0C0-4DFB-4F0B-956A-DFC3DAFC572D}.Release|x86.ActiveCfg = Release|Any CPU
+		{10DAD0C0-4DFB-4F0B-956A-DFC3DAFC572D}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
