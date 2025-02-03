@@ -160,7 +160,7 @@ namespace JboxTransfer.Helpers
                 if (html == null || html == "")
                     return new CommonResult<string>(false, $"空内容");
 
-                var reg = new Regex(@"<input type=""hidden"" name=""uuid"" value=""(.+?)"">");
+                var reg = new Regex(@"uuid: ""(.+?)""");
                 var match = reg.Match(html);
                 if (!match.Success)
                     return new CommonResult<string>(false, $"未找到uuid");
