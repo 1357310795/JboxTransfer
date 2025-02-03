@@ -1,10 +1,9 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-using JboxTransfer.Core.Helpers;
+using JboxTransfer.Core.Models;
 using JboxTransfer.Core.Modules;
+using JboxTransfer.Core.Modules.Sync;
+using JboxTransfer.Core.Services;
 using JboxTransfer.Helpers;
-using JboxTransfer.Models;
-using JboxTransfer.Modules.Sync;
-using JboxTransfer.Services;
 using Newtonsoft.Json;
 using System.Diagnostics;
 using System.IO;

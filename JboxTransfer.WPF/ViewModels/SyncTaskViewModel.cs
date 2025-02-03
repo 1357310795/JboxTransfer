@@ -1,11 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-using JboxTransfer.Models;
-using JboxTransfer.Modules.Sync;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using JboxTransfer.Core.Models;
+using JboxTransfer.Core.Modules.Sync;
 using System.Windows.Media;
 
 namespace JboxTransfer.ViewModels

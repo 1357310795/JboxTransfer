@@ -1,7 +1,9 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Messaging;
+using JboxTransfer.Core.Modules.Sync;
+using JboxTransfer.Core.Services;
 using JboxTransfer.Models;
-using JboxTransfer.Modules.Sync;
+using JboxTransfer.Models.Messages;
 using JboxTransfer.Services;
 using JboxTransfer.Services.Contracts;
 using Microsoft.Extensions.DependencyInjection;

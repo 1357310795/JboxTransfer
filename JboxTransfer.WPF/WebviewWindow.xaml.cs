@@ -1,5 +1,5 @@
 ﻿using JboxTransfer.Core.Helpers;
-using JboxTransfer.Services;
+using JboxTransfer.Core.Services;
 using Microsoft.Web.WebView2.Core;
 using System;
 using System.Collections.Generic;

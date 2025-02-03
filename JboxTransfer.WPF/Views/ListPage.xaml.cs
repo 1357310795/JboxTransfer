@@ -2,10 +2,11 @@
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using JboxTransfer.Core.Helpers;
+using JboxTransfer.Core.Models;
+using JboxTransfer.Core.Modules.Sync;
+using JboxTransfer.Core.Services;
 using JboxTransfer.Helpers;
-using JboxTransfer.Models;
-using JboxTransfer.Modules.Sync;
-using JboxTransfer.Services;
+using JboxTransfer.Models.Messages;
 using JboxTransfer.Services.Contracts;
 using JboxTransfer.ViewModels;
 using System.Collections.ObjectModel;
@@ -197,13 +198,13 @@ namespace JboxTransfer.Views
                 for (int i = ListCurrent.Count - 1; i >= 0; i--)
                 {
                     var task = ListCurrent[i];
-                    if (task.State == Models.SyncTaskState.Complete)
+                    if (task.State == SyncTaskState.Complete)
                     {
                         ListCurrent.Remove(task);
                         ListCompleted.Insert(0, task);
                         task.Task = null;
                     }
-                    else if (task.State == Models.SyncTaskState.Error)
+                    else if (task.State == SyncTaskState.Error)
                     {
                         ListCurrent.Remove(task);
                         ListError.Insert(0, task);

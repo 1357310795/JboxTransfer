@@ -1,8 +1,8 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using JboxTransfer.Core.Helpers;
+using JboxTransfer.Core.Services;
 using JboxTransfer.Helpers;
-using JboxTransfer.Services;
 using JboxTransfer.Services.Contracts;
 using MaterialDesignColors;
 using System;

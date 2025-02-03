@@ -20,9 +20,10 @@ using ZXing;
 using ZXing.Windows.Compatibility;
 using System.Diagnostics;
 using JboxTransfer.Services.Contracts;
-using JboxTransfer.Modules.Sync;
 using System.Xml.Serialization;
 using Teru.Code.Models;
+using JboxTransfer.Core.Modules.Sync;
+using JboxTransfer.Core.Services;
 
 namespace JboxTransfer.Views
 {

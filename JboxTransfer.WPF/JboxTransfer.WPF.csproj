@@ -65,8 +65,4 @@
     <ProjectReference Include="..\JboxTransfer.Core\JboxTransfer.Core.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Models\Messages\" />
-  </ItemGroup>
-
 </Project>

@@ -1,4 +1,4 @@
-﻿using JboxTransfer.Services;
+﻿using JboxTransfer.Core.Services;
 using Newtonsoft.Json;
 using System.IO;
 using System.Net;

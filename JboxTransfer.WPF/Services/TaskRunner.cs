@@ -1,9 +1,4 @@
-﻿using JboxTransfer.Modules.Sync;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using JboxTransfer.Core.Modules.Sync;
 
 namespace JboxTransfer.Services
 {

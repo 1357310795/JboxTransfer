@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using JboxTransfer.Core.Models;
+using JboxTransfer.Core.Services;
 using JboxTransfer.Models;
-using JboxTransfer.Services;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;

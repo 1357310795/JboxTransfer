@@ -1,8 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.Messaging;
 using JboxTransfer.Extensions;
-using JboxTransfer.Models;
+using JboxTransfer.Models.Messages;
 using JboxTransfer.Services.Contracts;
-using System.Diagnostics.CodeAnalysis;
 using System.Windows.Controls;
 using System.Windows.Navigation;
 using static JboxTransfer.Services.TransitionService;
