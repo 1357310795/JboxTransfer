@@ -1,6 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using JboxTransfer.Core.Models;
-using JboxTransfer.Core.Modules.Sync;
+using JboxTransfer.Core.Modules.Jbox;
 using JboxTransfer.Core.Services;
 using JboxTransfer.Services;
 using JboxTransfer.Services.Contracts;

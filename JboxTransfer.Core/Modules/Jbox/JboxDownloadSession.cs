@@ -1,8 +1,7 @@
 ﻿using JboxTransfer.Core.Extensions;
-using JboxTransfer.Core.Modules.Sync;
 using Teru.Code.Models;
 
-namespace JboxTransfer.Core.Modules
+namespace JboxTransfer.Core.Modules.Jbox
 {
     public class JboxDownloadSession
     {

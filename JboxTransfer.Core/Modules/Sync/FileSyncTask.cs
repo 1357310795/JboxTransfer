@@ -1,14 +1,13 @@
 ﻿using JboxTransfer.Core.Extensions;
 using JboxTransfer.Core.Helpers;
-using JboxTransfer.Core.Modules;
 using JboxTransfer.Core.Models;
 using JboxTransfer.Core.Services;
 using Newtonsoft.Json;
 using System.Diagnostics;
-using System.IO;
 using System.Text;
 using Teru.Code.Models;
-using MD5 = JboxTransfer.Core.Modules.MD5;
+using JboxTransfer.Core.Modules.Tbox;
+using JboxTransfer.Core.Modules.Jbox;
 
 namespace JboxTransfer.Core.Modules.Sync
 {

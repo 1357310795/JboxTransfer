@@ -1,7 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using JboxTransfer.Core.Helpers;
-using JboxTransfer.Core.Modules.Sync;
+using JboxTransfer.Core.Modules.Jbox;
 using JboxTransfer.Helpers;
 using JboxTransfer.Services;
 using JboxTransfer.ViewModels;

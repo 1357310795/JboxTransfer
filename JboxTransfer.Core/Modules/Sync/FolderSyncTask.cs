@@ -13,6 +13,8 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using Teru.Code.Models;
+using JboxTransfer.Core.Modules.Jbox;
+using JboxTransfer.Core.Modules.Tbox;
 
 namespace JboxTransfer.Core.Modules.Sync
 {

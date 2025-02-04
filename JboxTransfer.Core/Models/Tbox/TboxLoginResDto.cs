@@ -15,8 +15,8 @@ namespace JboxTransfer.Core.Models.Tbox
         [JsonProperty("isNewUser")]
         public bool IsNewUser { get; set; }
 
-        [JsonProperty("organizations")]
-        public List<Organization> Organizations { get; set; }
+        //[JsonProperty("organizations")]
+        //public List<Organization> Organizations { get; set; }
 
         [JsonProperty("userId")]
         public long UserId { get; set; }

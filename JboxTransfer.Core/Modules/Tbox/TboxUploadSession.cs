@@ -1,7 +1,6 @@
 ﻿using JboxTransfer.Core.Extensions;
 using JboxTransfer.Core.Helpers;
 using JboxTransfer.Core.Models.Tbox;
-using JboxTransfer.Core.Modules.Sync;
 using System;
 using System.Buffers;
 using System.Collections;
@@ -14,7 +13,7 @@ using System.Threading.Tasks;
 using Teru.Code.Extensions;
 using Teru.Code.Models;
 
-namespace JboxTransfer.Core.Modules
+namespace JboxTransfer.Core.Modules.Tbox
 {
     /// <summary>
     /// 用于管理上传整个文件的会话。支持由confirmKey进行断点续传
@@ -180,7 +179,7 @@ namespace JboxTransfer.Core.Modules
             sb.Append("https://");
             sb.Append(uploadContext.Domain);
             sb.Append(uploadContext.Path);
-            sb.Append(UrlHelper.BuildQuery(query));
+            sb.Append(UriHelper.BuildQuery(query));
             string url = sb.ToString();
 
             HttpWebRequest req = WebRequest.CreateHttp(url);

@@ -1,5 +1,5 @@
-﻿using JboxTransfer.Server.Modules.DataWrapper;
-using JboxTransfer.Server.Modules.Db;
+﻿using JboxTransfer.Core.Modules.Db;
+using JboxTransfer.Server.Modules.DataWrapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;

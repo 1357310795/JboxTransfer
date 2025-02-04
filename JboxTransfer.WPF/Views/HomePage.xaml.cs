@@ -1,6 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Messaging;
-using JboxTransfer.Core.Modules.Sync;
+using JboxTransfer.Core.Modules.Tbox;
 using JboxTransfer.Core.Services;
 using JboxTransfer.Models;
 using JboxTransfer.Models.Messages;

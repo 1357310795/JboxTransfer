@@ -22,8 +22,9 @@ using System.Diagnostics;
 using JboxTransfer.Services.Contracts;
 using System.Xml.Serialization;
 using Teru.Code.Models;
-using JboxTransfer.Core.Modules.Sync;
 using JboxTransfer.Core.Services;
+using JboxTransfer.Core.Modules.Jbox;
+using JboxTransfer.Core.Modules.Tbox;
 
 namespace JboxTransfer.Views
 {

@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using JboxTransfer.Core.Helpers;
 using JboxTransfer.Core.Models;
+using JboxTransfer.Core.Modules.Jbox;
 using JboxTransfer.Core.Modules.Sync;
 using JboxTransfer.Core.Services;
 using JboxTransfer.Helpers;

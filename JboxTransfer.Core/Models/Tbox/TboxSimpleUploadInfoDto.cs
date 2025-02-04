@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace JboxTransfer.Core.Models.Tbox
 {
-    public partial class TboxStartChunkUploadResDto
+    public partial class TboxSimpleUploadInfoDto
     {
         [JsonProperty("confirmKey")]
         public string ConfirmKey { get; set; }
@@ -16,37 +16,29 @@ namespace JboxTransfer.Core.Models.Tbox
         public string Domain { get; set; }
 
         [JsonProperty("expiration")]
-        public DateTime Expiration { get; set; }
+        public string Expiration { get; set; }
 
-        [JsonProperty("parts")]
-        public Dictionary<string, TboxChunkUploadPart> Parts { get; set; }
+        [JsonProperty("headers")]
+        public Dictionary<string, string> Headers { get; set; }
+        //public TboxUploadHeaders Headers { get; set; }
 
         [JsonProperty("path")]
         public string Path { get; set; }
-
-        [JsonProperty("uploadId")]
-        public string UploadId { get; set; }
-
-        [JsonProperty("code")]
-        public string Code { get; set; }
-
-        [JsonProperty("status")]
-        public long Status { get; set; }
-
-        [JsonProperty("message")]
-        public string Message { get; set; }
     }
 
-    public partial class TboxChunkUploadPart
-    {
-        [JsonProperty("headers")]
-        public Dictionary<string, string> Headers { get; set; }
-    }
-
-    public partial class TboxChunkUploadHeaders
+    public partial class TboxUploadHeaders
     {
         [JsonProperty("authorization")]
         public string Authorization { get; set; }
+
+        [JsonProperty("cache-control")]
+        public string CacheControl { get; set; }
+
+        [JsonProperty("content-type")]
+        public string ContentType { get; set; }
+
+        [JsonProperty("x-amz-acl")]
+        public string XAmzAcl { get; set; }
 
         [JsonProperty("x-amz-content-sha256")]
         public string XAmzContentSha256 { get; set; }

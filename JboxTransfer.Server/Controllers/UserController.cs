@@ -3,13 +3,13 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using Microsoft.Extensions.Caching.Memory;
 using JboxTransfer.Server.Modules.DataWrapper;
-using JboxTransfer.Server.Modules.Db;
-using JboxTransfer.Server.Models.Db;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
 using UserInfoDto = JboxTransfer.Server.Models.Output.UserInfoDto;
 using JboxTransfer.Server.Services;
 using JboxTransfer.Server.Models.User;
+using JboxTransfer.Core.Models.Db;
+using JboxTransfer.Core.Modules.Db;
 
 namespace JboxTransfer.Server.Controllers
 {

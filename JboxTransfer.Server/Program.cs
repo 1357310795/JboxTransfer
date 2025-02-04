@@ -1,12 +1,16 @@
 
+using JboxTransfer.Core.Modules;
+using JboxTransfer.Core.Modules.Db;
+using JboxTransfer.Core.Modules.Jbox;
+using JboxTransfer.Core.Modules.Tbox;
 using JboxTransfer.Server.Helpers;
 using JboxTransfer.Server.Modules.DataWrapper;
-using JboxTransfer.Server.Modules.Db;
 using MassTransit;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Rewrite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
+using TboxWebdav.Server.Modules;
 
 namespace JboxTransfer.Server
 {
@@ -99,6 +103,19 @@ namespace JboxTransfer.Server
                     //cfg.ConfigureEndpoints(context);
                 });
             });
+
+            // Application
+            builder.Services.AddScoped<TboxSpaceCredProvider>();
+            builder.Services.AddScoped<TboxUserTokenProvider>();
+            builder.Services.AddScoped<TboxSpaceInfoProvider>();
+            builder.Services.AddScoped<TboxService>();
+
+            builder.Services.AddScoped<JboxCredProvider>();
+            builder.Services.AddScoped<JboxService>();
+
+            builder.Services.AddScoped<CookieContainerProvider>();
+            builder.Services.AddScoped<HttpClientFactory>();
+            builder.Services.AddScoped<SystemUserInfoProvider>();
 
             // Host
             //builder.WebHost.UseUrls("http://0.0.0.0:18888");
