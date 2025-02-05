@@ -1,5 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-using JboxTransfer.Core.Models;
+using JboxTransfer.Core.Models.Db;
 using JboxTransfer.Core.Services;
 using JboxTransfer.Models;
 using Newtonsoft.Json;

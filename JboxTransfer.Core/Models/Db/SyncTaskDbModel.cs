@@ -1,11 +1,11 @@
-﻿using SQLite;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace JboxTransfer.Core.Models
+namespace JboxTransfer.Core.Models.Db
 {
     public class SyncTaskDbModel
     {
@@ -14,7 +14,7 @@ namespace JboxTransfer.Core.Models
 
         }
 
-        public SyncTaskDbModel(int type, string filePath, long size, int order)
+        public SyncTaskDbModel(SyncTaskType type, string filePath, long size, int order)
         {
             Type = type;
             FilePath = filePath;
@@ -24,16 +24,15 @@ namespace JboxTransfer.Core.Models
             State = 0;
         }
 
-        [PrimaryKey, AutoIncrement]
         public int Id { get; set; }
-
-        [Indexed]
+        public int UserId { get; set; }
+        public SystemUser User { get; set; }
         public int Order { get; set; }
         /// <summary>
         /// 0:file
         /// 1:folder
         /// </summary>
-        public int Type { get; set; }
+        public SyncTaskType Type { get; set; }
         public string FileName { get; set; }
         public string FilePath { get; set; }
         public long Size { get; set; }
@@ -45,11 +44,25 @@ namespace JboxTransfer.Core.Models
         /// 3:Done
         /// 4:Cancel
         /// </summary>
-        public int State { get; set; }
+        public SyncTaskDbState State { get; set; }
         public string MD5_Part { get; set; }
         public string MD5_Ori { get; set; }
         public long CRC64_Part { get; set; }
         public string RemainParts { get; set; }
         public string Message { get; set; }
+    }
+
+    public enum SyncTaskDbState
+    {
+        Idle,
+        Busy,
+        Error,
+        Done,
+        Cancel,
+    }
+
+    public enum SyncTaskType
+    {
+        File, Folder
     }
 }

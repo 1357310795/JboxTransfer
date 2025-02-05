@@ -15,6 +15,8 @@ using System.Threading.Tasks;
 using Teru.Code.Models;
 using JboxTransfer.Core.Modules.Jbox;
 using JboxTransfer.Core.Modules.Tbox;
+using Microsoft.Extensions.DependencyInjection;
+using JboxTransfer.Core.Models.Db;
 
 namespace JboxTransfer.Core.Modules.Sync
 {
@@ -49,8 +51,15 @@ namespace JboxTransfer.Core.Modules.Sync
             }
         }
 
+        private readonly IServiceScopeFactory _serviceScopeFactory;
+
+        public FolderSyncTask(IServiceScopeFactory serviceScopeFactory)
+        {
+            _serviceScopeFactory = serviceScopeFactory;
+        }
+
         //Only for debug
-        public FolderSyncTask(string path, string hash, long size)
+        public void Init(string path, string hash, long size)
         {
             this.path = path;
             page = 0;
@@ -59,7 +68,7 @@ namespace JboxTransfer.Core.Modules.Sync
             pts = new PauseTokenSource();
         }
 
-        public FolderSyncTask(SyncTaskDbModel dbModel)
+        public void Init(SyncTaskDbModel dbModel)
         {
             this.dbModel = dbModel;
             if (dbModel.RemainParts == null)
@@ -74,7 +83,7 @@ namespace JboxTransfer.Core.Modules.Sync
             }
             total = 0;
             path = dbModel.FilePath;
-            State = dbModel.State == 2 ? SyncTaskState.Error : SyncTaskState.Wait;
+            State = dbModel.State == SyncTaskDbState.Error ? SyncTaskState.Error : SyncTaskState.Wait;
             pts = new PauseTokenSource();
         }
 
@@ -128,14 +137,14 @@ namespace JboxTransfer.Core.Modules.Sync
             pts = new PauseTokenSource();
             pts.Resume();
             State = SyncTaskState.Running;
-            Task.Run(() => { internalStartWrap(pts); });
+            Task.Run(async () => { await internalStartWrap(pts); });
         }
 
         public void Cancel()
         {
             pts.Pause();
             State = SyncTaskState.Wait;
-            dbModel.State = 4;
+            dbModel.State = SyncTaskDbState.Cancel;
             Message = "已取消";
             DbService.db.Update(dbModel);
         }
@@ -156,21 +165,24 @@ namespace JboxTransfer.Core.Modules.Sync
             }
         }
 
-        private void internalStartWrap(PauseTokenSource inst_pts)
+        private async Task internalStartWrap(PauseTokenSource inst_pts)
         {
             try
             {
                 Monitor.Enter(this);
                 if (inst_pts.IsPaused)
                 {
-                    Monitor.Exit(this);
                     State = SyncTaskState.Pause;
                     return;
                 }
-                internalStart(pts);
+                await using (var scope = _serviceScopeFactory.CreateAsyncScope())
+                {
+                    var userInfoProvider = scope.ServiceProvider.GetRequiredService<SystemUserInfoProvider>();
+                    userInfoProvider.SetUser(dbModel.User);
+                    await internalStart(scope, pts);
+                }
                 if (inst_pts.IsPaused)
                 {
-                    Monitor.Exit(this);
                     State = SyncTaskState.Pause;
                     return;
                 }
@@ -181,28 +193,33 @@ namespace JboxTransfer.Core.Modules.Sync
                 Debug.WriteLine(ex);
                 Message = $"{ex.Message}";
                 State = SyncTaskState.Error;
-                dbModel.State = 2;
+                dbModel.State = SyncTaskDbState.Error;
                 DbService.db.Update(dbModel);
             }
-            Monitor.Exit(this);
+            finally
+            {
+                Monitor.Exit(this);
+            }
         }
 
-        public void internalStart(PauseTokenSource inst_pts)
+        public async Task internalStart(AsyncServiceScope scope, PauseTokenSource inst_pts)
         {
+            var tbox = scope.ServiceProvider.GetRequiredService<TboxService>();
+            var jbox = scope.ServiceProvider.GetRequiredService<JboxService>();
             State = SyncTaskState.Running;
 
             if (inst_pts.IsPaused)
                 return;
 
             //Create Folder in tbox
-            var res0 = TboxService.CreateDirectory(path);
+            var res0 = tbox.CreateDirectory(path);
             if (!res0.Success)
             {
                 if (res0.Result == null || res0.Result.Code != "SameNameDirectoryOrFileExists" && res0.Result.Code != "RootDirectoryNotAllowed")
                 {
                     State = SyncTaskState.Error;
                     Message = $"创建文件夹失败：{res0.Result.Message}";
-                    dbModel.State = 2;
+                    dbModel.State = SyncTaskDbState.Error;
                     DbService.db.Update(dbModel);
                     return;
                 }
@@ -218,7 +235,7 @@ namespace JboxTransfer.Core.Modules.Sync
                         if (inst_pts.IsPaused)
                             return;
 
-                        var res = JboxService.GetJboxFolderInfo(path, page);
+                        var res = jbox.GetJboxFolderInfo(path, page);
                         info = res.Result;
 
                         if (!res.Success)
@@ -239,9 +256,9 @@ namespace JboxTransfer.Core.Modules.Sync
                         DbService.db.RunInTransaction(() =>
                         {
                             foreach (var item in info.Content.Where(x => x.IsDir == true))
-                                DbService.db.Insert(new SyncTaskDbModel(1, item.Path, 0, order));
+                                DbService.db.Insert(new SyncTaskDbModel(SyncTaskType.Folder, item.Path, 0, order));
                             foreach (var item in info.Content.Where(x => x.IsDir == false))
-                                DbService.db.Insert(new SyncTaskDbModel(0, item.Path, item.Bytes, order) { MD5_Ori = item.Hash });
+                                DbService.db.Insert(new SyncTaskDbModel(SyncTaskType.File, item.Path, item.Bytes, order) { MD5_Ori = item.Hash });
                             dbModel.RemainParts = page.ToString();
                             DbService.db.Update(dbModel);
                         });
@@ -259,7 +276,7 @@ namespace JboxTransfer.Core.Modules.Sync
                 if (t <= 0)
                 {
                     State = SyncTaskState.Error;
-                    dbModel.State = 2;
+                    dbModel.State = SyncTaskDbState.Error;
                     Message = ex.Message;
                     DbService.db.Update(dbModel);
                     return;
@@ -267,7 +284,7 @@ namespace JboxTransfer.Core.Modules.Sync
                 if (info.Content.Length == 0)
                     break;
             }
-            dbModel.State = 3;
+            dbModel.State = SyncTaskDbState.Done;
             State = SyncTaskState.Complete;
             Message = "同步完成";
             DbService.db.Update(dbModel);

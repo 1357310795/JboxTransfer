@@ -589,7 +589,7 @@ namespace JboxTransfer.Core.Modules.Tbox
             }
         }
 
-        public CommonResult<HttpStatusCode> UploadChunk(TboxStartChunkUploadResDto info, Stream stream, int partNumber)
+        public CommonResult<HttpStatusCode> UploadChunk(TboxStartChunkUploadResDto info, Stream stream, int partNumber, Pack<long> chunkProgress)
         {
             try
             {
@@ -599,14 +599,14 @@ namespace JboxTransfer.Core.Modules.Tbox
 
                 HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Put, $"https://{info.Domain}{info.Path}{UriHelper.BuildQuery(query)}");
 
-                var content = new StreamContent(stream);
+                var content = new ProgressableStreamContent(stream, (x) => { chunkProgress.Value = x; });
                 req.Content = content;
                 foreach (var header in info.Parts[partNumber.ToString()].Headers)
                 {
                     req.Headers.TryAddWithoutValidation(header.Key, header.Value);
                 }
 
-                var res = _client.SendAsync(req).GetAwaiter().GetResult();
+                var res = _client.SendAsync(req, HttpCompletionOption.ResponseHeadersRead).GetAwaiter().GetResult();
 
                 if (!res.IsSuccessStatusCode)
                 {

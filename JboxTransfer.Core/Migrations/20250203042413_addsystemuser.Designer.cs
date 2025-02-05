@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace JboxTransfer.Server.Migrations
+namespace JboxTransfer.Core.Migrations
 {
     [DbContext(typeof(DefaultDbContext))]
     [Migration("20250203042413_addsystemuser")]

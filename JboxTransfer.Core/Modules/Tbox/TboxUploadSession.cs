@@ -20,6 +20,12 @@ namespace JboxTransfer.Core.Modules.Tbox
     /// </summary>
     public class TboxUploadSession
     {
+        private readonly TboxService _tbox;
+        public TboxUploadSession(TboxService tbox)
+        {
+            _tbox = tbox;
+        }
+
         private string path;
         private long size;
         private int chunkCount;
@@ -43,7 +49,7 @@ namespace JboxTransfer.Core.Modules.Tbox
             chunkProgress.Value = 0;
         }
 
-        public TboxUploadSession(string path, long size)
+        public void Init(string path, long size)
         {
             this.path = path;
             this.size = size;
@@ -53,7 +59,7 @@ namespace JboxTransfer.Core.Modules.Tbox
             State = TboxUploadState.NotInit;
         }
 
-        public TboxUploadSession(string path, long size, string confirmKey, List<int> remainParts)
+        public void Init(string path, long size, string confirmKey, List<int> remainParts)
         {
             this.path = path;
             this.size = size;
@@ -71,7 +77,7 @@ namespace JboxTransfer.Core.Modules.Tbox
 
             if (State == TboxUploadState.NotInit || State == TboxUploadState.Error)
             {
-                var res = TboxService.StartChunkUpload(path, chunkCount);
+                var res = _tbox.StartChunkUpload(path, chunkCount);
                 if (!res.Success)
                 {
                     if (res.Result != null)
@@ -88,7 +94,7 @@ namespace JboxTransfer.Core.Modules.Tbox
             {
                 if (remainParts.Count > 0)
                 {
-                    var res = TboxService.RenewChunkUpload(confirmKey, GetRefreshPartNumberList());
+                    var res = _tbox.RenewChunkUpload(confirmKey, GetRefreshPartNumberList());
                     if (!res.Success)
                     {
                         if (res.Result != null)
@@ -135,7 +141,7 @@ namespace JboxTransfer.Core.Modules.Tbox
             {
                 return new CommonResult(true, "");
             }
-            var res = TboxService.CreateDirectory(p);
+            var res = _tbox.CreateDirectory(p);
             if (res.Success)
                 return new CommonResult(true, "");
             if (res.Result == null)
@@ -147,17 +153,17 @@ namespace JboxTransfer.Core.Modules.Tbox
 
         public CommonResult EnsureNoExpire(int partNumber)
         {
-            var exp = DateTime.Parse(uploadContext.Expiration);
+            var exp = uploadContext.Expiration;
             if ((exp - DateTime.Now).TotalSeconds < 30)
             {
-                var res = TboxService.RenewChunkUpload(confirmKey, GetRefreshPartNumberList());
+                var res = _tbox.RenewChunkUpload(confirmKey, GetRefreshPartNumberList());
                 if (!res.Success)
                     return new CommonResult(false, $"刷新分块凭据出错：{res.Message}");
                 uploadContext = res.Result;
             }
             if (!uploadContext.Parts.ContainsKey(partNumber.ToString()))
             {
-                var res = TboxService.RenewChunkUpload(confirmKey, GetRefreshPartNumberList());
+                var res = _tbox.RenewChunkUpload(confirmKey, GetRefreshPartNumberList());
                 if (!res.Success)
                     return new CommonResult(false, $"刷新分块凭据出错：{res.Message}");
                 uploadContext = res.Result;
@@ -169,63 +175,23 @@ namespace JboxTransfer.Core.Modules.Tbox
 
         public CommonResult Upload(MemoryStream data, int partNumber)
         {
-            var headerInfo = uploadContext.Parts[partNumber.ToString()].Headers;
-
-            Dictionary<string, string> query = new Dictionary<string, string>();
-            query.Add("uploadId", uploadContext.UploadId);
-            query.Add("partNumber", partNumber.ToString());
-
-            StringBuilder sb = new StringBuilder();
-            sb.Append("https://");
-            sb.Append(uploadContext.Domain);
-            sb.Append(uploadContext.Path);
-            sb.Append(UriHelper.BuildQuery(query));
-            string url = sb.ToString();
-
-            HttpWebRequest req = WebRequest.CreateHttp(url);
-            req.Method = "PUT";
-            req.Accept = "*/*";
-            req.Headers.Add("Accept-Encoding", "gzip, deflate, br");
-            req.Headers.Add("Accept-Language", "zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7");
-            req.Headers.Add("x-amz-date", headerInfo.XAmzDate);
-            req.Headers.Add("authorization", headerInfo.Authorization);
-            req.Headers.Add("x-amz-content-sha256", headerInfo.XAmzContentSha256);
-
-            var reqstream = req.GetRequestStream();
-
-            chunkProgress.Value = 0;
-            byte[] buffer = ArrayPool<byte>.Shared.Rent(81920 / 2);
-            try
+            var res = _tbox.UploadChunk(uploadContext, data, partNumber, chunkProgress);
+            if (res.Success)
             {
-                int bytesWrite;
-                while ((bytesWrite = data.Read(buffer, 0, buffer.Length)) != 0)
-                {
-                    reqstream.Write(buffer, 0, bytesWrite);
-                    chunkProgress.Value += bytesWrite;
-                }
-            }
-            finally
-            {
-                ArrayPool<byte>.Shared.Return(buffer);
-            }
-
-            try
-            {
-                var resp = req.GetResponse();
                 return new CommonResult(true, "");
             }
-            catch (WebException ex)
+            else
             {
-                return new CommonResult(false, ex.Message);
+                return new CommonResult(false, res.Message);
             }
         }
 
-        public CommonResult<TboxConfirmChunkUploadResDto> Confirm(ulong crc64)
+        public CommonResult<TboxConfirmUploadResDto> Confirm(ulong crc64)
         {
             //Todo:再次请求检查是否有未上传
-            var res = TboxService.ConfirmChunkUpload(confirmKey, crc64);
+            var res = _tbox.ConfirmUpload(confirmKey, crc64);
             if (!res.Success)
-                return new CommonResult<TboxConfirmChunkUploadResDto>(false, $"确认上传出错：{res.Message}");
+                return new (false, $"确认上传出错：{res.Message}");
             return res;
         }
 

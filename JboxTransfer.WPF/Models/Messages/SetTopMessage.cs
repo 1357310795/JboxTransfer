@@ -1,5 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.Messaging.Messages;
-using JboxTransfer.Core.Models;
+using JboxTransfer.Core.Models.Db;
 using System;
 using System.Collections.Generic;
 using System.Linq;

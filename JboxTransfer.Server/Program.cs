@@ -2,6 +2,7 @@
 using JboxTransfer.Core.Modules;
 using JboxTransfer.Core.Modules.Db;
 using JboxTransfer.Core.Modules.Jbox;
+using JboxTransfer.Core.Modules.Sync;
 using JboxTransfer.Core.Modules.Tbox;
 using JboxTransfer.Server.Helpers;
 using JboxTransfer.Server.Modules.DataWrapper;
@@ -56,6 +57,9 @@ namespace JboxTransfer.Server
                 //options.DefaultPolicy = options.GetPolicy("CustomPolicy");
             });
 
+            // HttpContextAccessor
+            builder.Services.AddHttpContextAccessor();
+
             // Cache
             builder.Services.AddMemoryCache();
 
@@ -109,13 +113,18 @@ namespace JboxTransfer.Server
             builder.Services.AddScoped<TboxUserTokenProvider>();
             builder.Services.AddScoped<TboxSpaceInfoProvider>();
             builder.Services.AddScoped<TboxService>();
+            builder.Services.AddTransient<TboxUploadSession>();
 
             builder.Services.AddScoped<JboxCredProvider>();
             builder.Services.AddScoped<JboxService>();
+            builder.Services.AddTransient<JboxDownloadSession>();
 
             builder.Services.AddScoped<CookieContainerProvider>();
             builder.Services.AddScoped<HttpClientFactory>();
             builder.Services.AddScoped<SystemUserInfoProvider>();
+
+            builder.Services.AddTransient<FileSyncTask>();
+            builder.Services.AddTransient<FolderSyncTask>();
 
             // Host
             //builder.WebHost.UseUrls("http://0.0.0.0:18888");

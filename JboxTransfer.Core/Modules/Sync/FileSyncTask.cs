@@ -8,6 +8,8 @@ using System.Text;
 using Teru.Code.Models;
 using JboxTransfer.Core.Modules.Tbox;
 using JboxTransfer.Core.Modules.Jbox;
+using Microsoft.Extensions.DependencyInjection;
+using JboxTransfer.Core.Models.Db;
 
 namespace JboxTransfer.Core.Modules.Sync
 {
@@ -53,32 +55,23 @@ namespace JboxTransfer.Core.Modules.Sync
             }
         }
 
-        //public FileSyncTask(string path, string hash, long size) {
-        //    this.path = path;
-        //    this.jboxhash = hash;
-        //    this.size = size;
-        //    this.succChunk = 0;
-        //    this.chunkCount = size.GetChunkCount();
-        //    jbox = new JboxDownloadSession(path, size);
-        //    tbox = new TboxUploadSession(path, size);
-        //    State = SyncTaskState.Wait;
-        //    md5 = new MD5();
-        //    crc64 = new CRC64();
-        //    pts = new PauseTokenSource();
-        //}
+        private readonly IServiceScopeFactory _serviceScopeFactory;
 
-        public FileSyncTask(SyncTaskDbModel dbModel)
+        public FileSyncTask(IServiceScopeFactory serviceScopeFactory)
+        {
+            _serviceScopeFactory = serviceScopeFactory;
+        }
+
+        public void Init(SyncTaskDbModel dbModel)
         {
             this.dbModel = dbModel;
             this.path = dbModel.FilePath;
             this.jboxhash = dbModel.MD5_Ori;
             this.size = dbModel.Size;
             this.chunkCount = size.GetChunkCount();
-            jbox = new JboxDownloadSession(path, size);
 
             if (dbModel.ConfirmKey == null)
             {
-                tbox = new TboxUploadSession(path, size);
                 crc64 = new CRC64();
                 md5 = new MD5();
                 this.succChunk = 0;
@@ -86,12 +79,11 @@ namespace JboxTransfer.Core.Modules.Sync
             else
             {
                 var remain = JsonConvert.DeserializeObject<List<int>>(dbModel.RemainParts);
-                tbox = new TboxUploadSession(path, size, dbModel.ConfirmKey, remain);
                 crc64 = CRC64.FromValue((ulong)dbModel.CRC64_Part);
                 md5 = MD5.Create(JsonConvert.DeserializeObject<MD5StateStorage>(dbModel.MD5_Part));
                 this.succChunk = this.chunkCount - remain.Count;
             }
-            State = dbModel.State == 2 ? SyncTaskState.Error : SyncTaskState.Wait;
+            State = dbModel.State == SyncTaskDbState.Error ? SyncTaskState.Error : SyncTaskState.Wait;
             pts = new PauseTokenSource();
         }
         public string GetName()
@@ -153,7 +145,7 @@ namespace JboxTransfer.Core.Modules.Sync
             pts = new PauseTokenSource();
             pts.Resume();
             State = SyncTaskState.Running;
-            Task.Run(() => { internalStartWrap(pts); });
+            Task.Run(async () => { await internalStartWrap(pts); });
         }
 
         public void Cancel()
@@ -162,7 +154,7 @@ namespace JboxTransfer.Core.Modules.Sync
             State = SyncTaskState.Wait;
             if (curChunk != null)
                 curChunk.Uploading = false;
-            dbModel.State = 4;
+            dbModel.State = SyncTaskDbState.Cancel;
             Message = "已取消";
             DbService.db.Update(dbModel);
         }
@@ -183,21 +175,24 @@ namespace JboxTransfer.Core.Modules.Sync
             }
         }
 
-        private void internalStartWrap(PauseTokenSource inst_pts)
+        private async Task internalStartWrap(PauseTokenSource inst_pts)
         {
             try
             {
                 Monitor.Enter(this);
                 if (inst_pts.IsPaused)
                 {
-                    Monitor.Exit(this);
                     State = SyncTaskState.Pause;
                     return;
                 }
-                internalStart(pts);
+                await using (var scope = _serviceScopeFactory.CreateAsyncScope())
+                {
+                    var userInfoProvider = scope.ServiceProvider.GetRequiredService<SystemUserInfoProvider>();
+                    userInfoProvider.SetUser(dbModel.User);
+                    internalStart(scope, pts);
+                }
                 if (inst_pts.IsPaused)
                 {
-                    Monitor.Exit(this);
                     State = SyncTaskState.Pause;
                     return;
                 }
@@ -208,15 +203,38 @@ namespace JboxTransfer.Core.Modules.Sync
                 Debug.WriteLine(ex);
                 Message = $"{ex.Message}";
                 State = SyncTaskState.Error;
-                dbModel.State = 2;
+                dbModel.State = SyncTaskDbState.Error;
                 DbService.db.Update(dbModel);
             }
-            Monitor.Exit(this);
+            finally
+            {
+                Monitor.Exit(this);
+            }
         }
 
-        private void internalStart(PauseTokenSource inst_pts)
+        private async Task internalStart(AsyncServiceScope scope, PauseTokenSource inst_pts)
         {
             CommonResult<MemoryStream> chunkRes = null;
+
+            if (jbox == null)
+            {
+                jbox = scope.ServiceProvider.GetRequiredService<JboxDownloadSession>();
+                jbox.Init(path, size);
+            }
+            if (tbox == null)
+            {
+                if (dbModel.ConfirmKey == null)
+                {
+                    tbox = scope.ServiceProvider.GetRequiredService<TboxUploadSession>();
+                    tbox.Init(path, size);
+                }
+                else
+                {
+                    tbox = scope.ServiceProvider.GetRequiredService<TboxUploadSession>();
+                    tbox.Init(path, size, dbModel.ConfirmKey, JsonConvert.DeserializeObject<List<int>>(dbModel.RemainParts));
+                }
+            }
+
             State = SyncTaskState.Running;
             
             if (inst_pts.IsPaused) 
@@ -226,7 +244,7 @@ namespace JboxTransfer.Core.Modules.Sync
             if (!res0.success)
             {
                 State = SyncTaskState.Error;
-                dbModel.State = 2;
+                dbModel.State = SyncTaskDbState.Error;
                 Message = res0.result;
                 DbService.db.Update(dbModel);
                 return;
@@ -239,7 +257,7 @@ namespace JboxTransfer.Core.Modules.Sync
             if (!res1.Success)
             {
                 State = SyncTaskState.Error;
-                dbModel.State = 2;
+                dbModel.State = SyncTaskDbState.Error;
                 Message = res1.Message;
                 DbService.db.Update(dbModel);
                 return;
@@ -252,7 +270,7 @@ namespace JboxTransfer.Core.Modules.Sync
             if (!res2.Success)
             {
                 State = SyncTaskState.Error;
-                dbModel.State = 2;
+                dbModel.State = SyncTaskDbState.Error;
                 Message = res2.Message;
                 DbService.db.Update(dbModel);
                 return;
@@ -313,7 +331,7 @@ namespace JboxTransfer.Core.Modules.Sync
                     tbox.ResetPartNumber(curChunk);
                     State = SyncTaskState.Error;
                     chunkRes = null;
-                    dbModel.State = 2;
+                    dbModel.State = SyncTaskDbState.Error;
                     Message = ex.Message;
                     DbService.db.Update(dbModel);
                     return;
@@ -362,7 +380,7 @@ namespace JboxTransfer.Core.Modules.Sync
                 {
                     Message = $"下载流校验值不匹配";
                     State = SyncTaskState.Error;
-                    dbModel.State = 2;
+                    dbModel.State = SyncTaskDbState.Error;
                     DbService.db.Update(dbModel);
                     return;
                 }
@@ -371,11 +389,11 @@ namespace JboxTransfer.Core.Modules.Sync
                 {
                     Message = $"{res4.Message}";
                     State = SyncTaskState.Error;
-                    dbModel.State = 2;
+                    dbModel.State = SyncTaskDbState.Error;
                     DbService.db.Update(dbModel);
                     return;
                 }
-                dbModel.State = 3;
+                dbModel.State = SyncTaskDbState.Done;
                 Message = "同步完成";
                 State = SyncTaskState.Complete;
                 DbService.db.Update(dbModel);

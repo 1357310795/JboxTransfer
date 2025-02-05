@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace JboxTransfer.Server.Migrations
+namespace JboxTransfer.Core.Migrations
 {
     /// <inheritdoc />
     public partial class addsystemuser : Migration

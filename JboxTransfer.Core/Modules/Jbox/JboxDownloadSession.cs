@@ -1,4 +1,5 @@
 ﻿using JboxTransfer.Core.Extensions;
+using Microsoft.Extensions.Logging;
 using Teru.Code.Models;
 
 namespace JboxTransfer.Core.Modules.Jbox
@@ -19,7 +20,16 @@ namespace JboxTransfer.Core.Modules.Jbox
             }
         }
 
-        public JboxDownloadSession(string path, long size)
+        private readonly ILogger<JboxDownloadSession> _logger;
+        private readonly JboxService _jbox;
+
+        public JboxDownloadSession(ILogger<JboxDownloadSession> logger, JboxService jbox)
+        {
+            _logger = logger;
+            _jbox = jbox;
+        }
+
+        public void Init(string path, long size)
         {
             this.path = path;
             this.size = size;
@@ -31,7 +41,7 @@ namespace JboxTransfer.Core.Modules.Jbox
         {
             //Todo : 检查块大小
             var curchunksize = chunk == chunkCount ? size - ChunkSize * (chunk - 1) : ChunkSize;
-            var res = JboxService.DownloadChunk(path, (chunk - 1) * ChunkSize, curchunksize, chunkProgress);
+            var res = _jbox.DownloadChunk(path, (chunk - 1) * ChunkSize, curchunksize, chunkProgress);
             if (!res.Success)
                 return res;
             if (res.Result.Length != curchunksize)

@@ -1,5 +1,5 @@
 ﻿using JboxTransfer.Core.Helpers;
-using JboxTransfer.Core.Models;
+using JboxTransfer.Core.Models.Db;
 using SQLite;
 
 namespace JboxTransfer.Core.Services

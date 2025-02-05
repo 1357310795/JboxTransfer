@@ -1,7 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using JboxTransfer.Core.Extensions;
 using JboxTransfer.Core.Helpers;
-using JboxTransfer.Core.Models;
+using JboxTransfer.Core.Models.Db;
 using JboxTransfer.Helpers;
 using JboxTransfer.Views;
 using System.Windows.Media;
