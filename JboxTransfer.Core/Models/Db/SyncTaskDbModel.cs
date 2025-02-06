@@ -14,14 +14,18 @@ namespace JboxTransfer.Core.Models.Db
 
         }
 
-        public SyncTaskDbModel(SyncTaskType type, string filePath, long size, int order)
+        public SyncTaskDbModel(SystemUser user, SyncTaskType type, string filePath, long size, int order)
         {
             Type = type;
             FilePath = filePath;
             Size = size;
             Order = order;
             FileName = FilePath.Split('/').Last();
-            State = 0;
+            State = SyncTaskDbState.Idle;
+            CreationTime = DateTime.Now;
+            UpdateTime = DateTime.Now;
+            UserId = user.Id;
+            User = user;
         }
 
         public int Id { get; set; }
@@ -36,7 +40,7 @@ namespace JboxTransfer.Core.Models.Db
         public string FileName { get; set; }
         public string FilePath { get; set; }
         public long Size { get; set; }
-        public string ConfirmKey { get; set; }
+        public string? ConfirmKey { get; set; }
         /// <summary>
         /// 0:Idle
         /// 1:Busy
@@ -45,11 +49,13 @@ namespace JboxTransfer.Core.Models.Db
         /// 4:Cancel
         /// </summary>
         public SyncTaskDbState State { get; set; }
-        public string MD5_Part { get; set; }
-        public string MD5_Ori { get; set; }
-        public long CRC64_Part { get; set; }
-        public string RemainParts { get; set; }
-        public string Message { get; set; }
+        public string? MD5_Part { get; set; }
+        public string? MD5_Ori { get; set; }
+        public long? CRC64_Part { get; set; }
+        public string? RemainParts { get; set; }
+        public string? Message { get; set; }
+        public DateTime CreationTime { get; set; }
+        public DateTime UpdateTime { get; set; }
     }
 
     public enum SyncTaskDbState

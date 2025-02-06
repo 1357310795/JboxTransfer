@@ -1,4 +1,5 @@
-﻿using JboxTransfer.Core.Models;
+﻿using JboxTransfer.Core.Models.Db;
+using JboxTransfer.Core.Models.Sync;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,8 +8,9 @@ using System.Threading.Tasks;
 
 namespace JboxTransfer.Core.Modules.Sync
 {
-    public interface IBaseTask
+    public interface IBaseSyncTask
     {
+        public void Init(SyncTaskDbModel dbModel);
         public string GetProgressStr();
         public string GetProgressTextTooltip();
         public void Start();
@@ -24,5 +26,6 @@ namespace JboxTransfer.Core.Modules.Sync
         public double Progress { get; }
         public string Message { get; }
         public SyncTaskState State { get; set; }
+        public bool IsUserPause { get; set; }
     }
 }

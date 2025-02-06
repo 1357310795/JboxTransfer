@@ -1,4 +1,11 @@
-﻿using JboxTransfer.Core.Modules.Db;
+﻿using AutoMapper;
+using JboxTransfer.Core.Models.Db;
+using JboxTransfer.Core.Models.Output;
+using JboxTransfer.Core.Modules;
+using JboxTransfer.Core.Modules.Db;
+using JboxTransfer.Core.Modules.Jbox;
+using JboxTransfer.Core.Modules.Sync;
+using JboxTransfer.Core.Services;
 using JboxTransfer.Server.Modules.DataWrapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,12 +19,20 @@ namespace JboxTransfer.Server.Controllers
     {
         private readonly ILogger<TaskController> _logger;
         private readonly IMemoryCache _mcache;
-        private readonly DefaultDbContext _context;
-        public TaskController(ILogger<TaskController> logger, IMemoryCache memoryCache, DefaultDbContext context)
+        private readonly DefaultDbContext _db;
+        private readonly SystemUserInfoProvider _user;
+        private readonly SyncTaskCollectionProvider _taskCollectionProvider;
+        private readonly JboxService _jbox;
+        private readonly IMapper _mapper;
+        public TaskController(ILogger<TaskController> logger, IMemoryCache memoryCache, DefaultDbContext db, SystemUserInfoProvider user, SyncTaskCollectionProvider taskCollectionProvider, JboxService jbox, IMapper mapper)
         {
             _logger = logger;
             _mcache = memoryCache;
-            _context = context;
+            _db = db;
+            _user = user;
+            _taskCollectionProvider = taskCollectionProvider;
+            _jbox = jbox;
+            _mapper = mapper;
         }
 
         [HttpGet]
@@ -29,10 +44,29 @@ namespace JboxTransfer.Server.Controllers
         }
 
         [HttpPost]
+        [Route("add")]
+        [Authorize]
+        public ApiResponse Add([FromForm]string path) //EnqueueTask
+        {
+            var res = _jbox.GetJboxFileInfo(path);
+            if (!res.Success)
+            {
+                return new ApiResponse(500, "GetJboxItemInfoError", $"获取文件信息失败：{res.Message}");
+            }
+
+            var order = _db.GetMinOrder() - 1;
+            var entity = _db.Add(new SyncTaskDbModel(_user.GetUser(), res.Result.IsDir ? SyncTaskType.Folder : SyncTaskType.File, res.Result.Path, res.Result.Bytes, order) { MD5_Ori = res.Result.Hash });
+            _db.SaveChanges();
+
+            return new ApiResponse(_mapper.Map<SyncTaskDbModelOutputDto>(entity.Entity));
+        }
+
+        [HttpPost]
         [Route("pause")]
         [Authorize]
         public ApiResponse Pause([FromForm]int id)
         {
+            var collection = _taskCollectionProvider.GetSyncTaskCollection(_user.GetUser());
             return new ApiResponse();
         }
 

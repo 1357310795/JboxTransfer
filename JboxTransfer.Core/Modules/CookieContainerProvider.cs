@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using JboxTransfer.Core.Models.Db;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,25 +12,23 @@ namespace JboxTransfer.Core.Modules
 {
     public class CookieContainerProvider
     {
-        private readonly ILogger<HttpClientFactory> _logger;
-        private readonly SystemUserInfoProvider _user;
+        private readonly ILogger<CookieContainerProvider> _logger;
         private readonly Dictionary<string, CookieContainer> _dic;
 
-        public CookieContainerProvider(ILogger<HttpClientFactory> logger, SystemUserInfoProvider user)
+        public CookieContainerProvider(ILogger<CookieContainerProvider> logger)
         {
             _logger = logger;
-            _user = user;
             _dic = new Dictionary<string, CookieContainer>();
         }
 
-        public CookieContainer GetCookieContainer()
+        public CookieContainer GetCookieContainer(SystemUser user)
         {
-            var key = _user.GetUser().Jaccount;
-            if (!_dic.TryGetValue(key, out CookieContainer? cc))
+            if (!_dic.TryGetValue(user.Jaccount, out CookieContainer? cc))
             {
+                _logger.LogTrace(user.Jaccount + " cookie not found, create new one.");
                 cc = new CookieContainer();
-                _dic.Add(key, cc);
-                cc.Add(new Cookie("JAAuthCookie", _user.GetUser().Cookie, "/jaccount", "jaccount.sjtu.edu.cn"));
+                _dic.Add(user.Jaccount, cc);
+                cc.Add(new Cookie("JAAuthCookie", user.Cookie, "/jaccount", "jaccount.sjtu.edu.cn"));
             }
             return cc;
         }

@@ -1,5 +1,4 @@
 ﻿using JboxTransfer.Core.Modules;
-using JboxTransfer.Core.Models;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -8,6 +7,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using JboxTransfer.Core.Models.Sync;
 
 namespace JboxTransfer.Core.Services
 {

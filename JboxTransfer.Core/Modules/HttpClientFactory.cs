@@ -25,7 +25,7 @@ namespace TboxWebdav.Server.Modules
 
         public HttpClient CreateClient()
         {
-            var cc = _cc.GetCookieContainer();
+            var cc = _cc.GetCookieContainer(_user.GetUser());
             var client = new HttpClient(new HttpClientHandler() { AllowAutoRedirect = true, AutomaticDecompression = System.Net.DecompressionMethods.Deflate | DecompressionMethods.GZip, UseCookies = true, CookieContainer = cc });
             
             return client;

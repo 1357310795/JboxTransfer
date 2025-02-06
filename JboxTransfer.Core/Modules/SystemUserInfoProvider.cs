@@ -1,6 +1,7 @@
 ﻿using JboxTransfer.Core.Models.Db;
 using JboxTransfer.Core.Modules.Db;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace JboxTransfer.Core.Modules
@@ -28,7 +29,9 @@ namespace JboxTransfer.Core.Modules
             var jaccount = _contextAccessor.HttpContext.User.FindFirst("jaccount");
             if (jaccount == null)
                 return null;
-            var user = _db.Users.FirstOrDefault(x => x.Jaccount == jaccount.Value);
+            var user = _db.Users
+                .AsNoTracking()
+                .FirstOrDefault(x => x.Jaccount == jaccount.Value);
             return user;
         }
 

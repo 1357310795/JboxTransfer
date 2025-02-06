@@ -9,9 +9,10 @@ namespace JboxTransfer.Core.Modules.Db
         public DbSet<SystemUser> Users { set; get; }
         public DbSet<SyncTaskDbModel> SyncTasks { set; get; }
 
-        public DefaultDbContext(DbContextOptions<DefaultDbContext> Options) : base(Options)
-        {
+        public object insertLock = new object();
 
+        public DefaultDbContext(DbContextOptions<DefaultDbContext> options) : base(options)
+        {
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -24,6 +25,24 @@ namespace JboxTransfer.Core.Modules.Db
                 .Entity<SyncTaskDbModel>()
                 .Property(e => e.State)
                 .HasConversion<string>();
+        }
+
+        public int GetMinOrder()
+        {
+            var res = SyncTasks.OrderBy(x => x.Order).FirstOrDefault();
+            if (res == null)
+                return 0;
+            else
+                return res.Order;
+        }
+
+        public int GetMaxOrder()
+        {
+            var res = SyncTasks.OrderByDescending(x => x.Order).FirstOrDefault();
+            if (res == null)
+                return 0;
+            else
+                return res.Order;
         }
     }
 }

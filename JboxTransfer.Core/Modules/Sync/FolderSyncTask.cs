@@ -1,26 +1,17 @@
-﻿using JboxTransfer.Core.Helpers;
-using JboxTransfer.Core.Models.Jbox;
-using JboxTransfer.Core.Modules;
-using JboxTransfer.Core.Models;
-using JboxTransfer.Core.Services;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
+﻿using JboxTransfer.Core.Models.Jbox;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
-using Teru.Code.Models;
 using JboxTransfer.Core.Modules.Jbox;
 using JboxTransfer.Core.Modules.Tbox;
 using Microsoft.Extensions.DependencyInjection;
 using JboxTransfer.Core.Models.Db;
+using JboxTransfer.Core.Models.Sync;
+using JboxTransfer.Core.Modules.Db;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace JboxTransfer.Core.Modules.Sync
 {
-    public class FolderSyncTask : IBaseTask
+    public class FolderSyncTask : IBaseSyncTask
     {
         private const int RetryTimes = 3;
         private string path;
@@ -35,10 +26,10 @@ namespace JboxTransfer.Core.Modules.Sync
         public string Message
         {
             get { return message; }
-            set { message = value; dbModel.Message = value; }
+            set { message = value; }
         }
 
-        private SyncTaskDbModel dbModel;
+        private int syncTaskId;
 
         public PauseTokenSource pts;
 
@@ -50,6 +41,8 @@ namespace JboxTransfer.Core.Modules.Sync
                 return succ / (double)total;
             }
         }
+
+        public bool IsUserPause { get; set; }
 
         private readonly IServiceScopeFactory _serviceScopeFactory;
 
@@ -70,7 +63,7 @@ namespace JboxTransfer.Core.Modules.Sync
 
         public void Init(SyncTaskDbModel dbModel)
         {
-            this.dbModel = dbModel;
+            this.syncTaskId = dbModel.Id;
             if (dbModel.RemainParts == null)
             {
                 page = 0;
@@ -121,7 +114,7 @@ namespace JboxTransfer.Core.Modules.Sync
         public void Start()
         {
             State = SyncTaskState.Running;
-            Task.Run(() => { internalStartWrap(pts); });
+            Task.Run(async () => { await internalStartWrap(pts); });
         }
 
         public void Pause()
@@ -142,70 +135,99 @@ namespace JboxTransfer.Core.Modules.Sync
 
         public void Cancel()
         {
-            pts.Pause();
-            State = SyncTaskState.Wait;
-            dbModel.State = SyncTaskDbState.Cancel;
-            Message = "已取消";
-            DbService.db.Update(dbModel);
+            using (var scope = _serviceScopeFactory.CreateAsyncScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<DefaultDbContext>();
+                pts.Pause();
+                State = SyncTaskState.Wait;
+                db.SyncTasks
+                    .Where(x => x.Id == syncTaskId)
+                    .ExecuteUpdate(call => call
+                    .SetProperty(x => x.State, x => SyncTaskDbState.Cancel)
+                    .SetProperty(x => x.Message, x => "已取消"));
+                Message = "已取消";
+            }
         }
 
         public void Recover(bool keepProgress)
         {
-            if (keepProgress)
+            using (var scope = _serviceScopeFactory.CreateScope())
             {
-                dbModel.State = 0;
-                DbService.db.Update(dbModel);
-            }
-            else
-            {
-                dbModel.ConfirmKey = null;
-                dbModel.State = 0;
-                dbModel.RemainParts = null;
-                DbService.db.Update(dbModel);
+                var db = scope.ServiceProvider.GetRequiredService<DefaultDbContext>();
+                if (keepProgress)
+                {
+                    db.SyncTasks
+                        .Where(x => x.Id == syncTaskId)
+                        .ExecuteUpdate(call => call
+                        .SetProperty(x => x.State, x => SyncTaskDbState.Idle)
+                        .SetProperty(x => x.Message, x => null));
+                }
+                else
+                {
+                    db.SyncTasks
+                        .Where(x => x.Id == syncTaskId)
+                        .ExecuteUpdate(call => call
+                        .SetProperty(x => x.State, x => SyncTaskDbState.Idle)
+                        .SetProperty(x => x.ConfirmKey, x => null)
+                        .SetProperty(x => x.RemainParts, x => null)
+                        .SetProperty(x => x.Message, x => null));
+                }
             }
         }
 
         private async Task internalStartWrap(PauseTokenSource inst_pts)
         {
-            try
+            await using (var scope = _serviceScopeFactory.CreateAsyncScope())
             {
-                Monitor.Enter(this);
-                if (inst_pts.IsPaused)
+                var db = scope.ServiceProvider.GetRequiredService<DefaultDbContext>();
+
+                try
                 {
-                    State = SyncTaskState.Pause;
-                    return;
-                }
-                await using (var scope = _serviceScopeFactory.CreateAsyncScope())
-                {
-                    var userInfoProvider = scope.ServiceProvider.GetRequiredService<SystemUserInfoProvider>();
-                    userInfoProvider.SetUser(dbModel.User);
+                    Monitor.Enter(this);
+                    if (inst_pts.IsPaused)
+                    {
+                        State = SyncTaskState.Pause;
+                        return;
+                    }
                     await internalStart(scope, pts);
+                    if (inst_pts.IsPaused)
+                    {
+                        State = SyncTaskState.Pause;
+                        return;
+                    }
                 }
-                if (inst_pts.IsPaused)
+                catch (Exception ex)
                 {
-                    State = SyncTaskState.Pause;
-                    return;
+                    //log
+                    Debug.WriteLine(ex);
+                    Message = $"{ex.Message}";
+                    State = SyncTaskState.Error;
+                    db.SyncTasks
+                        .Where(x => x.Id == syncTaskId)
+                        .ExecuteUpdate(call => call
+                        .SetProperty(x => x.State, x => SyncTaskDbState.Error)
+                        .SetProperty(x => x.Message, x => Message));
                 }
-            }
-            catch (Exception ex)
-            {
-                //log
-                Debug.WriteLine(ex);
-                Message = $"{ex.Message}";
-                State = SyncTaskState.Error;
-                dbModel.State = SyncTaskDbState.Error;
-                DbService.db.Update(dbModel);
-            }
-            finally
-            {
-                Monitor.Exit(this);
+                finally
+                {
+                    Monitor.Exit(this);
+                }
             }
         }
 
         public async Task internalStart(AsyncServiceScope scope, PauseTokenSource inst_pts)
         {
+            var db = scope.ServiceProvider.GetRequiredService<DefaultDbContext>();
+            var dbModel = db.SyncTasks
+                .Include(x => x.User)
+                .Where(x => x.Id == syncTaskId)
+                .First();
+            var user = scope.ServiceProvider.GetRequiredService<SystemUserInfoProvider>();
+            user.SetUser(dbModel.User);
             var tbox = scope.ServiceProvider.GetRequiredService<TboxService>();
             var jbox = scope.ServiceProvider.GetRequiredService<JboxService>();
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<FolderSyncTask>>();
+
             State = SyncTaskState.Running;
 
             if (inst_pts.IsPaused)
@@ -220,7 +242,9 @@ namespace JboxTransfer.Core.Modules.Sync
                     State = SyncTaskState.Error;
                     Message = $"创建文件夹失败：{res0.Result.Message}";
                     dbModel.State = SyncTaskDbState.Error;
-                    DbService.db.Update(dbModel);
+                    dbModel.Message = Message;
+                    db.Update(dbModel);
+                    db.SaveChanges();
                     return;
                 }
             }
@@ -246,23 +270,31 @@ namespace JboxTransfer.Core.Modules.Sync
                         if (info.Content.Length == 0)
                             break;
 
-                        Monitor.Enter(DbService.db);
+                        Monitor.Enter(db.insertLock);
                         if (inst_pts.IsPaused)
                         {
-                            Monitor.Exit(DbService.db);
+                            Monitor.Exit(db.insertLock);
                             return;
                         }
-                        var order = DbService.GetMinOrder() - 1;
-                        DbService.db.RunInTransaction(() =>
-                        {
-                            foreach (var item in info.Content.Where(x => x.IsDir == true))
-                                DbService.db.Insert(new SyncTaskDbModel(SyncTaskType.Folder, item.Path, 0, order));
-                            foreach (var item in info.Content.Where(x => x.IsDir == false))
-                                DbService.db.Insert(new SyncTaskDbModel(SyncTaskType.File, item.Path, item.Bytes, order) { MD5_Ori = item.Hash });
-                            dbModel.RemainParts = page.ToString();
-                            DbService.db.Update(dbModel);
-                        });
-                        Monitor.Exit(DbService.db);
+                        var order = db.GetMinOrder() - 1;
+
+                        //db.ChangeTracker.DetectChanges();
+                        //Console.WriteLine(db.ChangeTracker.DebugView.LongView);
+                        //Console.WriteLine("---------------------------------------");
+
+                        //EF Core 的 SaveChanges 本身就是事务
+                        foreach (var item in info.Content.Where(x => x.IsDir == true))
+                            db.Add(new SyncTaskDbModel(user.GetUser(), SyncTaskType.Folder, item.Path, 0, order));
+                        foreach (var item in info.Content.Where(x => x.IsDir == false))
+                            db.Add(new SyncTaskDbModel(user.GetUser(), SyncTaskType.File, item.Path, item.Bytes, order) { MD5_Ori = item.Hash });
+                        dbModel.RemainParts = page.ToString();
+                        db.Update(dbModel);
+
+                        //db.ChangeTracker.DetectChanges();
+                        //Console.WriteLine(db.ChangeTracker.DebugView.LongView);
+                        db.SaveChanges();
+
+                        Monitor.Exit(db.insertLock);
 
                         succ += info.Content.Length;
                         page++;
@@ -270,24 +302,29 @@ namespace JboxTransfer.Core.Modules.Sync
                     }
                     catch (Exception ex)
                     {
+                        logger.LogWarning($"同步文件夹出错：{ex}");
                         this.ex = ex;
                     }
                 }
                 if (t <= 0)
                 {
                     State = SyncTaskState.Error;
-                    dbModel.State = SyncTaskDbState.Error;
                     Message = ex.Message;
-                    DbService.db.Update(dbModel);
+                    dbModel.State = SyncTaskDbState.Error;
+                    dbModel.Message = Message;
+                    db.Update(dbModel);
+                    db.SaveChanges();
                     return;
                 }
                 if (info.Content.Length == 0)
                     break;
             }
-            dbModel.State = SyncTaskDbState.Done;
             State = SyncTaskState.Complete;
             Message = "同步完成";
-            DbService.db.Update(dbModel);
+            dbModel.State = SyncTaskDbState.Done;
+            dbModel.Message = Message;
+            db.Update(dbModel);
+            db.SaveChanges();
         }
     }
 }

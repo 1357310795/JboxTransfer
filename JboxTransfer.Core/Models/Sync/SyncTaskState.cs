@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace JboxTransfer.Core.Models
+namespace JboxTransfer.Core.Models.Sync
 {
     public enum SyncTaskState
     {

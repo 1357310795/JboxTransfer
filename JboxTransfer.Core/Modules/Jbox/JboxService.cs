@@ -61,7 +61,7 @@ namespace JboxTransfer.Core.Modules.Jbox
                     return new (false, $"校外访问");
                 }
 
-                var cookies = _ccProvider.GetCookieContainer().GetCookies(new Uri("https://jbox.sjtu.edu.cn"));
+                var cookies = _ccProvider.GetCookieContainer(_user.GetUser()).GetCookies(new Uri("https://jbox.sjtu.edu.cn"));
                 var Sc = cookies.FirstOrDefault(x => x.Name == "S");
                 if (Sc != null)
                 {

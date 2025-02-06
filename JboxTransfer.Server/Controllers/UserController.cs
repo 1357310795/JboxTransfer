@@ -254,7 +254,13 @@ namespace JboxTransfer.Server.Controllers
 
             if (sysuser == null)
             {
-                sysuser = new SystemUser() { Name = userinfores.Result.Name, Jaccount = userinfores.Result.AccountNo, Cookie = loginService.GetCookie(), RegistrationTime = DateTime.Now };
+                sysuser = new SystemUser() { 
+                    Name = userinfores.Result.Name, 
+                    Jaccount = userinfores.Result.AccountNo, 
+                    Cookie = loginService.GetCookie(), 
+                    RegistrationTime = DateTime.Now,
+                    Role = userinfores.Result.UserType
+                };
                 _context.Add(sysuser);
                 _context.SaveChanges();
             }

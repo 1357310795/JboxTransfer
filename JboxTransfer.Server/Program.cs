@@ -1,5 +1,6 @@
 
 using JboxTransfer.Core.Modules;
+using JboxTransfer.Core.Modules.AutoMapper;
 using JboxTransfer.Core.Modules.Db;
 using JboxTransfer.Core.Modules.Jbox;
 using JboxTransfer.Core.Modules.Sync;
@@ -69,12 +70,15 @@ namespace JboxTransfer.Server
 
             // Sqlite
             Directory.CreateDirectory(PathHelper.AppDataPath);
-            builder.Services.AddDbContext<DefaultDbContext>(options => options.UseSqlite($"DataSource={Path.Combine(PathHelper.AppDataPath, "jboxtransfer.server.db")};"));
+            builder.Services.AddDbContext<DefaultDbContext>(options => {
+                options.UseSqlite($"DataSource={Path.Combine(PathHelper.AppDataPath, "jboxtransfer.server.db")};");
+                options.EnableSensitiveDataLogging();
+            });
 
             // AutoMapper
             builder.Services.AddAutoMapper(cfg =>
             {
-                //cfg.AddProfile<JobInstMapperProfile>();
+                cfg.AddProfile<SyncTaskMapperProfile>();
             });
 
             // CORS
@@ -119,12 +123,13 @@ namespace JboxTransfer.Server
             builder.Services.AddScoped<JboxService>();
             builder.Services.AddTransient<JboxDownloadSession>();
 
-            builder.Services.AddScoped<CookieContainerProvider>();
+            builder.Services.AddSingleton<CookieContainerProvider>();
             builder.Services.AddScoped<HttpClientFactory>();
             builder.Services.AddScoped<SystemUserInfoProvider>();
 
             builder.Services.AddTransient<FileSyncTask>();
             builder.Services.AddTransient<FolderSyncTask>();
+            builder.Services.AddSingleton<SyncTaskCollectionProvider>();
 
             // Host
             //builder.WebHost.UseUrls("http://0.0.0.0:18888");

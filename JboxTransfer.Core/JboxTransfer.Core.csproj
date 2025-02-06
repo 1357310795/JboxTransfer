@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="13.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.0" />
 	  <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.1">
 		  <PrivateAssets>all</PrivateAssets>

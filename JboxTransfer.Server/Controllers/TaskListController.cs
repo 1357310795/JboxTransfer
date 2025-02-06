@@ -1,4 +1,8 @@
-﻿using JboxTransfer.Core.Modules.Db;
+﻿using AutoMapper;
+using JboxTransfer.Core.Modules;
+using JboxTransfer.Core.Modules.Db;
+using JboxTransfer.Core.Modules.Jbox;
+using JboxTransfer.Core.Modules.Sync;
 using JboxTransfer.Server.Modules.DataWrapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,12 +16,21 @@ namespace JboxTransfer.Server.Controllers
     {
         private readonly ILogger<TaskListController> _logger;
         private readonly IMemoryCache _mcache;
-        private readonly DefaultDbContext _context;
-        public TaskListController(ILogger<TaskListController> logger, IMemoryCache memoryCache, DefaultDbContext context)
+        private readonly DefaultDbContext _db;
+        private readonly SystemUserInfoProvider _user;
+        private readonly SyncTaskCollectionProvider _taskCollectionProvider;
+        private readonly JboxService _jbox;
+        private readonly IMapper _mapper;
+
+        public TaskListController(ILogger<TaskListController> logger, IMemoryCache mcache, DefaultDbContext db, SystemUserInfoProvider user, SyncTaskCollectionProvider taskCollectionProvider, JboxService jbox, IMapper mapper)
         {
             _logger = logger;
-            _mcache = memoryCache;
-            _context = context;
+            _mcache = mcache;
+            _db = db;
+            _user = user;
+            _taskCollectionProvider = taskCollectionProvider;
+            _jbox = jbox;
+            _mapper = mapper;
         }
 
         [HttpGet]
@@ -33,7 +46,16 @@ namespace JboxTransfer.Server.Controllers
         [Authorize]
         public ApiResponse StartAll()
         {
-            return new ApiResponse();
+            var collection = _taskCollectionProvider.GetSyncTaskCollection(_user.GetUser());
+            var res = collection.StartAll();
+            if (res.success)
+            {
+                return new ApiResponse(true);
+            }
+            else
+            {
+                return new ApiResponse(500, "StartTaskQueueError", res.result);
+            }
         }        
         
         [HttpPost]

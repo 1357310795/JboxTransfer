@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Messaging;
 using JboxTransfer.Core.Helpers;
 using JboxTransfer.Core.Models;
 using JboxTransfer.Core.Models.Db;
+using JboxTransfer.Core.Models.Sync;
 using JboxTransfer.Core.Modules.Jbox;
 using JboxTransfer.Core.Modules.Sync;
 using JboxTransfer.Core.Services;

@@ -50,14 +50,14 @@ namespace JboxTransfer.Core.Modules
 
                 onProgress(uploaded);
 
-                using (content) while (true)
-                    {
-                        var length = content.Read(buffer, 0, buffer.Length);
-                        if (length <= 0) break;
-                        stream.Write(buffer, 0, length);
-                        uploaded += length;
-                        onProgress(uploaded);
-                    }
+                while (true)
+                {
+                    var length = content.Read(buffer, 0, buffer.Length);
+                    if (length <= 0) break;
+                    stream.Write(buffer, 0, length);
+                    uploaded += length;
+                    onProgress(uploaded);
+                }
             });
         }
 
@@ -67,14 +67,14 @@ namespace JboxTransfer.Core.Modules
             return true;
         }
 
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                content.Dispose();
-            }
-            base.Dispose(disposing);
-        }
+        //protected override void Dispose(bool disposing)
+        //{
+        //    if (disposing)
+        //    {
+        //        content.Dispose();
+        //    }
+        //    base.Dispose(disposing);
+        //}
 
 
         private void PrepareContent()
