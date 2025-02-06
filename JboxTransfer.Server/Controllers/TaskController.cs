@@ -67,7 +67,15 @@ namespace JboxTransfer.Server.Controllers
         public ApiResponse Pause([FromForm]int id)
         {
             var collection = _taskCollectionProvider.GetSyncTaskCollection(_user.GetUser());
-            return new ApiResponse();
+            var res = collection.PauseOne(id);
+            if (res.success)
+            {
+                return new ApiResponse(true);
+            }
+            else
+            {
+                return new ApiResponse(500, "PauseTaskError", res.result);
+            }
         }
 
         [HttpPost]
@@ -75,7 +83,16 @@ namespace JboxTransfer.Server.Controllers
         [Authorize]
         public ApiResponse Start(int id)
         {
-            return new ApiResponse();
+            var collection = _taskCollectionProvider.GetSyncTaskCollection(_user.GetUser());
+            var res = collection.StartOne(id);
+            if (res.success)
+            {
+                return new ApiResponse(true);
+            }
+            else
+            {
+                return new ApiResponse(500, "StartTaskError", res.result);
+            }
         }
 
         [HttpPost]
@@ -83,7 +100,16 @@ namespace JboxTransfer.Server.Controllers
         [Authorize]
         public ApiResponse Cancel(int id)
         {
-            return new ApiResponse();
+            var collection = _taskCollectionProvider.GetSyncTaskCollection(_user.GetUser());
+            var res = collection.CancelOne(id);
+            if (res.success)
+            {
+                return new ApiResponse(true);
+            }
+            else
+            {
+                return new ApiResponse(500, "CancelTaskError", res.result);
+            }
         }
 
         [HttpPost]
@@ -97,9 +123,18 @@ namespace JboxTransfer.Server.Controllers
         [HttpPost]
         [Route("restart")]
         [Authorize]
-        public ApiResponse Restart(int id, bool clearProgress = false)
+        public ApiResponse Restart(int id, bool keepProgress = true)
         {
-            return new ApiResponse();
+            var collection = _taskCollectionProvider.GetSyncTaskCollection(_user.GetUser());
+            var res = collection.RestartOneError(id, keepProgress);
+            if (res.success)
+            {
+                return new ApiResponse(true);
+            }
+            else
+            {
+                return new ApiResponse(500, "CancelTaskError", res.result);
+            }
         }
     }
 }

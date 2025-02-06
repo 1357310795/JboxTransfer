@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using JboxTransfer.Core.Models.Output;
 using JboxTransfer.Core.Modules;
 using JboxTransfer.Core.Modules.Db;
 using JboxTransfer.Core.Modules.Jbox;
@@ -36,9 +37,18 @@ namespace JboxTransfer.Server.Controllers
         [HttpGet]
         [Route("list")]
         [Authorize]
-        public ApiResponse List(string type = "transfering")
+        public ApiResponse List(string type = "transferring")
         {
-            return new ApiResponse();
+            var collection = _taskCollectionProvider.GetSyncTaskCollection(_user.GetUser());
+            var res = collection.GetCurrentListInfo();
+            if (res.Success)
+            {
+                return new ApiResponse(new ListOutputDto<SyncTaskOutputDto>(res.Result));
+            }
+            else
+            {
+                return new ApiResponse(500, "QueryTaskQueueError", res.Message);
+            }
         }
 
         [HttpPost]
@@ -63,7 +73,16 @@ namespace JboxTransfer.Server.Controllers
         [Authorize]
         public ApiResponse PauseAll()
         {
-            return new ApiResponse();
+            var collection = _taskCollectionProvider.GetSyncTaskCollection(_user.GetUser());
+            var res = collection.PauseAll();
+            if (res.success)
+            {
+                return new ApiResponse(true);
+            }
+            else
+            {
+                return new ApiResponse(500, "PauseTaskQueueError", res.result);
+            }
         }        
 
         [HttpPost]
@@ -71,16 +90,34 @@ namespace JboxTransfer.Server.Controllers
         [Authorize]
         public ApiResponse CancelAll()
         {
-            return new ApiResponse();
+            var collection = _taskCollectionProvider.GetSyncTaskCollection(_user.GetUser());
+            var res = collection.CancelAll();
+            if (res.success)
+            {
+                return new ApiResponse(true);
+            }
+            else
+            {
+                return new ApiResponse(500, "PauseTaskQueueError", res.result);
+            }
         }
 
         // error queue
         [HttpPost]
         [Route("restartall")]
         [Authorize]
-        public ApiResponse RestartAll(bool clearProgress = false)
+        public ApiResponse RestartAll(bool keepProgress = true)
         {
-            return new ApiResponse();
+            var collection = _taskCollectionProvider.GetSyncTaskCollection(_user.GetUser());
+            var res = collection.RestartAllError(keepProgress);
+            if (res.success)
+            {
+                return new ApiResponse(true);
+            }
+            else
+            {
+                return new ApiResponse(500, "RestartTaskQueueError", res.result);
+            }
         }
 
         [HttpPost]
@@ -88,7 +125,16 @@ namespace JboxTransfer.Server.Controllers
         [Authorize]
         public ApiResponse CancelAllError()
         {
-            return new ApiResponse();
+            var collection = _taskCollectionProvider.GetSyncTaskCollection(_user.GetUser());
+            var res = collection.CancelAllError();
+            if (res.success)
+            {
+                return new ApiResponse(true);
+            }
+            else
+            {
+                return new ApiResponse(500, "CancelTaskQueueError", res.result);
+            }
         }
 
         // complete queue
@@ -97,7 +143,16 @@ namespace JboxTransfer.Server.Controllers
         [Authorize]
         public ApiResponse DeleteAll()
         {
-            return new ApiResponse();
+            var collection = _taskCollectionProvider.GetSyncTaskCollection(_user.GetUser());
+            var res = collection.DeleteAllComplete();
+            if (res.success)
+            {
+                return new ApiResponse(true);
+            }
+            else
+            {
+                return new ApiResponse(500, "DeleteTaskQueueError", res.result);
+            }
         }
     }
 }

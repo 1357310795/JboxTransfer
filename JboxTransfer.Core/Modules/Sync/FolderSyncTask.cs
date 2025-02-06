@@ -8,6 +8,7 @@ using JboxTransfer.Core.Models.Sync;
 using JboxTransfer.Core.Modules.Db;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Drawing;
 
 namespace JboxTransfer.Core.Modules.Sync
 {
@@ -29,7 +30,7 @@ namespace JboxTransfer.Core.Modules.Sync
             set { message = value; }
         }
 
-        private int syncTaskId;
+        public int SyncTaskId { get; private set; }
 
         public PauseTokenSource pts;
 
@@ -41,6 +42,14 @@ namespace JboxTransfer.Core.Modules.Sync
                 return succ / (double)total;
             }
         }
+
+        public long TotalBytes => total;
+        public long DownloadedBytes => succ;
+        public long UploadedBytes => succ;
+
+        public string FileName => GetName();
+        public string FilePath => GetPath();
+        public string ParentPath => GetParentPath();
 
         public bool IsUserPause { get; set; }
 
@@ -63,7 +72,7 @@ namespace JboxTransfer.Core.Modules.Sync
 
         public void Init(SyncTaskDbModel dbModel)
         {
-            this.syncTaskId = dbModel.Id;
+            this.SyncTaskId = dbModel.Id;
             if (dbModel.RemainParts == null)
             {
                 page = 0;
@@ -141,7 +150,7 @@ namespace JboxTransfer.Core.Modules.Sync
                 pts.Pause();
                 State = SyncTaskState.Wait;
                 db.SyncTasks
-                    .Where(x => x.Id == syncTaskId)
+                    .Where(x => x.Id == SyncTaskId)
                     .ExecuteUpdate(call => call
                     .SetProperty(x => x.State, x => SyncTaskDbState.Cancel)
                     .SetProperty(x => x.Message, x => "已取消"));
@@ -157,7 +166,7 @@ namespace JboxTransfer.Core.Modules.Sync
                 if (keepProgress)
                 {
                     db.SyncTasks
-                        .Where(x => x.Id == syncTaskId)
+                        .Where(x => x.Id == SyncTaskId)
                         .ExecuteUpdate(call => call
                         .SetProperty(x => x.State, x => SyncTaskDbState.Idle)
                         .SetProperty(x => x.Message, x => null));
@@ -165,7 +174,7 @@ namespace JboxTransfer.Core.Modules.Sync
                 else
                 {
                     db.SyncTasks
-                        .Where(x => x.Id == syncTaskId)
+                        .Where(x => x.Id == SyncTaskId)
                         .ExecuteUpdate(call => call
                         .SetProperty(x => x.State, x => SyncTaskDbState.Idle)
                         .SetProperty(x => x.ConfirmKey, x => null)
@@ -203,7 +212,7 @@ namespace JboxTransfer.Core.Modules.Sync
                     Message = $"{ex.Message}";
                     State = SyncTaskState.Error;
                     db.SyncTasks
-                        .Where(x => x.Id == syncTaskId)
+                        .Where(x => x.Id == SyncTaskId)
                         .ExecuteUpdate(call => call
                         .SetProperty(x => x.State, x => SyncTaskDbState.Error)
                         .SetProperty(x => x.Message, x => Message));
@@ -220,7 +229,7 @@ namespace JboxTransfer.Core.Modules.Sync
             var db = scope.ServiceProvider.GetRequiredService<DefaultDbContext>();
             var dbModel = db.SyncTasks
                 .Include(x => x.User)
-                .Where(x => x.Id == syncTaskId)
+                .Where(x => x.Id == SyncTaskId)
                 .First();
             var user = scope.ServiceProvider.GetRequiredService<SystemUserInfoProvider>();
             user.SetUser(dbModel.User);

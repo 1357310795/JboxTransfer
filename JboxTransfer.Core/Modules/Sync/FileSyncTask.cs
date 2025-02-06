@@ -37,10 +37,10 @@ namespace JboxTransfer.Core.Modules.Sync
 
         public bool IsUserPause { get; set; }
 
-        private JboxDownloadSession jbox;
-        private TboxUploadSession tbox;
+        private JboxDownloadSession? jbox;
+        private TboxUploadSession? tbox;
 
-        private int syncTaskId;
+        public int SyncTaskId { get; private set; }
 
         private CRC64 crc64;
         private MD5 md5;
@@ -52,11 +52,19 @@ namespace JboxTransfer.Core.Modules.Sync
             get
             {
                 if (size == 0) return 0;
-                var up = (succChunk == chunkCount ? size : (succChunk * ChunkSize + tbox.Progress));
+                var up = (succChunk == chunkCount ? size : (succChunk * ChunkSize + (tbox?.Progress ?? 0)));
                 var all = size;
                 return (double)up / (double)all; 
             }
         }
+
+        public long TotalBytes => size;
+        public long DownloadedBytes => succChunk == chunkCount ? size : (succChunk * ChunkSize + (jbox?.Progress ?? 0));
+        public long UploadedBytes => succChunk == chunkCount ? size : (succChunk * ChunkSize + (tbox?.Progress ?? 0));
+
+        public string FileName => GetName();
+        public string FilePath => GetPath();
+        public string ParentPath => GetParentPath();
 
         private readonly IServiceScopeFactory _serviceScopeFactory;
 
@@ -67,7 +75,7 @@ namespace JboxTransfer.Core.Modules.Sync
 
         public void Init(SyncTaskDbModel dbModel)
         {
-            this.syncTaskId = dbModel.Id;
+            this.SyncTaskId = dbModel.Id;
             this.path = dbModel.FilePath;
             this.jboxhash = dbModel.MD5_Ori;
             this.size = dbModel.Size;
@@ -162,7 +170,7 @@ namespace JboxTransfer.Core.Modules.Sync
                 if (curChunk != null)
                     curChunk.Uploading = false;
                 db.SyncTasks
-                    .Where(x => x.Id == syncTaskId)
+                    .Where(x => x.Id == SyncTaskId)
                     .ExecuteUpdate(call => call
                     .SetProperty(x => x.State, x => SyncTaskDbState.Cancel)
                     .SetProperty(x => x.Message, x => "已取消"));
@@ -178,7 +186,7 @@ namespace JboxTransfer.Core.Modules.Sync
                 if (keepProgress)
                 {
                     db.SyncTasks
-                        .Where(x => x.Id == syncTaskId)
+                        .Where(x => x.Id == SyncTaskId)
                         .ExecuteUpdate(call => call
                         .SetProperty(x => x.State, x => SyncTaskDbState.Idle)
                         .SetProperty(x => x.Message, x => null));
@@ -186,7 +194,7 @@ namespace JboxTransfer.Core.Modules.Sync
                 else
                 {
                     db.SyncTasks
-                        .Where(x => x.Id == syncTaskId)
+                        .Where(x => x.Id == SyncTaskId)
                         .ExecuteUpdate(call => call
                         .SetProperty(x => x.State, x => SyncTaskDbState.Idle)
                         .SetProperty(x => x.ConfirmKey, x => null)
@@ -223,7 +231,7 @@ namespace JboxTransfer.Core.Modules.Sync
                     Message = $"{ex.Message}";
                     State = SyncTaskState.Error;
                     db.SyncTasks
-                        .Where(x => x.Id == syncTaskId)
+                        .Where(x => x.Id == SyncTaskId)
                         .ExecuteUpdate(call => call
                         .SetProperty(x => x.State, x => SyncTaskDbState.Error)
                         .SetProperty(x => x.Message, x => Message));
@@ -242,7 +250,7 @@ namespace JboxTransfer.Core.Modules.Sync
             var db = scope.ServiceProvider.GetRequiredService<DefaultDbContext>();
             var dbModel = db.SyncTasks
                 .Include(x => x.User)
-                .Where(x => x.Id == syncTaskId)
+                .Where(x => x.Id == SyncTaskId)
                 .First();
             var userInfoProvider = scope.ServiceProvider.GetRequiredService<SystemUserInfoProvider>();
             userInfoProvider.SetUser(dbModel.User);

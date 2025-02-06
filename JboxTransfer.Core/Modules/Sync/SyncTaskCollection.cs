@@ -1,4 +1,5 @@
 ﻿using JboxTransfer.Core.Models.Db;
+using JboxTransfer.Core.Models.Output;
 using JboxTransfer.Core.Models.Sync;
 using JboxTransfer.Core.Modules;
 using JboxTransfer.Core.Modules.Db;
@@ -7,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -319,6 +321,188 @@ namespace JboxTransfer.Core.Modules.Sync
             }
             ListCurrent.Clear();
             return new CommonResult(true, "");
+        }
+
+        public CommonResult RestartAllError(bool keepProgress)
+        {
+            try
+            {
+                for (int i = ListError.Count - 1; i >= 0; i--)
+                {
+                    var item = ListError[i];
+                    item.Recover(true);
+                    ListError.Remove(item);
+                }
+                return new CommonResult(true, "");
+            }
+            catch (Exception ex)
+            {
+                return new CommonResult(false, ex.Message);
+            }
+        }
+
+        public CommonResult CancelAllError()
+        {
+            try
+            {
+                foreach (var task in ListError)
+                {
+                    task.Cancel();
+                }
+                ListError = new List<IBaseSyncTask>();
+                return new CommonResult(true, "");
+            }
+            catch (Exception ex)
+            {
+                return new CommonResult(false, ex.Message);
+            }
+        }
+        
+        public CommonResult DeleteAllComplete()
+        {
+            try
+            {
+                ListCompleted = new List<IBaseSyncTask>();
+                return new CommonResult(true, "");
+            }
+            catch (Exception ex)
+            {
+                return new CommonResult(false, ex.Message);
+            }
+        }
+
+        public CommonResult StartOne(int syncTaskId)
+        {
+            try
+            {
+                var task = ListCurrent.FirstOrDefault(x => x.SyncTaskId == syncTaskId);
+                if (task != null)
+                {
+                    if (task.State == SyncTaskState.Pause)
+                    {
+                        task.Resume();
+                        task.IsUserPause = false;
+                    }
+                    else if (task.State == SyncTaskState.Wait)
+                        task.Start();
+                    return new CommonResult(true, "");
+                }
+                else
+                {
+                    return new CommonResult(false, "找不到任务，请确保任务在传输列表中");
+                }
+            }
+            catch (Exception ex)
+            {
+                return new CommonResult(false, ex.Message);
+            }
+        }        
+        
+        public CommonResult PauseOne(int syncTaskId)
+        {
+            try
+            {
+                var task = ListCurrent.FirstOrDefault(x => x.SyncTaskId == syncTaskId);
+                if (task != null)
+                {
+                    if (task.State == SyncTaskState.Running || task.State == SyncTaskState.Wait)
+                    {
+                        task.Pause();
+                        task.IsUserPause = true;
+                    }
+                    return new CommonResult(true, "");
+                }
+                else
+                {
+                    return new CommonResult(false, "找不到任务，请确保任务在传输列表中");
+                }
+            }
+            catch (Exception ex)
+            {
+                return new CommonResult(false, ex.Message);
+            }
+        }
+
+        public CommonResult CancelOne(int syncTaskId) // both in list or db supported
+        {
+            try
+            {
+                var task = ListCurrent.FirstOrDefault(x => x.SyncTaskId == syncTaskId);
+                if (task != null)
+                {
+                    task.Cancel();
+                    ListCurrent.Remove(task);
+                    return new CommonResult(true, "");
+                }
+                else
+                {
+                    using (var scope = _serviceScopeFactory.CreateScope())
+                    {
+                        var db = scope.ServiceProvider.GetRequiredService<DefaultDbContext>();
+                        var taskDb = db.SyncTasks.FirstOrDefault(x => x.Id == syncTaskId);
+                        if (taskDb != null)
+                        {
+                            taskDb.State = SyncTaskDbState.Cancel;
+                            db.Update(taskDb);
+                            int changed = db.SaveChanges(); //todo: 检查
+                            return new CommonResult(true, "");
+                        }
+                        else
+                        {
+                            return new CommonResult(false, "找不到任务");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                return new CommonResult(false, ex.Message);
+            }
+        }
+
+        public CommonResult RestartOneError(int syncTaskId, bool keepProgress)
+        {
+            try
+            {
+                var task = ListError.FirstOrDefault(x => x.SyncTaskId == syncTaskId);
+                if (task != null)
+                {
+                    task.Recover(true);
+                    ListError.Remove(task);
+                    return new CommonResult(true, "");
+                }
+                else
+                {
+                    return new CommonResult(false, "找不到任务，请确保任务在错误列表中");
+                }
+            }
+            catch (Exception ex)
+            {
+                return new CommonResult(false, ex.Message);
+            }
+        }
+        #endregion
+
+        #region Output
+        public CommonResult<List<SyncTaskOutputDto>> GetCurrentListInfo()
+        {
+            List<SyncTaskOutputDto> list = new List<SyncTaskOutputDto>();
+            foreach (var task in ListCurrent)
+            {
+                list.Add(new SyncTaskOutputDto()
+                {
+                    Id = task.SyncTaskId,
+                    FileName = task.FileName,
+                    FilePath = task.FilePath,
+                    ParentPath = task.ParentPath,
+                    Progress = task.Progress,
+                    TotalBytes = task.TotalBytes,
+                    DownloadedBytes = task.DownloadedBytes,
+                    UploadedBytes = task.UploadedBytes,
+                    state = task.State
+                });
+            }
+            return new CommonResult<List<SyncTaskOutputDto>>(true, "", list);
         }
         #endregion
     }

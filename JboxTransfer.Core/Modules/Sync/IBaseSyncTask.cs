@@ -19,13 +19,17 @@ namespace JboxTransfer.Core.Modules.Sync
         public void Cancel();
         public void Recover(bool keepProgress);
 
-        public string GetName();
-        public string GetPath();
-        public string GetParentPath();
+        public string FileName { get; }
+        public string FilePath { get; }
+        public string ParentPath { get; }
 
         public double Progress { get; }
         public string Message { get; }
         public SyncTaskState State { get; set; }
         public bool IsUserPause { get; set; }
+        public int SyncTaskId { get; }
+        public long TotalBytes { get; }
+        public long DownloadedBytes { get; }
+        public long UploadedBytes { get; }
     }
 }
