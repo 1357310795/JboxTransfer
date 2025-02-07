@@ -50,6 +50,7 @@ namespace JboxTransfer.Core.Modules.Sync
         public string FileName => GetName();
         public string FilePath => GetPath();
         public string ParentPath => GetParentPath();
+        public SyncTaskType Type => SyncTaskType.Folder;
 
         public bool IsUserPause { get; set; }
 
@@ -83,9 +84,10 @@ namespace JboxTransfer.Core.Modules.Sync
                 page = int.Parse(dbModel.RemainParts);
                 succ = page * 50;
             }
-            total = 0;
+            total = (int)dbModel.Size;
             path = dbModel.FilePath;
             State = dbModel.State == SyncTaskDbState.Error ? SyncTaskState.Error : SyncTaskState.Wait;
+            this.Message = dbModel.Message;
             pts = new PauseTokenSource();
         }
 
@@ -153,6 +155,7 @@ namespace JboxTransfer.Core.Modules.Sync
                     .Where(x => x.Id == SyncTaskId)
                     .ExecuteUpdate(call => call
                     .SetProperty(x => x.State, x => SyncTaskDbState.Cancel)
+                    .SetProperty(x => x.UpdateTime, x => DateTime.Now)
                     .SetProperty(x => x.Message, x => "已取消"));
                 Message = "已取消";
             }
@@ -169,6 +172,7 @@ namespace JboxTransfer.Core.Modules.Sync
                         .Where(x => x.Id == SyncTaskId)
                         .ExecuteUpdate(call => call
                         .SetProperty(x => x.State, x => SyncTaskDbState.Idle)
+                        .SetProperty(x => x.UpdateTime, x => DateTime.Now)
                         .SetProperty(x => x.Message, x => null));
                 }
                 else
@@ -177,6 +181,7 @@ namespace JboxTransfer.Core.Modules.Sync
                         .Where(x => x.Id == SyncTaskId)
                         .ExecuteUpdate(call => call
                         .SetProperty(x => x.State, x => SyncTaskDbState.Idle)
+                        .SetProperty(x => x.UpdateTime, x => DateTime.Now)
                         .SetProperty(x => x.ConfirmKey, x => null)
                         .SetProperty(x => x.RemainParts, x => null)
                         .SetProperty(x => x.Message, x => null));
@@ -215,6 +220,7 @@ namespace JboxTransfer.Core.Modules.Sync
                         .Where(x => x.Id == SyncTaskId)
                         .ExecuteUpdate(call => call
                         .SetProperty(x => x.State, x => SyncTaskDbState.Error)
+                        .SetProperty(x => x.UpdateTime, x => DateTime.Now)
                         .SetProperty(x => x.Message, x => Message));
                 }
                 finally
@@ -251,6 +257,7 @@ namespace JboxTransfer.Core.Modules.Sync
                     State = SyncTaskState.Error;
                     Message = $"创建文件夹失败：{res0.Result.Message}";
                     dbModel.State = SyncTaskDbState.Error;
+                    dbModel.UpdateTime = DateTime.Now;
                     dbModel.Message = Message;
                     db.Update(dbModel);
                     db.SaveChanges();
@@ -274,8 +281,6 @@ namespace JboxTransfer.Core.Modules.Sync
                         if (!res.Success)
                             throw new Exception($"获取文件夹信息失败：{res.Message}");
 
-                        total = (int)info.ContentSize;
-
                         if (info.Content.Length == 0)
                             break;
 
@@ -296,7 +301,12 @@ namespace JboxTransfer.Core.Modules.Sync
                             db.Add(new SyncTaskDbModel(user.GetUser(), SyncTaskType.Folder, item.Path, 0, order));
                         foreach (var item in info.Content.Where(x => x.IsDir == false))
                             db.Add(new SyncTaskDbModel(user.GetUser(), SyncTaskType.File, item.Path, item.Bytes, order) { MD5_Ori = item.Hash });
+
+                        succ += info.Content.Length;
+                        total = (int)info.ContentSize;
+                        dbModel.Size = total;
                         dbModel.RemainParts = page.ToString();
+                        dbModel.UpdateTime = DateTime.Now;
                         db.Update(dbModel);
 
                         //db.ChangeTracker.DetectChanges();
@@ -305,7 +315,6 @@ namespace JboxTransfer.Core.Modules.Sync
 
                         Monitor.Exit(db.insertLock);
 
-                        succ += info.Content.Length;
                         page++;
                         break;
                     }
@@ -320,6 +329,7 @@ namespace JboxTransfer.Core.Modules.Sync
                     State = SyncTaskState.Error;
                     Message = ex.Message;
                     dbModel.State = SyncTaskDbState.Error;
+                    dbModel.UpdateTime = DateTime.Now;
                     dbModel.Message = Message;
                     db.Update(dbModel);
                     db.SaveChanges();
@@ -331,6 +341,7 @@ namespace JboxTransfer.Core.Modules.Sync
             State = SyncTaskState.Complete;
             Message = "同步完成";
             dbModel.State = SyncTaskDbState.Done;
+            dbModel.UpdateTime = DateTime.Now;
             dbModel.Message = Message;
             db.Update(dbModel);
             db.SaveChanges();

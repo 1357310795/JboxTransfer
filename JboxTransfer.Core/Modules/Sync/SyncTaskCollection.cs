@@ -164,6 +164,7 @@ namespace JboxTransfer.Core.Modules.Sync
                     foreach (var item in items)
                     {
                         item.State = SyncTaskDbState.Busy;
+                        item.UpdateTime = DateTime.Now;
                         db.Update(item);
                     }
                     await db.SaveChangesAsync();
@@ -358,7 +359,7 @@ namespace JboxTransfer.Core.Modules.Sync
             }
         }
         
-        public CommonResult DeleteAllComplete()
+        public CommonResult DeleteAllDone()
         {
             try
             {
@@ -480,6 +481,28 @@ namespace JboxTransfer.Core.Modules.Sync
             {
                 return new CommonResult(false, ex.Message);
             }
+        } 
+        
+        public CommonResult CancelOneError(int syncTaskId)
+        {
+            try
+            {
+                var task = ListError.FirstOrDefault(x => x.SyncTaskId == syncTaskId);
+                if (task != null)
+                {
+                    task.Cancel();
+                    ListError.Remove(task);
+                    return new CommonResult(true, "");
+                }
+                else
+                {
+                    return new CommonResult(false, "找不到任务，请确保任务在错误列表中");
+                }
+            }
+            catch (Exception ex)
+            {
+                return new CommonResult(false, ex.Message);
+            }
         }
         #endregion
 
@@ -499,7 +522,55 @@ namespace JboxTransfer.Core.Modules.Sync
                     TotalBytes = task.TotalBytes,
                     DownloadedBytes = task.DownloadedBytes,
                     UploadedBytes = task.UploadedBytes,
-                    state = task.State
+                    State = task.State,
+                    Message = task.Message,
+                    Type = task.Type,
+                });
+            }
+            return new CommonResult<List<SyncTaskOutputDto>>(true, "", list);
+        }        
+        
+        public CommonResult<List<SyncTaskOutputDto>> GetCompletedListInfo()
+        {
+            List<SyncTaskOutputDto> list = new List<SyncTaskOutputDto>();
+            foreach (var task in ListCompleted)
+            {
+                list.Add(new SyncTaskOutputDto()
+                {
+                    Id = task.SyncTaskId,
+                    FileName = task.FileName,
+                    FilePath = task.FilePath,
+                    ParentPath = task.ParentPath,
+                    Progress = task.Progress,
+                    TotalBytes = task.TotalBytes,
+                    DownloadedBytes = task.DownloadedBytes,
+                    UploadedBytes = task.UploadedBytes,
+                    State = task.State,
+                    Message = task.Message,
+                    Type = task.Type,
+                });
+            }
+            return new CommonResult<List<SyncTaskOutputDto>>(true, "", list);
+        }
+
+        public CommonResult<List<SyncTaskOutputDto>> GetErrorListInfo()
+        {
+            List<SyncTaskOutputDto> list = new List<SyncTaskOutputDto>();
+            foreach (var task in ListError)
+            {
+                list.Add(new SyncTaskOutputDto()
+                {
+                    Id = task.SyncTaskId,
+                    FileName = task.FileName,
+                    FilePath = task.FilePath,
+                    ParentPath = task.ParentPath,
+                    Progress = task.Progress,
+                    TotalBytes = task.TotalBytes,
+                    DownloadedBytes = task.DownloadedBytes,
+                    UploadedBytes = task.UploadedBytes,
+                    State = task.State,
+                    Message = task.Message,
+                    Type = task.Type,
                 });
             }
             return new CommonResult<List<SyncTaskOutputDto>>(true, "", list);

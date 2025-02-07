@@ -25,12 +25,11 @@ namespace JboxTransfer.Core.Models.Db
             CreationTime = DateTime.Now;
             UpdateTime = DateTime.Now;
             UserId = user.Id;
-            User = user;
         }
 
         public int Id { get; set; }
         public int UserId { get; set; }
-        public SystemUser User { get; set; }
+        public SystemUser? User { get; set; }
         public int Order { get; set; }
         /// <summary>
         /// 0:file

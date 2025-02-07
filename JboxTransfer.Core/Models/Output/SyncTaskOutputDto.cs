@@ -1,4 +1,5 @@
-﻿using JboxTransfer.Core.Models.Sync;
+﻿using JboxTransfer.Core.Models.Db;
+using JboxTransfer.Core.Models.Sync;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -36,6 +37,13 @@ namespace JboxTransfer.Core.Models.Output
 
         [JsonPropertyName("state")]
         [JsonConverter(typeof(JsonStringEnumConverter))]
-        public SyncTaskState state { get; set; }
+        public SyncTaskState State { get; set; }
+
+        [JsonPropertyName("type")]
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public SyncTaskType Type { get; set; }
+
+        [JsonPropertyName("message")]
+        public string Message { get; set; }
     }
 }

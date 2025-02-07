@@ -56,6 +56,7 @@ namespace JboxTransfer.Server.Controllers
 
             var order = _db.GetMinOrder() - 1;
             var entity = _db.Add(new SyncTaskDbModel(_user.GetUser(), res.Result.IsDir ? SyncTaskType.Folder : SyncTaskType.File, res.Result.Path, res.Result.Bytes, order) { MD5_Ori = res.Result.Hash });
+
             _db.SaveChanges();
 
             return new ApiResponse(_mapper.Map<SyncTaskDbModelOutputDto>(entity.Entity));
@@ -81,7 +82,7 @@ namespace JboxTransfer.Server.Controllers
         [HttpPost]
         [Route("start")]
         [Authorize]
-        public ApiResponse Start(int id)
+        public ApiResponse Start([FromForm] int id)
         {
             var collection = _taskCollectionProvider.GetSyncTaskCollection(_user.GetUser());
             var res = collection.StartOne(id);
@@ -98,7 +99,7 @@ namespace JboxTransfer.Server.Controllers
         [HttpPost]
         [Route("cancel")]
         [Authorize]
-        public ApiResponse Cancel(int id)
+        public ApiResponse Cancel([FromForm] int id)
         {
             var collection = _taskCollectionProvider.GetSyncTaskCollection(_user.GetUser());
             var res = collection.CancelOne(id);
@@ -113,17 +114,34 @@ namespace JboxTransfer.Server.Controllers
         }
 
         [HttpPost]
+        [Route("cancelerr")]
+        [Authorize]
+        public ApiResponse CancelError([FromForm] int id)
+        {
+            var collection = _taskCollectionProvider.GetSyncTaskCollection(_user.GetUser());
+            var res = collection.CancelOneError(id);
+            if (res.success)
+            {
+                return new ApiResponse(true);
+            }
+            else
+            {
+                return new ApiResponse(500, "CancelErrorTaskError", res.result);
+            }
+        }
+
+        [HttpPost]
         [Route("settop")]
         [Authorize]
-        public ApiResponse SetTop(int id)
+        public ApiResponse SetTop([FromForm] int id)
         {
             return new ApiResponse();
         }
 
         [HttpPost]
-        [Route("restart")]
+        [Route("restarterr")]
         [Authorize]
-        public ApiResponse Restart(int id, bool keepProgress = true)
+        public ApiResponse RestartError([FromForm] int id, [FromForm] bool keepProgress = true)
         {
             var collection = _taskCollectionProvider.GetSyncTaskCollection(_user.GetUser());
             var res = collection.RestartOneError(id, keepProgress);
@@ -133,8 +151,24 @@ namespace JboxTransfer.Server.Controllers
             }
             else
             {
-                return new ApiResponse(500, "CancelTaskError", res.result);
+                return new ApiResponse(500, "RestartErrorTaskError", res.result);
             }
+        }
+
+        [HttpGet]
+        [Route("jboxlink")]
+        [Authorize]
+        public ApiResponse JboxLink([FromForm] int id)
+        {
+            return new ApiResponse();
+        }
+
+        [HttpGet]
+        [Route("tboxlink")]
+        [Authorize]
+        public ApiResponse TboxLink([FromForm] int id)
+        {
+            return new ApiResponse();
         }
     }
 }

@@ -26,6 +26,7 @@ namespace JboxTransfer.Core.Modules.Sync
         public double Progress { get; }
         public string Message { get; }
         public SyncTaskState State { get; set; }
+        public SyncTaskType Type { get; }
         public bool IsUserPause { get; set; }
         public int SyncTaskId { get; }
         public long TotalBytes { get; }

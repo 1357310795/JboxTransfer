@@ -52,9 +52,7 @@ namespace JboxTransfer.Core.Modules.Sync
             get
             {
                 if (size == 0) return 0;
-                var up = (succChunk == chunkCount ? size : (succChunk * ChunkSize + (tbox?.Progress ?? 0)));
-                var all = size;
-                return (double)up / (double)all; 
+                return ((double)DownloadedBytes + (double)UploadedBytes) / (2*(double)TotalBytes); 
             }
         }
 
@@ -65,6 +63,7 @@ namespace JboxTransfer.Core.Modules.Sync
         public string FileName => GetName();
         public string FilePath => GetPath();
         public string ParentPath => GetParentPath();
+        public SyncTaskType Type => SyncTaskType.File;
 
         private readonly IServiceScopeFactory _serviceScopeFactory;
 
@@ -79,6 +78,7 @@ namespace JboxTransfer.Core.Modules.Sync
             this.path = dbModel.FilePath;
             this.jboxhash = dbModel.MD5_Ori;
             this.size = dbModel.Size;
+            this.Message = dbModel.Message;
             this.chunkCount = size.GetChunkCount();
 
             if (dbModel.ConfirmKey == null)
@@ -173,6 +173,7 @@ namespace JboxTransfer.Core.Modules.Sync
                     .Where(x => x.Id == SyncTaskId)
                     .ExecuteUpdate(call => call
                     .SetProperty(x => x.State, x => SyncTaskDbState.Cancel)
+                    .SetProperty(x => x.UpdateTime, x => DateTime.Now)
                     .SetProperty(x => x.Message, x => "已取消"));
                 Message = "已取消";
             }
@@ -189,6 +190,7 @@ namespace JboxTransfer.Core.Modules.Sync
                         .Where(x => x.Id == SyncTaskId)
                         .ExecuteUpdate(call => call
                         .SetProperty(x => x.State, x => SyncTaskDbState.Idle)
+                        .SetProperty(x => x.UpdateTime, x => DateTime.Now)
                         .SetProperty(x => x.Message, x => null));
                 }
                 else
@@ -197,6 +199,7 @@ namespace JboxTransfer.Core.Modules.Sync
                         .Where(x => x.Id == SyncTaskId)
                         .ExecuteUpdate(call => call
                         .SetProperty(x => x.State, x => SyncTaskDbState.Idle)
+                        .SetProperty(x => x.UpdateTime, x => DateTime.Now)
                         .SetProperty(x => x.ConfirmKey, x => null)
                         .SetProperty(x => x.RemainParts, x => null)
                         .SetProperty(x => x.Message, x => null));
@@ -234,6 +237,7 @@ namespace JboxTransfer.Core.Modules.Sync
                         .Where(x => x.Id == SyncTaskId)
                         .ExecuteUpdate(call => call
                         .SetProperty(x => x.State, x => SyncTaskDbState.Error)
+                        .SetProperty(x => x.UpdateTime, x => DateTime.Now)
                         .SetProperty(x => x.Message, x => Message));
                 }
                 finally
@@ -286,6 +290,7 @@ namespace JboxTransfer.Core.Modules.Sync
                 State = SyncTaskState.Error;
                 dbModel.State = SyncTaskDbState.Error;
                 dbModel.Message = res0.result;
+                dbModel.UpdateTime = DateTime.Now;
                 Message = res0.result; 
                 db.Update(dbModel);
                 db.SaveChanges();
@@ -300,6 +305,7 @@ namespace JboxTransfer.Core.Modules.Sync
             {
                 State = SyncTaskState.Error;
                 dbModel.State = SyncTaskDbState.Error;
+                dbModel.UpdateTime = DateTime.Now;
                 dbModel.Message = res1.Message;
                 Message = res1.Message;
                 db.Update(dbModel);
@@ -315,6 +321,7 @@ namespace JboxTransfer.Core.Modules.Sync
             {
                 State = SyncTaskState.Error;
                 dbModel.State = SyncTaskDbState.Error;
+                dbModel.UpdateTime = DateTime.Now;
                 dbModel.Message = res2.Message;
                 Message = res2.Message;
                 db.Update(dbModel);
@@ -330,6 +337,7 @@ namespace JboxTransfer.Core.Modules.Sync
             dbModel.RemainParts = JsonConvert.SerializeObject(tbox.RemainParts.Select(x => x.PartNumber));
             dbModel.CRC64_Part = (long)crc64.GetValue();
             dbModel.MD5_Part = JsonConvert.SerializeObject(md5.GetValue());
+            dbModel.UpdateTime = DateTime.Now;
             db.Update(dbModel);
             db.SaveChanges();
 
@@ -381,6 +389,7 @@ namespace JboxTransfer.Core.Modules.Sync
                     Message = ex.Message;
                     chunkRes = null;
                     dbModel.State = SyncTaskDbState.Error;
+                    dbModel.UpdateTime = DateTime.Now;
                     dbModel.Message = ex.Message;
                     db.Update(dbModel);
                     db.SaveChanges();
@@ -399,6 +408,7 @@ namespace JboxTransfer.Core.Modules.Sync
                 dbModel.CRC64_Part = (long)crc64.GetValue();
                 dbModel.MD5_Part = JsonConvert.SerializeObject(md5.GetValue());
                 dbModel.RemainParts = JsonConvert.SerializeObject(tbox.RemainParts.Select(x=>x.PartNumber));
+                dbModel.UpdateTime = DateTime.Now;
                 db.Update(dbModel);
                 db.SaveChanges();
 
@@ -412,6 +422,7 @@ namespace JboxTransfer.Core.Modules.Sync
                     State = SyncTaskState.Error;
                     dbModel.State = SyncTaskDbState.Error;
                     dbModel.Message = Message;
+                    dbModel.UpdateTime = DateTime.Now;
                     db.Update(dbModel);
                     db.SaveChanges();
                     return;
@@ -436,6 +447,7 @@ namespace JboxTransfer.Core.Modules.Sync
                     Message = $"下载流校验值不匹配";
                     State = SyncTaskState.Error;
                     dbModel.State = SyncTaskDbState.Error;
+                    dbModel.UpdateTime = DateTime.Now;
                     dbModel.Message = Message;
                     db.Update(dbModel);
                     db.SaveChanges();
@@ -447,6 +459,7 @@ namespace JboxTransfer.Core.Modules.Sync
                     Message = $"{res4.Message}";
                     State = SyncTaskState.Error;
                     dbModel.State = SyncTaskDbState.Error;
+                    dbModel.UpdateTime = DateTime.Now;
                     dbModel.Message = Message;
                     db.Update(dbModel);
                     db.SaveChanges();
@@ -456,6 +469,7 @@ namespace JboxTransfer.Core.Modules.Sync
                 State = SyncTaskState.Complete;
                 dbModel.Message = Message;
                 dbModel.State = SyncTaskDbState.Done;
+                dbModel.UpdateTime = DateTime.Now;
                 db.Update(dbModel);
                 db.SaveChanges();
             }

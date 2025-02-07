@@ -23,14 +23,17 @@ namespace JboxTransfer.Core.Modules
 
         public CookieContainer GetCookieContainer(SystemUser user)
         {
-            if (!_dic.TryGetValue(user.Jaccount, out CookieContainer? cc))
+            lock (_dic)
             {
-                _logger.LogTrace(user.Jaccount + " cookie not found, create new one.");
-                cc = new CookieContainer();
-                _dic.Add(user.Jaccount, cc);
-                cc.Add(new Cookie("JAAuthCookie", user.Cookie, "/jaccount", "jaccount.sjtu.edu.cn"));
+                if (!_dic.TryGetValue(user.Jaccount, out CookieContainer? cc))
+                {
+                    _logger.LogTrace(user.Jaccount + " cookie not found, create new one.");
+                    cc = new CookieContainer();
+                    _dic.Add(user.Jaccount, cc);
+                    cc.Add(new Cookie("JAAuthCookie", user.Cookie, "/jaccount", "jaccount.sjtu.edu.cn"));
+                }
+                return cc;
             }
-            return cc;
         }
     }
 }

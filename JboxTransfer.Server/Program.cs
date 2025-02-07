@@ -85,10 +85,10 @@ namespace JboxTransfer.Server
             builder.Services.AddCors(options =>
             {
                 options.AddDefaultPolicy(
-                    x => x.WithOrigins("http://localhost:3000")
+                    x => x.WithOrigins("http://localhost:5173")
                         .WithMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
                         .AllowAnyHeader()
-                        .SetIsOriginAllowed(origin => origin == "http://localhost:3000")
+                        .SetIsOriginAllowed(origin => origin == "http://localhost:5173")
                         .AllowCredentials()
                 );
             });

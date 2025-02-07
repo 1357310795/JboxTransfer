@@ -40,7 +40,13 @@ namespace JboxTransfer.Server.Controllers
         public ApiResponse List(string type = "transferring")
         {
             var collection = _taskCollectionProvider.GetSyncTaskCollection(_user.GetUser());
-            var res = collection.GetCurrentListInfo();
+            var res = type switch
+            {
+                "transferring" => collection.GetCurrentListInfo(),
+                "completed" => collection.GetCompletedListInfo(),
+                "error" => collection.GetErrorListInfo(),
+                _ => throw new NotImplementedException(),
+            };
             if (res.Success)
             {
                 return new ApiResponse(new ListOutputDto<SyncTaskOutputDto>(res.Result));
@@ -104,7 +110,7 @@ namespace JboxTransfer.Server.Controllers
 
         // error queue
         [HttpPost]
-        [Route("restartall")]
+        [Route("restartallerr")]
         [Authorize]
         public ApiResponse RestartAll(bool keepProgress = true)
         {
@@ -139,12 +145,12 @@ namespace JboxTransfer.Server.Controllers
 
         // complete queue
         [HttpPost]
-        [Route("deleteall")]
+        [Route("deletealldone")]
         [Authorize]
         public ApiResponse DeleteAll()
         {
             var collection = _taskCollectionProvider.GetSyncTaskCollection(_user.GetUser());
-            var res = collection.DeleteAllComplete();
+            var res = collection.DeleteAllDone();
             if (res.success)
             {
                 return new ApiResponse(true);
