@@ -1,11 +1,14 @@
 ﻿using JboxTransfer.Core.Models.Db;
+using JboxTransfer.Core.Models.Message;
 using JboxTransfer.Core.Models.Output;
 using JboxTransfer.Core.Models.Sync;
 using JboxTransfer.Core.Modules;
 using JboxTransfer.Core.Modules.Db;
 using JboxTransfer.Core.Services;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -20,24 +23,31 @@ namespace JboxTransfer.Core.Modules.Sync
 {
     public class SyncTaskCollection
     {
-        public List<IBaseSyncTask> ListCompleted { get; set; }
-        public List<IBaseSyncTask> ListError { get; set; }
-        public List<IBaseSyncTask> ListCurrent { get; set; }
-        public SystemUser User { get; set; }
+        private const int MaxErrorTaskCount = 99;
+        private const int MaxCompletedTaskCount = 99;
+        private const int MaxPendingTaskCount = 20;
+
+        private List<IBaseSyncTask> ListCompleted { get; set; }
+        private List<IBaseSyncTask> ListError { get; set; }
+        private List<IBaseSyncTask> ListCurrent { get; set; }
+        private int UserId { get; set; }
+        private UserPreference Preference { get; set; }
 
         private object addTaskLock = new object();
 
-        LoopWorker checker;
+        private LoopWorker checker;
 
         public bool IsBusy { get; set; }
-        public bool IsError { get; set; }
+        public bool IsTooManyError { get; set; }
+        public bool HasMoreTasks { get; set; }
         public string Message { get; set; }
 
         private readonly IServiceScopeFactory _serviceScopeFactory;
 
         public SyncTaskCollection(SystemUser user, IServiceScopeFactory serviceScopeFactory)
         {
-            User = user;
+            UserId = user.Id;
+            Preference = JsonConvert.DeserializeObject<UserPreference>(user.Preference);
             ListCompleted = new List<IBaseSyncTask>();
             ListError = new List<IBaseSyncTask>();
             ListCurrent = new List<IBaseSyncTask>();
@@ -57,19 +67,18 @@ namespace JboxTransfer.Core.Modules.Sync
         {
             await using (var scope = _serviceScopeFactory.CreateAsyncScope())
             {
-                var userInfoProvider = scope.ServiceProvider.GetRequiredService<SystemUserInfoProvider>();
-                userInfoProvider.SetUser(User);
                 var db = scope.ServiceProvider.GetRequiredService<DefaultDbContext>();
 
-                //await LoadPendingTasksFromDb(db);
                 await LoadErrorTasksFromDb(db);
                 await LoadCompleteTasksFromDb(db);
 
-                // 上次未完成直接被关闭的的任务
+                // 上次未完成直接被关闭的任务
                 db.SyncTasks
-                    .Where(db => db.UserId == User.Id)
+                    .Where(db => db.UserId == UserId)
                     .Where(x => x.State == SyncTaskDbState.Busy)
                     .ExecuteUpdate(x => x.SetProperty(model => model.State, (_) => SyncTaskDbState.Idle));
+
+                await LoadPendingTasksFromDb(db);
             }
         }
 
@@ -78,8 +87,9 @@ namespace JboxTransfer.Core.Modules.Sync
             try
             {
                 List<SyncTaskDbModel> items = await db.SyncTasks
-                    .Where(x => x.UserId == User.Id)
+                    .Where(x => x.UserId == UserId)
                     .Where(x => x.State == SyncTaskDbState.Error)
+                    .OrderByDescending(x => x.UpdateTime)
                     .ToListAsync();
 
                 if (items == null || items.Count == 0)
@@ -113,7 +123,7 @@ namespace JboxTransfer.Core.Modules.Sync
             try
             {
                 List<SyncTaskDbModel> items = await db.SyncTasks
-                    .Where(x => x.UserId == User.Id)
+                    .Where(x => x.UserId == UserId)
                     .Where(x => x.State == SyncTaskDbState.Done)
                     .OrderByDescending(x => x.UpdateTime)
                     .ToListAsync();
@@ -149,18 +159,27 @@ namespace JboxTransfer.Core.Modules.Sync
             Monitor.Enter(addTaskLock);
             try
             {
-                if (ListCurrent.Count < 99)
+                int availableCount = MaxPendingTaskCount - ListCurrent.Count;
+                if (availableCount > 0)
                 {
                     List<SyncTaskDbModel> items = await db.SyncTasks
-                        .Where(x => x.UserId == User.Id)
+                        .Where(x => x.UserId == UserId)
                         .Where(x => x.State == SyncTaskDbState.Idle)
                         .Include(x => x.User)
+                        .OrderByDescending(x => x.UpdateTime) //Todo: 到底应该怎么排序
                         .OrderBy(x => x.Order)
-                        .Take(99 - ListCurrent.Count)
+                        .Take(availableCount)
                         .ToListAsync();
 
                     if (items == null || items.Count == 0)
+                    {
+                        HasMoreTasks = false;
                         return;
+                    }
+                    else if (items.Count == availableCount)
+                    {
+                        HasMoreTasks = true;
+                    }
                     foreach (var item in items)
                     {
                         item.State = SyncTaskDbState.Busy;
@@ -198,28 +217,36 @@ namespace JboxTransfer.Core.Modules.Sync
         }
         #endregion
 
-        #region Background daemon
+        #region update
         private TaskState Checker_Go(CancellationTokenSource cts)
         {
             try
             {
                 UpdateList();
-                if (IsBusy)
+                if (IsBusy && !IsTooManyError)
                     UpdateStartNew();
+            }
+            catch( Exception ex)
+            {
+                Debug.WriteLine(ex);
+            }
+            return TaskState.Started;
+        }
+
+        public void UpdateFromDb()
+        {
+            try
+            {
                 using (var scope = _serviceScopeFactory.CreateScope())
                 {
-                    var userInfoProvider = scope.ServiceProvider.GetRequiredService<SystemUserInfoProvider>();
-                    userInfoProvider.SetUser(User);
                     var db = scope.ServiceProvider.GetRequiredService<DefaultDbContext>();
 
                     LoadPendingTasksFromDb(db).GetAwaiter().GetResult();
                 }
-                return TaskState.Started;
             }
             catch (Exception ex)
             {
                 Debug.WriteLine(ex);
-                return TaskState.Started;
             }
         }
 
@@ -229,9 +256,8 @@ namespace JboxTransfer.Core.Modules.Sync
                 x => x.State == SyncTaskState.Running ||
                 x.State == SyncTaskState.Error ||
                 x.State == SyncTaskState.Complete
-                ) < GlobalConfigService.Config.TaskConfig.ThreadCount)
+                ) < Preference.ConcurrencyCount)
             {
-                Debug.WriteLine("begin start new");
                 var x = ListCurrent.FirstOrDefault(x => (x.State == SyncTaskState.Wait || x.State == SyncTaskState.Pause) && x.IsUserPause == false);
                 if (x == null)
                     return;
@@ -259,41 +285,39 @@ namespace JboxTransfer.Core.Modules.Sync
                     CheckTooManyErrors();
                 }
             }
+            if (ListCompleted.Count > MaxCompletedTaskCount)
+            {
+                ListCompleted.RemoveRange(MaxCompletedTaskCount, ListCompleted.Count - MaxCompletedTaskCount);
+            }
         }
 
         private void CheckTooManyErrors()
         {
-            if (ListError.Count > 99)
+            if (ListError.Count > MaxErrorTaskCount)
             {
-                //ErrorNum = "99+";
-                IsBusy = false;
+                IsTooManyError = true;
                 Message = "错误过多，队列被迫终止。请先处理出错的项目。";
             }
+        }
+
+        public void UpdatePreference(UserPreference preference)
+        {
+            Preference = preference;
         }
         #endregion
 
         #region State control
         public CommonResult StartAll()
         {
-            if (ListError.Count > 99)
+            if (IsTooManyError)
             {
-                return new CommonResult(false, "错误过多，无法启动队列。请先前往“已停止”选项卡处理出错的项目。");
+                return new CommonResult(false, Message);
             }
             IsBusy = true;
-            var t = GlobalConfigService.Config.TaskConfig.ThreadCount;
             foreach (var task in ListCurrent)
             {
                 task.IsUserPause = false;
             }
-            //foreach (var task in ListCurrent)
-            //{
-            //    t--;
-            //    if (task.State == SyncTaskState.Running)
-            //        continue;
-            //    task.Resume();
-            //    if (t == 0)
-            //        break;
-            //}
             return new CommonResult(true, "");
         }
 
@@ -318,7 +342,10 @@ namespace JboxTransfer.Core.Modules.Sync
             using (var scope = _serviceScopeFactory.CreateAsyncScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<DefaultDbContext>();
-                db.SyncTasks.Where(x => x.UserId == User.Id).ExecuteDelete();
+                db.SyncTasks
+                    .Where(x => x.UserId == UserId)
+                    .Where(x => x.State == SyncTaskDbState.Idle || x.State == SyncTaskDbState.Busy)
+                    .ExecuteDelete();
             }
             ListCurrent.Clear();
             return new CommonResult(true, "");
@@ -374,6 +401,10 @@ namespace JboxTransfer.Core.Modules.Sync
 
         public CommonResult StartOne(int syncTaskId)
         {
+            if (IsTooManyError)
+            {
+                return new CommonResult(false, Message);
+            }
             try
             {
                 var task = ListCurrent.FirstOrDefault(x => x.SyncTaskId == syncTaskId);
@@ -507,7 +538,7 @@ namespace JboxTransfer.Core.Modules.Sync
         #endregion
 
         #region Output
-        public CommonResult<List<SyncTaskOutputDto>> GetCurrentListInfo()
+        public CommonResult<SyncTaskListOutputDto> GetCurrentListInfo()
         {
             List<SyncTaskOutputDto> list = new List<SyncTaskOutputDto>();
             foreach (var task in ListCurrent)
@@ -527,10 +558,14 @@ namespace JboxTransfer.Core.Modules.Sync
                     Type = task.Type,
                 });
             }
-            return new CommonResult<List<SyncTaskOutputDto>>(true, "", list);
+            var outputDto = new SyncTaskListOutputDto(list);
+            outputDto.HasMore = this.HasMoreTasks;
+            outputDto.IsTooManyError = this.IsTooManyError;
+            outputDto.Message = this.Message;
+            return new (true, "", outputDto);
         }        
         
-        public CommonResult<List<SyncTaskOutputDto>> GetCompletedListInfo()
+        public CommonResult<SyncTaskListOutputDto> GetCompletedListInfo()
         {
             List<SyncTaskOutputDto> list = new List<SyncTaskOutputDto>();
             foreach (var task in ListCompleted)
@@ -550,10 +585,12 @@ namespace JboxTransfer.Core.Modules.Sync
                     Type = task.Type,
                 });
             }
-            return new CommonResult<List<SyncTaskOutputDto>>(true, "", list);
+            var outputDto = new SyncTaskListOutputDto(list);
+            outputDto.HasMore = ListCompleted.Count >= MaxCompletedTaskCount;
+            return new(true, "", outputDto);
         }
 
-        public CommonResult<List<SyncTaskOutputDto>> GetErrorListInfo()
+        public CommonResult<SyncTaskListOutputDto> GetErrorListInfo()
         {
             List<SyncTaskOutputDto> list = new List<SyncTaskOutputDto>();
             foreach (var task in ListError)
@@ -573,7 +610,8 @@ namespace JboxTransfer.Core.Modules.Sync
                     Type = task.Type,
                 });
             }
-            return new CommonResult<List<SyncTaskOutputDto>>(true, "", list);
+            var outputDto = new SyncTaskListOutputDto(list);
+            return new(true, "", outputDto);
         }
         #endregion
     }

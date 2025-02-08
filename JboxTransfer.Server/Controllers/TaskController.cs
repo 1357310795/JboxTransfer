@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using JboxTransfer.Core.Models.Db;
+using JboxTransfer.Core.Models.Message;
 using JboxTransfer.Core.Models.Output;
 using JboxTransfer.Core.Modules;
 using JboxTransfer.Core.Modules.Db;
@@ -7,6 +8,7 @@ using JboxTransfer.Core.Modules.Jbox;
 using JboxTransfer.Core.Modules.Sync;
 using JboxTransfer.Core.Services;
 using JboxTransfer.Server.Modules.DataWrapper;
+using MassTransit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
@@ -24,7 +26,8 @@ namespace JboxTransfer.Server.Controllers
         private readonly SyncTaskCollectionProvider _taskCollectionProvider;
         private readonly JboxService _jbox;
         private readonly IMapper _mapper;
-        public TaskController(ILogger<TaskController> logger, IMemoryCache memoryCache, DefaultDbContext db, SystemUserInfoProvider user, SyncTaskCollectionProvider taskCollectionProvider, JboxService jbox, IMapper mapper)
+        private readonly ISendEndpointProvider _sendEndpointProvider;
+        public TaskController(ILogger<TaskController> logger, IMemoryCache memoryCache, DefaultDbContext db, SystemUserInfoProvider user, SyncTaskCollectionProvider taskCollectionProvider, JboxService jbox, IMapper mapper, ISendEndpointProvider sendEndpointProvider)
         {
             _logger = logger;
             _mcache = memoryCache;
@@ -33,6 +36,7 @@ namespace JboxTransfer.Server.Controllers
             _taskCollectionProvider = taskCollectionProvider;
             _jbox = jbox;
             _mapper = mapper;
+            _sendEndpointProvider = sendEndpointProvider;
         }
 
         [HttpGet]
@@ -46,7 +50,7 @@ namespace JboxTransfer.Server.Controllers
         [HttpPost]
         [Route("add")]
         [Authorize]
-        public ApiResponse Add([FromForm]string path) //EnqueueTask
+        public async Task<ApiResponse> Add([FromForm]string path) //EnqueueTask
         {
             var res = _jbox.GetJboxFileInfo(path);
             if (!res.Success)
@@ -58,6 +62,9 @@ namespace JboxTransfer.Server.Controllers
             var entity = _db.Add(new SyncTaskDbModel(_user.GetUser(), res.Result.IsDir ? SyncTaskType.Folder : SyncTaskType.File, res.Result.Path, res.Result.Bytes, order) { MD5_Ori = res.Result.Hash });
 
             _db.SaveChanges();
+
+            var endpoint = await _sendEndpointProvider.GetSendEndpoint(new Uri("queue:add_task_from_db"));
+            await endpoint.Send(new NewTaskCheckMessage() { UserId = _user.GetUser().Id });
 
             return new ApiResponse(_mapper.Map<SyncTaskDbModelOutputDto>(entity.Entity));
         }

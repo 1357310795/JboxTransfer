@@ -1,5 +1,6 @@
 ﻿using JboxTransfer.Core.Models.Db;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection.Metadata;
 using System.Threading.Tasks;
 
 namespace JboxTransfer.Core.Modules.Db
@@ -7,6 +8,7 @@ namespace JboxTransfer.Core.Modules.Db
     public class DefaultDbContext : DbContext
     {
         public DbSet<SystemUser> Users { set; get; }
+        public DbSet<UserStatistics> UserStats { set; get; }
         public DbSet<SyncTaskDbModel> SyncTasks { set; get; }
 
         public object insertLock = new object();
@@ -25,6 +27,11 @@ namespace JboxTransfer.Core.Modules.Db
                 .Entity<SyncTaskDbModel>()
                 .Property(e => e.State)
                 .HasConversion<string>();
+            modelBuilder.Entity<SystemUser>()
+                .HasOne(e => e.Stat)
+                .WithMany()
+                .HasForeignKey(e => e.StatId)
+                .IsRequired();
         }
 
         public int GetMinOrder()

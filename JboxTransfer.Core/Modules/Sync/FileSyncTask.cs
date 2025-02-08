@@ -12,6 +12,8 @@ using JboxTransfer.Core.Models.Sync;
 using JboxTransfer.Core.Modules.Db;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using JboxTransfer.Core.Models.Message;
+using MassTransit;
 
 namespace JboxTransfer.Core.Modules.Sync
 {
@@ -41,6 +43,7 @@ namespace JboxTransfer.Core.Modules.Sync
         private TboxUploadSession? tbox;
 
         public int SyncTaskId { get; private set; }
+        public int UserId { get; private set; }
 
         private CRC64 crc64;
         private MD5 md5;
@@ -75,6 +78,7 @@ namespace JboxTransfer.Core.Modules.Sync
         public void Init(SyncTaskDbModel dbModel)
         {
             this.SyncTaskId = dbModel.Id;
+            this.UserId = dbModel.UserId;
             this.path = dbModel.FilePath;
             this.jboxhash = dbModel.MD5_Ori;
             this.size = dbModel.Size;
@@ -162,49 +166,63 @@ namespace JboxTransfer.Core.Modules.Sync
 
         public void Cancel()
         {
-            using (var scope = _serviceScopeFactory.CreateScope())
+            Task.Run(async () =>
             {
-                var db = scope.ServiceProvider.GetRequiredService<DefaultDbContext>();
-                pts.Pause();
-                State = SyncTaskState.Wait;
-                if (curChunk != null)
-                    curChunk.Uploading = false;
-                db.SyncTasks
-                    .Where(x => x.Id == SyncTaskId)
-                    .ExecuteUpdate(call => call
-                    .SetProperty(x => x.State, x => SyncTaskDbState.Cancel)
-                    .SetProperty(x => x.UpdateTime, x => DateTime.Now)
-                    .SetProperty(x => x.Message, x => "已取消"));
-                Message = "已取消";
-            }
+                using (var scope = _serviceScopeFactory.CreateScope())
+                {
+                    var db = scope.ServiceProvider.GetRequiredService<DefaultDbContext>();
+                    pts.Pause();
+                    State = SyncTaskState.Wait;
+                    if (curChunk != null)
+                        curChunk.Uploading = false;
+                    db.SyncTasks
+                        .Where(x => x.Id == SyncTaskId)
+                        .ExecuteUpdate(call => call
+                        .SetProperty(x => x.State, x => SyncTaskDbState.Cancel)
+                        .SetProperty(x => x.UpdateTime, x => DateTime.Now)
+                        .SetProperty(x => x.Message, x => "已取消"));
+                    Message = "已取消";
+
+                    ISendEndpointProvider sendEndpointProvider = scope.ServiceProvider.GetRequiredService<ISendEndpointProvider>();
+                    var endpoint = await sendEndpointProvider.GetSendEndpoint(new Uri("queue:add_task_from_db"));
+                    await endpoint.Send(new NewTaskCheckMessage() { UserId = this.UserId });
+                }
+            });
         }
 
         public void Recover(bool keepProgress)
         {
-            using (var scope = _serviceScopeFactory.CreateScope())
+            Task.Run(async () =>
             {
-                var db = scope.ServiceProvider.GetRequiredService<DefaultDbContext>();
-                if (keepProgress)
+                using (var scope = _serviceScopeFactory.CreateScope())
                 {
-                    db.SyncTasks
-                        .Where(x => x.Id == SyncTaskId)
-                        .ExecuteUpdate(call => call
-                        .SetProperty(x => x.State, x => SyncTaskDbState.Idle)
-                        .SetProperty(x => x.UpdateTime, x => DateTime.Now)
-                        .SetProperty(x => x.Message, x => null));
+                    var db = scope.ServiceProvider.GetRequiredService<DefaultDbContext>();
+                    if (keepProgress)
+                    {
+                        db.SyncTasks
+                            .Where(x => x.Id == SyncTaskId)
+                            .ExecuteUpdate(call => call
+                            .SetProperty(x => x.State, x => SyncTaskDbState.Idle)
+                            .SetProperty(x => x.UpdateTime, x => DateTime.Now)
+                            .SetProperty(x => x.Message, x => null));
+                    }
+                    else
+                    {
+                        db.SyncTasks
+                            .Where(x => x.Id == SyncTaskId)
+                            .ExecuteUpdate(call => call
+                            .SetProperty(x => x.State, x => SyncTaskDbState.Idle)
+                            .SetProperty(x => x.UpdateTime, x => DateTime.Now)
+                            .SetProperty(x => x.ConfirmKey, x => null)
+                            .SetProperty(x => x.RemainParts, x => null)
+                            .SetProperty(x => x.Message, x => null));
+                    }
+
+                    ISendEndpointProvider sendEndpointProvider = scope.ServiceProvider.GetRequiredService<ISendEndpointProvider>();
+                    var endpoint = await sendEndpointProvider.GetSendEndpoint(new Uri("queue:add_task_from_db"));
+                    await endpoint.Send(new NewTaskCheckMessage() { UserId = this.UserId });
                 }
-                else
-                {
-                    db.SyncTasks
-                        .Where(x => x.Id == SyncTaskId)
-                        .ExecuteUpdate(call => call
-                        .SetProperty(x => x.State, x => SyncTaskDbState.Idle)
-                        .SetProperty(x => x.UpdateTime, x => DateTime.Now)
-                        .SetProperty(x => x.ConfirmKey, x => null)
-                        .SetProperty(x => x.RemainParts, x => null)
-                        .SetProperty(x => x.Message, x => null));
-                }
-            }
+            });
         }
 
         private async Task internalStartWrap(PauseTokenSource inst_pts)
@@ -243,6 +261,9 @@ namespace JboxTransfer.Core.Modules.Sync
                 finally
                 {
                     Monitor.Exit(this);
+                    ISendEndpointProvider sendEndpointProvider = scope.ServiceProvider.GetRequiredService<ISendEndpointProvider>();
+                    var endpoint = await sendEndpointProvider.GetSendEndpoint(new Uri("queue:add_task_from_db"));
+                    await endpoint.Send(new NewTaskCheckMessage() { UserId = this.UserId });
                 }
             }
         }
@@ -472,8 +493,11 @@ namespace JboxTransfer.Core.Modules.Sync
                 dbModel.UpdateTime = DateTime.Now;
                 db.Update(dbModel);
                 db.SaveChanges();
+                db.UserStats
+                    .Where(x => x.UserId == UserId)
+                    .ExecuteUpdate(call => call
+                    .SetProperty(x => x.TotalTransferredBytes, x => x.TotalTransferredBytes + dbModel.Size));
             }
         }
-
     }
 }

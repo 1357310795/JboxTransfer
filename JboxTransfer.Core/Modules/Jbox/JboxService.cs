@@ -76,6 +76,39 @@ namespace JboxTransfer.Core.Modules.Jbox
                 return new (false, ex.Message);
             }
         }
+        
+        public CommonResult<JboxUserInfo> GetUserInfo()
+        {
+            try
+            {
+                var cred = CheckLogined();
+                HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Get, "https://jbox.sjtu.edu.cn/v2/user/info/get?S=" + cred.S);
+                req.Headers.Accept.ParseAdd("text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
+                req.Headers.AcceptEncoding.ParseAdd("gzip, deflate, br");
+                req.Headers.AcceptLanguage.ParseAdd("zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7");
+                req.Headers.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36 Edg/116.0.1938.76");
+                var res = _client.SendAsync(req).GetAwaiter().GetResult();
+
+                if (!res.IsSuccessStatusCode)
+                {
+                    return new (false, $"服务器响应{res.StatusCode}");
+                }
+
+                var body = res.Content.ReadAsStringAsync().Result;
+                var json = JsonConvert.DeserializeObject<JboxUserInfo>(body);
+
+                if (json.Type == "error")
+                {
+                    return new (false, $"服务器返回失败：{json.Message}");
+                }
+
+                return new (true, "", json);
+            }
+            catch (Exception ex)
+            {
+                return new (false, ex.Message);
+            }
+        }
 
         public CommonResult<MemoryStream> DownloadChunk(string path, long start, long size, Pack<long> chunkProgress)
         {

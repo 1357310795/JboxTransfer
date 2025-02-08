@@ -1,16 +1,14 @@
-﻿using Newtonsoft.Json;
-
-namespace JboxTransfer.Server.Models.Output
+﻿namespace JboxTransfer.Server.Models.Output
 {
     public class UserInfoDto
     {
-        [JsonProperty("name")]
         public string Name { get; set; }
-
-        [JsonProperty("role")]
+        public string? Avatar { get; set; }
         public string Role { get; set; }
-
-        [JsonProperty("jaccount")]
         public string Jaccount { get; set; }
+        public string Preference { get; set; }
+        public long TotalTransferredBytes { get; set; }
+        public long JboxSpaceUsedBytes { get; set; }
+        public bool OnlyFullTransfer { get; set; }
     }
 }

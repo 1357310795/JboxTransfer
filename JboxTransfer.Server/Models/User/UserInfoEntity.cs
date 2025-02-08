@@ -22,17 +22,17 @@ namespace JboxTransfer.Server.Models.User
         //[JsonProperty("authAccounts")]
         //public System.Collections.Generic.List<string> AuthAccounts { get; set; }
 
-        //[JsonProperty("avatars")]
-        //public object Avatars { get; set; }
+        [JsonProperty("avatars")]
+        public string? Avatars { get; set; }
 
-        //[JsonProperty("code")]
-        //public string Code { get; set; }
+        [JsonProperty("code")]
+        public string Code { get; set; }
 
-        //[JsonProperty("email")]
-        //public string Email { get; set; }
+        [JsonProperty("email")]
+        public string Email { get; set; }
 
-        //[JsonProperty("expireDate")]
-        //public string ExpireDate { get; set; }
+        [JsonProperty("expireDate")]
+        public string ExpireDate { get; set; }
 
         //[JsonProperty("identities")]
         //public System.Collections.Generic.List<Identity> Identities { get; set; }
@@ -43,23 +43,23 @@ namespace JboxTransfer.Server.Models.User
         [JsonProperty("name")]
         public string Name { get; set; }
 
-        //[JsonProperty("organizeId")]
-        //public string OrganizeId { get; set; }
+        [JsonProperty("organizeId")]
+        public string OrganizeId { get; set; }
 
-        //[JsonProperty("organizeName")]
-        //public string OrganizeName { get; set; }
+        [JsonProperty("organizeName")]
+        public string OrganizeName { get; set; }
 
-        //[JsonProperty("responseName")]
-        //public object ResponseName { get; set; }
+        [JsonProperty("responseName")]
+        public object ResponseName { get; set; }
 
-        //[JsonProperty("status")]
-        //public string Status { get; set; }
+        [JsonProperty("status")]
+        public string Status { get; set; }
 
-        //[JsonProperty("statusEN")]
-        //public string StatusEn { get; set; }
+        [JsonProperty("statusEN")]
+        public string StatusEn { get; set; }
 
-        //[JsonProperty("userStyleName")]
-        //public string UserStyleName { get; set; }
+        [JsonProperty("userStyleName")]
+        public string UserStyleName { get; set; }
 
         [JsonProperty("userType")]
         public string UserType { get; set; }

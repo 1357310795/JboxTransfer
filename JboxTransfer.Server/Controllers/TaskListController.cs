@@ -49,7 +49,7 @@ namespace JboxTransfer.Server.Controllers
             };
             if (res.Success)
             {
-                return new ApiResponse(new ListOutputDto<SyncTaskOutputDto>(res.Result));
+                return new ApiResponse(res.Result);
             }
             else
             {

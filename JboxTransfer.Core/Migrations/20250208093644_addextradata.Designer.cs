@@ -3,6 +3,7 @@ using System;
 using JboxTransfer.Core.Modules.Db;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace JboxTransfer.Core.Migrations
 {
     [DbContext(typeof(DefaultDbContext))]
-    partial class DefaultDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250208093644_addextradata")]
+    partial class addextradata
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.1");
@@ -85,9 +88,6 @@ namespace JboxTransfer.Core.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("Avatar")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Cookie")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -116,8 +116,6 @@ namespace JboxTransfer.Core.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("StatId");
-
                     b.ToTable("Users");
                 });
 
@@ -141,6 +139,9 @@ namespace JboxTransfer.Core.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
                     b.ToTable("UserStats");
                 });
 
@@ -155,15 +156,22 @@ namespace JboxTransfer.Core.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("JboxTransfer.Core.Models.Db.SystemUser", b =>
+            modelBuilder.Entity("JboxTransfer.Core.Models.Db.UserStatistics", b =>
                 {
-                    b.HasOne("JboxTransfer.Core.Models.Db.UserStatistics", "Stat")
-                        .WithMany()
-                        .HasForeignKey("StatId")
+                    b.HasOne("JboxTransfer.Core.Models.Db.SystemUser", "User")
+                        .WithOne("Stat")
+                        .HasForeignKey("JboxTransfer.Core.Models.Db.UserStatistics", "UserId")
+                        .HasPrincipalKey("JboxTransfer.Core.Models.Db.SystemUser", "StatId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Stat");
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("JboxTransfer.Core.Models.Db.SystemUser", b =>
+                {
+                    b.Navigation("Stat")
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

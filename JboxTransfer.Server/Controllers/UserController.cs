@@ -10,6 +10,12 @@ using JboxTransfer.Server.Services;
 using JboxTransfer.Server.Models.User;
 using JboxTransfer.Core.Models.Db;
 using JboxTransfer.Core.Modules.Db;
+using Newtonsoft.Json;
+using Microsoft.EntityFrameworkCore;
+using JboxTransfer.Core.Modules;
+using AutoMapper;
+using JboxTransfer.Core.Modules.Sync;
+using TboxWebdav.Server.Modules.Tbox;
 
 namespace JboxTransfer.Server.Controllers
 {
@@ -20,11 +26,19 @@ namespace JboxTransfer.Server.Controllers
         private readonly ILogger<UserController> _logger;
         private readonly IMemoryCache _mcache;
         private readonly DefaultDbContext _context;
-        public UserController(ILogger<UserController> logger, IMemoryCache memoryCache, DefaultDbContext context)
+        private readonly SystemUserInfoProvider _userInfoProvider;
+        private readonly IMapper _mapper;
+        private readonly SyncTaskCollectionProvider _taskCollectionProvider;
+        private readonly IServiceProvider _serviceProvider;
+        public UserController(ILogger<UserController> logger, IMemoryCache memoryCache, DefaultDbContext context, SystemUserInfoProvider userInfoProvider, IMapper mapper, SyncTaskCollectionProvider taskCollectionProvider, IServiceProvider serviceProvider)
         {
             _logger = logger;
             _mcache = memoryCache;
             _context = context;
+            _userInfoProvider = userInfoProvider;
+            _mapper = mapper;
+            _taskCollectionProvider = taskCollectionProvider;
+            _serviceProvider = serviceProvider;
         }
 
         [Route("info")]
@@ -35,15 +49,23 @@ namespace JboxTransfer.Server.Controllers
             var jaccount = User.FindFirstValue("jaccount");
             if (jaccount == null)
                 return new ApiResponse(400, "UserIdMissingError", "找不到用户");
-            var sysuser = _context.Users.FirstOrDefault(x => x.Jaccount == jaccount);
+            var sysuser = _context.Users
+                .Where(x => x.Jaccount == jaccount)
+                .Include(x => x.Stat)
+                .FirstOrDefault();
             if (sysuser == null)
                 return new ApiResponse(400, "UserNotFoundError", "找不到用户");
 
             return new ApiResponse(new UserInfoDto()
             {
                 Name = sysuser.Name,
+                Avatar = sysuser.Avatar,
                 Role = sysuser.Role,
                 Jaccount = sysuser.Jaccount,
+                Preference = sysuser.Preference,
+                OnlyFullTransfer = sysuser.Stat.OnlyFullTransfer,
+                JboxSpaceUsedBytes = sysuser.Stat.JboxSpaceUsedBytes,
+                TotalTransferredBytes = sysuser.Stat.TotalTransferredBytes,
             });
         }
 
@@ -256,18 +278,26 @@ namespace JboxTransfer.Server.Controllers
             {
                 sysuser = new SystemUser() { 
                     Name = userinfores.Result.Name, 
+                    Avatar = userinfores.Result.Avatars,
                     Jaccount = userinfores.Result.AccountNo, 
                     Cookie = loginService.GetCookie(), 
                     RegistrationTime = DateTime.Now,
-                    Role = userinfores.Result.UserType
+                    Role = userinfores.Result.UserType,
+                    Stat = new UserStatistics(),
+                    Preference = JsonConvert.SerializeObject(new UserPreference())
                 };
-                _context.Add(sysuser);
+                var entity = _context.Add(sysuser).Entity;
+                _context.SaveChanges();
+                entity.Stat.UserId = entity.Id;
                 _context.SaveChanges();
             }
             else
             {
                 sysuser.Cookie = loginService.GetCookie();
+                sysuser.Name = userinfores.Result.Name;
+                sysuser.Role = userinfores.Result.UserType;
                 sysuser.Jaccount = userinfores.Result.AccountNo;
+                sysuser.Avatar = userinfores.Result.Avatars;
                 _context.Update(sysuser);
                 _context.SaveChanges();
             }
@@ -276,13 +306,69 @@ namespace JboxTransfer.Server.Controllers
             return new ApiResponse(true);
         }
 
-        //[Route("list")]
-        //[HttpGet]
-        //public List<SystemUser> GetUsers()
-        //{
-        //    var users = _context.Users.ToList();
-        //    return users;
-        //}
+        [Route("updatepreference")]
+        [Authorize]
+        [HttpPut]
+        public ApiResponse UpdatePreference([FromBody] UserPreference inputDto)
+        {
+            var user = _userInfoProvider.GetUser();
+            if (user == null)
+            {
+                return new ApiResponse(500, "UserNotFoundError", "请先登录");
+            }
+            if (inputDto.ConcurrencyCount <= 0 || inputDto.ConcurrencyCount > 8)
+            {
+                return new ApiResponse(400, "ParamsNotValid", "并行数量不合法");
+            }
+            _context.Users
+                .Where(x => x.Id == user.Id)
+                .ExecuteUpdate(call => call
+                    .SetProperty(x => x.Preference, x => JsonConvert.SerializeObject(inputDto)));
+            _taskCollectionProvider.GetSyncTaskCollection(user).UpdatePreference(inputDto);
+            return new ApiResponse(Info());
+        }
+
+        [Route("stat")]
+        [Authorize]
+        [HttpGet]
+        public ApiResponse GetUserStat()
+        {
+            var user = _userInfoProvider.GetUser();
+            if (user == null)
+            {
+                return new ApiResponse(500, "UserNotFoundError", "请先登录");
+            }
+            var stat = _context.UserStats
+                .Where(x => x.UserId == user.Id)
+                .FirstOrDefault();
+            if (stat == null)
+            {
+                return new ApiResponse(500, "DataNotFoundError", "未找到数据");
+            }
+            var jboxQuotaInfoProvider = _serviceProvider.GetRequiredService<JboxQuotaInfoProvider>();
+            var jboxUserInfo = jboxQuotaInfoProvider.GetSpaceInfo();
+            if (jboxUserInfo != null && jboxUserInfo.Used != stat.JboxSpaceUsedBytes)
+            {
+                stat.JboxSpaceUsedBytes = jboxUserInfo.Used;
+                _context.Update(stat);
+                _context.SaveChanges();
+                //_context.UserStats
+                //    .Where(x => x.Id == stat.Id)
+                //    .ExecuteUpdate(call => call
+                //    .SetProperty(x => x.JboxSpaceUsedBytes, x => jboxUserInfo.Used));
+            }
+            return new ApiResponse(_mapper.Map<UserStatisticsOutputDto>(stat));
+        }
+
+        //debug only!!!
+        [Route("debug_login")]
+        [HttpGet]
+        public ApiResponse DirectLogin()
+        {
+            var user = _context.Users.FirstOrDefault();
+            UserSignin(user);
+            return new ApiResponse(true);
+        }
 
         [NonAction]
         private void UserSignin(SystemUser user)

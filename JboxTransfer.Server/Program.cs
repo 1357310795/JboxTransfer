@@ -1,4 +1,5 @@
 
+using JboxTransfer.Core.Models.Message;
 using JboxTransfer.Core.Modules;
 using JboxTransfer.Core.Modules.AutoMapper;
 using JboxTransfer.Core.Modules.Db;
@@ -8,11 +9,15 @@ using JboxTransfer.Core.Modules.Tbox;
 using JboxTransfer.Server.Helpers;
 using JboxTransfer.Server.Modules.DataWrapper;
 using MassTransit;
+using MassTransit.Contracts.JobService;
+using MassTransit.Middleware;
+using MassTransit.Testing;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Rewrite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using TboxWebdav.Server.Modules;
+using TboxWebdav.Server.Modules.Tbox;
 
 namespace JboxTransfer.Server
 {
@@ -79,6 +84,7 @@ namespace JboxTransfer.Server
             builder.Services.AddAutoMapper(cfg =>
             {
                 cfg.AddProfile<SyncTaskMapperProfile>();
+                cfg.AddProfile<UserMapperProfile>();
             });
 
             // CORS
@@ -96,19 +102,24 @@ namespace JboxTransfer.Server
             //MassTransit
             builder.Services.AddMassTransit(x =>
             {
-                //x.AddConsumer<GlobalSubscribeCheckHandler>((context, cfg) =>
-                //{
-                //    cfg.UseConcurrencyLimit(1);
-                //});
+                x.AddConsumer<NewTaskCheckConsumer>((context, cfg) =>
+                {
+                    var partition = new Partitioner(16, new Murmur3UnsafeHashGenerator());
+                    cfg.Message<NewTaskCheckMessage>(s => {
+                        s.UsePartitioner(partition, x => x.Message.UserId);
+                        s.UseTimeout(timeout => timeout.Timeout = TimeSpan.FromSeconds(15));
+                    });
+                    cfg.UseInlineFilter((context, next) => { return next.Send(context).ContinueWith((x) => Task.Delay(1000)); });
+                });
 
                 x.UsingInMemory((context, cfg) =>
                 {
-                    //cfg.ReceiveEndpoint("global-subscribe-check", e =>
-                    //{
-                    //    e.UseConsumeFilter<GlobalSubscribeCheckFilter>(context);
-                    //    e.ConfigureConsumer<GlobalSubscribeCheckHandler>(context);
-                    //});
-                    //cfg.ConfigureEndpoints(context);
+                    cfg.ReceiveEndpoint("add_task_from_db", e =>
+                    {
+                        //e.UseConsumeFilter<GlobalSubscribeCheckFilter>(context);
+                        e.ConfigureConsumer<NewTaskCheckConsumer>(context);
+                    });
+                    cfg.ConfigureEndpoints(context);
                 });
             });
 
@@ -121,6 +132,7 @@ namespace JboxTransfer.Server
 
             builder.Services.AddScoped<JboxCredProvider>();
             builder.Services.AddScoped<JboxService>();
+            builder.Services.AddScoped<JboxQuotaInfoProvider>();
             builder.Services.AddTransient<JboxDownloadSession>();
 
             builder.Services.AddSingleton<CookieContainerProvider>();
@@ -158,7 +170,7 @@ namespace JboxTransfer.Server
                 FileProvider = new PhysicalFileProvider(System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "Static"))
             });
 
-            app.UseRewriter(new RewriteOptions().AddRewrite("(.*)", "$1.html", true));
+            app.UseRewriter(new RewriteOptions().AddRewrite("^[^.]*$", "index.html", true));
             app.UseStaticFiles();
 
             app.UseCors();

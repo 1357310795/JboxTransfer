@@ -11,22 +11,37 @@ namespace JboxTransfer.Core.Modules.Sync
     public class SyncTaskCollectionProvider
     {
         private readonly IServiceScopeFactory _serviceScopeFactory;
-        private readonly Dictionary<string, SyncTaskCollection> _dic;
+        private readonly Dictionary<int, SyncTaskCollection> _dic;
 
         public SyncTaskCollectionProvider(IServiceScopeFactory serviceScopeFactory)
         {
             _serviceScopeFactory = serviceScopeFactory;
-            _dic = new Dictionary<string, SyncTaskCollection>();
+            _dic = new Dictionary<int, SyncTaskCollection>();
         }
 
         public SyncTaskCollection GetSyncTaskCollection(SystemUser user)
         {
-            if (!_dic.TryGetValue(user.Jaccount, out SyncTaskCollection? stc))
+            lock (_dic)
             {
-                stc = new SyncTaskCollection(user, _serviceScopeFactory);
-                _dic.Add(user.Jaccount, stc);
+                if (!_dic.TryGetValue(user.Id, out SyncTaskCollection? stc))
+                {
+                    stc = new SyncTaskCollection(user, _serviceScopeFactory);
+                    _dic.Add(user.Id, stc);
+                }
+                return stc;
             }
-            return stc;
+        }        
+        
+        public SyncTaskCollection GetRequiredSyncTaskCollection(int userId)
+        {
+            lock (_dic)
+            {
+                if (!_dic.TryGetValue(userId, out SyncTaskCollection? stc))
+                {
+                    throw new Exception("SyncTaskCollection not found");
+                }
+                return stc;
+            }
         }
     }
 }
