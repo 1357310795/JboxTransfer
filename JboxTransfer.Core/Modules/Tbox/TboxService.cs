@@ -290,8 +290,8 @@ namespace JboxTransfer.Core.Modules.Tbox
                 var query = new Dictionary<string, string>();
                 query.Add("page", $"{page}");
                 query.Add("page_size", $"{count}");
-                query.Add("order_by", $"name");
-                query.Add("order_by_type", $"asc");
+                //query.Add("order_by", $"name");
+                query.Add("order_by_type", $"desc");
                 query.Add("access_token", cred.AccessToken);
 
                 HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Get, baseUrl + $"/api/v1/directory/{cred.LibraryId}/{cred.SpaceId}/{path.UrlEncodeByParts()}" + UriHelper.BuildQuery(query));

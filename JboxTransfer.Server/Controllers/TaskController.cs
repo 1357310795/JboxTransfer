@@ -52,7 +52,7 @@ namespace JboxTransfer.Server.Controllers
         [Authorize]
         public async Task<ApiResponse> Add([FromForm]string path) //EnqueueTask
         {
-            var res = _jbox.GetJboxFileInfo(path);
+            var res = _jbox.GetJboxItemInfo(path);
             if (!res.Success)
             {
                 return new ApiResponse(500, "GetJboxItemInfoError", $"获取文件信息失败：{res.Message}");
@@ -162,20 +162,5 @@ namespace JboxTransfer.Server.Controllers
             }
         }
 
-        [HttpGet]
-        [Route("jboxlink")]
-        [Authorize]
-        public ApiResponse JboxLink([FromForm] int id)
-        {
-            return new ApiResponse();
-        }
-
-        [HttpGet]
-        [Route("tboxlink")]
-        [Authorize]
-        public ApiResponse TboxLink([FromForm] int id)
-        {
-            return new ApiResponse();
-        }
     }
 }

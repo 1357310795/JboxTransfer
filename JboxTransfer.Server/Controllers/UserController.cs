@@ -260,7 +260,11 @@ namespace JboxTransfer.Server.Controllers
                 return new ApiResponse(StatusCodes.Status408RequestTimeout, "RequestTimeoutError", "请求超时，请在3分钟内完成操作。");
             }
 
-            loginService.WaitForLogined();
+            if (!loginService.Failed && !loginService.Logined)
+            {
+                return new ApiResponse(StatusCodes.Status400BadRequest, "NotCompletedError", "登录还未完成");
+            }
+
             if (loginService.Failed || !loginService.Logined)
             {
                 return new ApiResponse(StatusCodes.Status500InternalServerError, "LoginFailError", $"登录失败：{loginService.Message}");
@@ -271,39 +275,42 @@ namespace JboxTransfer.Server.Controllers
             {
                 return new ApiResponse(StatusCodes.Status500InternalServerError, "LoginFailError", $"获取用户信息失败：{userinfores.Message}");
             }
-
-            var sysuser = _context.Users.FirstOrDefault(x => x.Jaccount == userinfores.Result.AccountNo);
-
-            if (sysuser == null)
+            lock (loginService)
             {
-                sysuser = new SystemUser() { 
-                    Name = userinfores.Result.Name, 
-                    Avatar = userinfores.Result.Avatars,
-                    Jaccount = userinfores.Result.AccountNo, 
-                    Cookie = loginService.GetCookie(), 
-                    RegistrationTime = DateTime.Now,
-                    Role = userinfores.Result.UserType,
-                    Stat = new UserStatistics(),
-                    Preference = JsonConvert.SerializeObject(new UserPreference())
-                };
-                var entity = _context.Add(sysuser).Entity;
-                _context.SaveChanges();
-                entity.Stat.UserId = entity.Id;
-                _context.SaveChanges();
+                var sysuser = _context.Users.FirstOrDefault(x => x.Jaccount == userinfores.Result.AccountNo);
+
+                if (sysuser == null)
+                {
+                    sysuser = new SystemUser()
+                    {
+                        Name = userinfores.Result.Name,
+                        Avatar = userinfores.Result.Avatars,
+                        Jaccount = userinfores.Result.AccountNo,
+                        Cookie = loginService.GetCookie(),
+                        RegistrationTime = DateTime.Now,
+                        Role = userinfores.Result.UserType,
+                        Stat = new UserStatistics(),
+                        Preference = JsonConvert.SerializeObject(new UserPreference())
+                    };
+                    var entity = _context.Add(sysuser).Entity;
+                    _context.SaveChanges();
+                    entity.Stat.UserId = entity.Id;
+                    _context.SaveChanges();
+                }
+                else
+                {
+                    sysuser.Cookie = loginService.GetCookie();
+                    sysuser.Name = userinfores.Result.Name;
+                    sysuser.Role = userinfores.Result.UserType;
+                    sysuser.Jaccount = userinfores.Result.AccountNo;
+                    sysuser.Avatar = userinfores.Result.Avatars;
+                    _context.Update(sysuser);
+                    _context.SaveChanges();
+                }
+
+                UserSignin(sysuser);
+                return new ApiResponse(true);
             }
-            else
-            {
-                sysuser.Cookie = loginService.GetCookie();
-                sysuser.Name = userinfores.Result.Name;
-                sysuser.Role = userinfores.Result.UserType;
-                sysuser.Jaccount = userinfores.Result.AccountNo;
-                sysuser.Avatar = userinfores.Result.Avatars;
-                _context.Update(sysuser);
-                _context.SaveChanges();
-            }
-            
-            UserSignin(sysuser);
-            return new ApiResponse(true);
         }
 
         [Route("updatepreference")]

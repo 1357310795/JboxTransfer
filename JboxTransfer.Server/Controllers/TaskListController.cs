@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using JboxTransfer.Core.Models.Db;
 using JboxTransfer.Core.Models.Output;
 using JboxTransfer.Core.Modules;
 using JboxTransfer.Core.Modules.Db;

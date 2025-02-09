@@ -49,18 +49,15 @@ namespace JboxTransfer.Core.Helpers
         {
             StringBuilder s = new StringBuilder();
             var it = iterator.GetEnumerator();
-            it.MoveNext();
-            bool next;
-            do
+            bool next = it.MoveNext();
+            while (next)
             {
-
                 s.Append(it.Current);
                 next = it.MoveNext();
                 if (next)
                     s.Append(separator);
 
-            } while (next);
-
+            }
             return s.ToString();
         }
 

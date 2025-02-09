@@ -14,7 +14,7 @@ namespace JboxTransfer.Core.Models.Tbox
         public string ETag { get; set; }
 
         [JsonProperty("fileCount")]
-        public long FileCount { get; set; }
+        public int FileCount { get; set; }
 
         //[JsonProperty("localSync")]
         //public object LocalSync { get; set; }
@@ -23,10 +23,10 @@ namespace JboxTransfer.Core.Models.Tbox
         public List<string> Path { get; set; }
 
         [JsonProperty("subDirCount")]
-        public long SubDirCount { get; set; }
+        public int SubDirCount { get; set; }
 
         [JsonProperty("totalNum")]
-        public long TotalNum { get; set; }
+        public int TotalNum { get; set; }
     }
 
     public partial class TboxMergedItemDto

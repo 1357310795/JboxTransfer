@@ -23,8 +23,8 @@ namespace JboxTransfer.Core.Modules.Sync
 {
     public class SyncTaskCollection
     {
-        private const int MaxErrorTaskCount = 99;
-        private const int MaxCompletedTaskCount = 99;
+        private const int MaxErrorTaskCount = 100;
+        private const int MaxCompletedTaskCount = 100;
         private const int MaxPendingTaskCount = 20;
 
         private List<IBaseSyncTask> ListCompleted { get; set; }
@@ -562,6 +562,9 @@ namespace JboxTransfer.Core.Modules.Sync
             outputDto.HasMore = this.HasMoreTasks;
             outputDto.IsTooManyError = this.IsTooManyError;
             outputDto.Message = this.Message;
+            outputDto.RunningCount = this.ListCurrent.Count;
+            outputDto.CompletedCount = this.ListCompleted.Count;
+            outputDto.ErrorCount = this.ListError.Count;
             return new (true, "", outputDto);
         }        
         
@@ -587,6 +590,9 @@ namespace JboxTransfer.Core.Modules.Sync
             }
             var outputDto = new SyncTaskListOutputDto(list);
             outputDto.HasMore = ListCompleted.Count >= MaxCompletedTaskCount;
+            outputDto.RunningCount = this.ListCurrent.Count;
+            outputDto.CompletedCount = this.ListCompleted.Count;
+            outputDto.ErrorCount = this.ListError.Count;
             return new(true, "", outputDto);
         }
 
@@ -611,6 +617,9 @@ namespace JboxTransfer.Core.Modules.Sync
                 });
             }
             var outputDto = new SyncTaskListOutputDto(list);
+            outputDto.RunningCount = this.ListCurrent.Count;
+            outputDto.CompletedCount = this.ListCompleted.Count;
+            outputDto.ErrorCount = this.ListError.Count;
             return new(true, "", outputDto);
         }
         #endregion

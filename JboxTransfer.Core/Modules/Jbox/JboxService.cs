@@ -171,7 +171,7 @@ namespace JboxTransfer.Core.Modules.Jbox
             }
         }
 
-        public CommonResult<JboxItemInfo> GetJboxFileInfo(string path)
+        public CommonResult<JboxItemInfo> GetJboxItemInfo(string path)
         {
             try
             {
@@ -209,14 +209,14 @@ namespace JboxTransfer.Core.Modules.Jbox
             }
         }
 
-        public CommonResult<JboxItemInfo> GetJboxFolderInfo(string path, int page)
+        public CommonResult<JboxItemInfo> GetJboxFolderInfo(string path, int page, int pageSize = 50)
         {
             try
             {
                 var cred = CheckLogined();
                 Dictionary<string, string> forms = new Dictionary<string, string>();
                 forms.Add("path_type", "self");
-                forms.Add("page_size", "50");
+                forms.Add("page_size", pageSize.ToString());
                 forms.Add("page_num", page.ToString());
                 forms.Add("target_path", path);
 

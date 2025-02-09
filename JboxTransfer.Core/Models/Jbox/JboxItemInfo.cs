@@ -26,7 +26,7 @@ namespace JboxTransfer.Core.Models.Jbox
         public JboxItemInfo[] Content { get; set; }
 
         [JsonProperty("content_size")]
-        public long ContentSize { get; set; }
+        public int ContentSize { get; set; }
 
         [JsonProperty("creator")]
         public string Creator { get; set; }
@@ -115,8 +115,8 @@ namespace JboxTransfer.Core.Models.Jbox
         [JsonProperty("rev_index")]
         public long RevIndex { get; set; }
 
-        [JsonProperty("router")]
-        public Dictionary<string, object> Router { get; set; }
+        //[JsonProperty("router")]
+        //public Dictionary<string, object> Router { get; set; }
 
         [JsonProperty("share_to_personal")]
         public bool ShareToPersonal { get; set; }

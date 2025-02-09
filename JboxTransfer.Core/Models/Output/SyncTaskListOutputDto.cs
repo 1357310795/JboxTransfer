@@ -11,6 +11,9 @@ namespace JboxTransfer.Core.Models.Output
         public bool HasMore { get; set; }
         public bool IsTooManyError { get; set; }
         public string Message { get; set; }
+        public int RunningCount { get; set; }
+        public int CompletedCount { get; set; }
+        public int ErrorCount { get; set; }
 
         public SyncTaskListOutputDto(List<SyncTaskOutputDto> entities) : base(entities)
         {
