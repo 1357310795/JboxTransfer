@@ -17,7 +17,7 @@ namespace JboxTransfer.Core.Models.Output
         /// <param name="size"></param>
         /// <param name="creationTime"></param>
         /// <param name="updateTime"></param>
-        public FileSystemItemInfoOutputDto(string name, string fullPath, long size, DateTime? creationTime, DateTime? updateTime)
+        public FileSystemItemInfoOutputDto(string name, string fullPath, long size, DateTime? creationTime, DateTime? updateTime, string syncState = "None")
         {
             Type = FileSystemItemType.File;
             Name = name;
@@ -25,6 +25,7 @@ namespace JboxTransfer.Core.Models.Output
             Size = size;
             CreationTime = creationTime;
             UpdateTime = updateTime;
+            SyncState = syncState;
         }
 
         /// <summary>
@@ -35,7 +36,7 @@ namespace JboxTransfer.Core.Models.Output
         /// <param name="creationTime"></param>
         /// <param name="updateTime"></param>
         /// <param name="contents"></param>
-        public FileSystemItemInfoOutputDto(string name, string fullPath, DateTime? creationTime, DateTime? updateTime, List<FileSystemItemInfoOutputDto>? contents, int totalCount)
+        public FileSystemItemInfoOutputDto(string name, string fullPath, DateTime? creationTime, DateTime? updateTime, List<FileSystemItemInfoOutputDto>? contents, int totalCount, string syncState = "None")
         {
             Type = FileSystemItemType.Folder;
             Name = name;
@@ -44,6 +45,7 @@ namespace JboxTransfer.Core.Models.Output
             UpdateTime = updateTime;
             Contents = contents;
             TotalCount = totalCount;
+            SyncState = syncState;
         }
 
         public string Name { get; set; }
@@ -57,6 +59,7 @@ namespace JboxTransfer.Core.Models.Output
         public List<FileSystemItemInfoOutputDto>? Contents { get; set; }
 
         public int TotalCount { get; set; }
+        public string SyncState { get; set; }
     }
 
     public enum FileSystemItemType

@@ -8,6 +8,7 @@ using JboxTransfer.Server.Modules.DataWrapper;
 using JboxTransfer.Core.Models.Output;
 using JboxTransfer.Core.Helpers;
 using System.Linq;
+using JboxTransfer.Core.Modules.Db;
 
 namespace JboxTransfer.Server.Controllers
 {
@@ -20,14 +21,16 @@ namespace JboxTransfer.Server.Controllers
         private readonly JboxService _jbox;
         private readonly TboxService _tbox;
         private readonly IMapper _mapper;
+        private readonly DefaultDbContext _db;
 
-        public CloudController(ILogger<CloudController> logger, SystemUserInfoProvider user, JboxService jbox, TboxService tbox, IMapper mapper)
+        public CloudController(ILogger<CloudController> logger, SystemUserInfoProvider user, JboxService jbox, TboxService tbox, IMapper mapper, DefaultDbContext db)
         {
             _logger = logger;
             _user = user;
             _jbox = jbox;
             _tbox = tbox;
             _mapper = mapper;
+            _db = db;
         }
 
         [HttpGet]
@@ -40,24 +43,36 @@ namespace JboxTransfer.Server.Controllers
             {
                 return new ApiResponse(500, "GetJboxFileListError", $"获取目录列表失败：{res.Message}");
             }
+            //Todo: 优化
+            var dbStates = new List<string>(res.Result.Content.Count());
+            foreach (var item in res.Result.Content)
+            {
+                var dbItem = _db.SyncTasks
+                    .Where(x => x.UserId == _user.GetUser().Id)
+                    .Where(x => x.FilePath == "/" + item.Path)
+                    .FirstOrDefault();
+                dbStates.Add(dbItem != null ? dbItem.State.ToString() : "None");
+            }
             var resout = new FileSystemItemInfoOutputDto(
                 res.Result.Path.PathToName(),
                 res.Result.Path,
                 null,
                 res.Result.Modified,
-                res.Result.Content.Select(x => x.IsDir ? new FileSystemItemInfoOutputDto(
+                res.Result.Content.Select((x, i) => x.IsDir ? new FileSystemItemInfoOutputDto(
                     x.Path.PathToName(),
                     x.Path,
                     null,
                     x.Modified,
                     null,
-                    0
+                    0,
+                    dbStates[i]
                 ) : new FileSystemItemInfoOutputDto(
                     x.Path.PathToName(),
                     x.Path,
                     x.Bytes,
                     null,
-                    x.Modified
+                    x.Modified,
+                    dbStates[i]
                 )).ToList(),
                 res.Result.ContentSize
             );
@@ -74,24 +89,36 @@ namespace JboxTransfer.Server.Controllers
             {
                 return new ApiResponse(500, "GetTboxFileListError", $"获取目录列表失败：{res.Message}");
             }
+            //Todo: 优化
+            var dbStates = new List<string>(res.Result.Contents.Count);
+            foreach (var item in res.Result.Contents)
+            {
+                var dbItem = _db.SyncTasks
+                    .Where(x => x.UserId == _user.GetUser().Id)
+                    .Where(x => x.FilePath == "/" + item.Path.Connect("/"))
+                    .FirstOrDefault();
+                dbStates.Add(dbItem != null ? dbItem.State.ToString() : "None");
+            }
             var resout = new FileSystemItemInfoOutputDto(
                 res.Result.Path.LastOrDefault() ?? "根目录",
                 "/" + res.Result.Path.Connect("/"),
                 null,
                 null,
-                res.Result.Contents.Select(x => x.Type == "dir" ? new FileSystemItemInfoOutputDto(
+                res.Result.Contents.Select((x, i) => x.Type == "dir" ? new FileSystemItemInfoOutputDto(
                     x.Path.LastOrDefault() ?? "根目录",
-                    "/" + res.Result.Path.Connect("/"),
+                    "/" + x.Path.Connect("/"),
                     x.CreationTime,
                     x.ModificationTime,
                     null,
-                    0
+                    0,
+                    dbStates[i]
                 ) : new FileSystemItemInfoOutputDto(
                     x.Path.Last(),
-                    "/" + res.Result.Path.Connect("/"),
+                    "/" + x.Path.Connect("/"),
                     long.Parse(x.Size),
                     x.CreationTime,
-                    x.ModificationTime
+                    x.ModificationTime,
+                    dbStates[i]
                 )).ToList(),
                 res.Result.TotalNum
             );

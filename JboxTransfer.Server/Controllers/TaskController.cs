@@ -142,7 +142,16 @@ namespace JboxTransfer.Server.Controllers
         [Authorize]
         public ApiResponse SetTop([FromForm] int id)
         {
-            return new ApiResponse();
+            var collection = _taskCollectionProvider.GetSyncTaskCollection(_user.GetUser());
+            var res = collection.SetTop(id);
+            if (res.success)
+            {
+                return new ApiResponse(true);
+            }
+            else
+            {
+                return new ApiResponse(500, "SetTopError", res.result);
+            }
         }
 
         [HttpPost]

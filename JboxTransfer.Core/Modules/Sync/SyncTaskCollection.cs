@@ -190,18 +190,7 @@ namespace JboxTransfer.Core.Modules.Sync
 
                     foreach (var item in items)
                     {
-                        IBaseSyncTask task2;
-                        if (item.Type == SyncTaskType.File)
-                        {
-                            task2 = new FileSyncTask(_serviceScopeFactory);
-                            task2.Init(item);
-                        }
-                        else
-                        {
-                            task2 = new FolderSyncTask(_serviceScopeFactory);
-                            task2.Init(item);
-                        }
-                        ListCurrent.Add(task2);
+                        AddToCurrentInternal(item);
                     }
                 }
             }
@@ -214,6 +203,25 @@ namespace JboxTransfer.Core.Modules.Sync
             {
                 Monitor.Exit(addTaskLock);
             }
+        }
+
+        private void AddToCurrentInternal(SyncTaskDbModel item, bool setTop = false)
+        {
+            IBaseSyncTask task2;
+            if (item.Type == SyncTaskType.File)
+            {
+                task2 = new FileSyncTask(_serviceScopeFactory);
+                task2.Init(item);
+            }
+            else
+            {
+                task2 = new FolderSyncTask(_serviceScopeFactory);
+                task2.Init(item);
+            }
+            if (setTop)
+                ListCurrent.Insert(0, task2);
+            else
+                ListCurrent.Add(task2);
         }
         #endregion
 
@@ -528,6 +536,48 @@ namespace JboxTransfer.Core.Modules.Sync
                 else
                 {
                     return new CommonResult(false, "找不到任务，请确保任务在错误列表中");
+                }
+            }
+            catch (Exception ex)
+            {
+                return new CommonResult(false, ex.Message);
+            }
+        }
+
+        public CommonResult SetTop(int syncTaskId) // both in list or db supported
+        {
+            try
+            {
+                var task = ListCurrent.FirstOrDefault(x => x.SyncTaskId == syncTaskId);
+                if (task != null)
+                {
+                    ListCurrent.Remove(task);
+                    ListCurrent.Insert(0, task);
+                    return new CommonResult(true, "");
+                }
+                else
+                {
+                    using (var scope = _serviceScopeFactory.CreateScope())
+                    {
+                        var db = scope.ServiceProvider.GetRequiredService<DefaultDbContext>();
+                        var taskDb = db.SyncTasks.FirstOrDefault(x => x.Id == syncTaskId);
+                        if (taskDb != null && taskDb.State == SyncTaskDbState.Idle)
+                        {
+                            taskDb.Order = db.GetMinOrder() - 1;
+                            taskDb.State = SyncTaskDbState.Busy;
+                            taskDb.UpdateTime = DateTime.Now;
+                            db.Update(taskDb);
+                            db.SaveChanges();
+
+                            AddToCurrentInternal(taskDb, true); //todo: 和前面的冲突怎么办
+
+                            return new CommonResult(true, "");
+                        }
+                        else
+                        {
+                            return new CommonResult(false, "找不到任务");
+                        }
+                    }
                 }
             }
             catch (Exception ex)
