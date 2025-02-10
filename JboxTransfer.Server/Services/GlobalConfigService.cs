@@ -1,8 +1,8 @@
 ﻿using JboxTransfer.Core.Helpers;
-using JboxTransfer.Core.Models;
+using JboxTransfer.Server.Models;
 using Newtonsoft.Json;
 
-namespace JboxTransfer.Core.Services
+namespace JboxTransfer.Server.Services
 {
     public static class GlobalConfigService
     {

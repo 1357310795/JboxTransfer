@@ -8,6 +8,7 @@ using JboxTransfer.Core.Modules.Sync;
 using JboxTransfer.Core.Modules.Tbox;
 using JboxTransfer.Server.Helpers;
 using JboxTransfer.Server.Modules.DataWrapper;
+using JboxTransfer.Server.Services;
 using MassTransit;
 using MassTransit.Contracts.JobService;
 using MassTransit.Middleware;
@@ -77,7 +78,7 @@ namespace JboxTransfer.Server
             Directory.CreateDirectory(PathHelper.AppDataPath);
             builder.Services.AddDbContext<DefaultDbContext>(options => {
                 options.UseSqlite($"DataSource={Path.Combine(PathHelper.AppDataPath, "jboxtransfer.server.db")};");
-                options.EnableSensitiveDataLogging();
+                //options.EnableSensitiveDataLogging();
             });
 
             // AutoMapper
@@ -88,16 +89,16 @@ namespace JboxTransfer.Server
             });
 
             // CORS
-            builder.Services.AddCors(options =>
-            {
-                options.AddDefaultPolicy(
-                    x => x.WithOrigins("http://localhost:5173")
-                        .WithMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
-                        .AllowAnyHeader()
-                        .SetIsOriginAllowed(origin => origin == "http://localhost:5173")
-                        .AllowCredentials()
-                );
-            });
+            //builder.Services.AddCors(options =>
+            //{
+            //    options.AddDefaultPolicy(
+            //        x => x.WithOrigins("http://localhost:5173")
+            //            .WithMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
+            //            .AllowAnyHeader()
+            //            .SetIsOriginAllowed(origin => origin == "http://localhost:5173")
+            //            .AllowCredentials()
+            //    );
+            //});
 
             //MassTransit
             builder.Services.AddMassTransit(x =>
@@ -144,7 +145,8 @@ namespace JboxTransfer.Server
             builder.Services.AddSingleton<SyncTaskCollectionProvider>();
 
             // Host
-            //builder.WebHost.UseUrls("http://0.0.0.0:18888");
+            var server_url = $"http://{GlobalConfigService.Config.ServerConfig.Host}:{GlobalConfigService.Config.ServerConfig.Port}";
+            builder.WebHost.UseUrls(server_url);
 
             var app = builder.Build();
 
@@ -164,16 +166,16 @@ namespace JboxTransfer.Server
 
             app.UseDefaultFiles();
             app.UseStaticFiles();
-            app.UseStaticFiles(new StaticFileOptions()
-            {
-                RequestPath = "/static",
-                FileProvider = new PhysicalFileProvider(System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "Static"))
-            });
+            //app.UseStaticFiles(new StaticFileOptions()
+            //{
+            //    RequestPath = "/static",
+            //    FileProvider = new PhysicalFileProvider(System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "Static"))
+            //});
 
             app.UseRewriter(new RewriteOptions().AddRewrite("^[^.]*$", "index.html", true));
             app.UseStaticFiles();
 
-            app.UseCors();
+            //app.UseCors();
 
             //迁移数据库
             using (var serviceScope = app.Services.GetService<IServiceScopeFactory>().CreateScope())
@@ -181,6 +183,9 @@ namespace JboxTransfer.Server
                 var context = serviceScope.ServiceProvider.GetRequiredService<DefaultDbContext>();
                 context.Database.Migrate();
             }
+
+            var logger = app.Services.GetRequiredService<ILogger<Program>>();
+            logger.LogInformation($"欢迎使用 JboxTransfer！请保持本窗口打开，在浏览器打开 http://127.0.0.1:{GlobalConfigService.Config.ServerConfig.Port} 以开始使用！");
 
             app.Run();
         }

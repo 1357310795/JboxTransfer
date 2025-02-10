@@ -4,7 +4,6 @@ using JboxTransfer.Core.Models.Output;
 using JboxTransfer.Core.Models.Sync;
 using JboxTransfer.Core.Modules;
 using JboxTransfer.Core.Modules.Db;
-using JboxTransfer.Core.Services;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
