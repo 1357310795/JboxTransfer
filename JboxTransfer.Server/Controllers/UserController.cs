@@ -75,7 +75,12 @@ namespace JboxTransfer.Server.Controllers
         {
             var jaccount = User.FindFirstValue("jaccount");
             if (jaccount != null)
-                _userInfoProvider.ClearUser(jaccount);
+                _userInfoProvider.ClearUser(jaccount);            
+            
+            var userId = User.FindFirstValue("userid");
+            if (jaccount != null)
+                _taskCollectionProvider.RemoveCollection(int.Parse(userId));
+
             HttpContext.SignOutAsync();
             return new ApiResponse(true) { Message = "ÍË³öµÇÂ¼³É¹¦" };
         }

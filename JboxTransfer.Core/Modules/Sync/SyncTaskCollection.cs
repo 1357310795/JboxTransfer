@@ -23,8 +23,8 @@ namespace JboxTransfer.Core.Modules.Sync
 {
     public class SyncTaskCollection
     {
-        private const int MaxErrorTaskCount = 100;
-        private const int MaxCompletedTaskCount = 100;
+        private const int MaxErrorTaskCount = 99;
+        private const int MaxCompletedTaskCount = 99;
         private const int MaxPendingTaskCount = 20;
 
         private List<IBaseSyncTask> ListCompleted { get; set; }
@@ -306,6 +306,11 @@ namespace JboxTransfer.Core.Modules.Sync
                 IsTooManyError = true;
                 Message = "错误过多，队列被迫终止。请先处理出错的项目。";
             }
+            else
+            {
+                IsTooManyError = false;
+                Message = "";
+            }
         }
 
         public void UpdatePreference(UserPreference preference)
@@ -369,6 +374,7 @@ namespace JboxTransfer.Core.Modules.Sync
                     item.Recover(true);
                     ListError.Remove(item);
                 }
+                CheckTooManyErrors();
                 return new CommonResult(true, "");
             }
             catch (Exception ex)
@@ -386,6 +392,7 @@ namespace JboxTransfer.Core.Modules.Sync
                     task.Cancel();
                 }
                 ListError = new List<IBaseSyncTask>();
+                CheckTooManyErrors();
                 return new CommonResult(true, "");
             }
             catch (Exception ex)
@@ -509,6 +516,7 @@ namespace JboxTransfer.Core.Modules.Sync
                 {
                     task.Recover(true);
                     ListError.Remove(task);
+                    CheckTooManyErrors();
                     return new CommonResult(true, "");
                 }
                 else
@@ -531,6 +539,7 @@ namespace JboxTransfer.Core.Modules.Sync
                 {
                     task.Cancel();
                     ListError.Remove(task);
+                    CheckTooManyErrors();
                     return new CommonResult(true, "");
                 }
                 else

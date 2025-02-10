@@ -42,6 +42,18 @@ namespace JboxTransfer.Core.Modules.Sync
                 }
                 return stc;
             }
+        } 
+
+        public void RemoveCollection(int userId)
+        {
+            lock (_dic)
+            {
+                if (_dic.TryGetValue(userId, out SyncTaskCollection stc))
+                {
+                    stc.PauseAll();
+                    _dic.Remove(userId);
+                }
+            }
         }
     }
 }

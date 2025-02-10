@@ -79,6 +79,8 @@ namespace JboxTransfer.Server.Controllers
 
             _db.SaveChanges();
 
+            _taskCollectionProvider.GetSyncTaskCollection(user);
+
             var endpoint = await _sendEndpointProvider.GetSendEndpoint(new Uri("queue:add_task_from_db"));
             await endpoint.Send(new NewTaskCheckMessage() { UserId = _user.GetUser().Id });
 
