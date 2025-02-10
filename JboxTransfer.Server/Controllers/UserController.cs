@@ -376,14 +376,14 @@ namespace JboxTransfer.Server.Controllers
         }
 
         //debug only!!!
-        [Route("debug_login")]
-        [HttpGet]
-        public ApiResponse DirectLogin()
-        {
-            var user = _context.Users.FirstOrDefault();
-            UserSignin(user);
-            return new ApiResponse(true);
-        }
+        //[Route("debug_login")]
+        //[HttpGet]
+        //public ApiResponse DirectLogin()
+        //{
+        //    var user = _context.Users.FirstOrDefault();
+        //    UserSignin(user);
+        //    return new ApiResponse(true);
+        //}
 
         [NonAction]
         private void UserSignin(SystemUser user)
