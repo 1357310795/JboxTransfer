@@ -32,7 +32,7 @@ jobs:
           repository: '1357310795/jboxtransfer-front'
           latest: true
           fileName: 'jboxtransfer-front-build.zip'
-          out-file-path: '/tmp
+          out-file-path: '/tmp'
 
       - name: Extract frontend files
         run: |
