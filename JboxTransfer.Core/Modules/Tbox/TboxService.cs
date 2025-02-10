@@ -646,7 +646,7 @@ namespace JboxTransfer.Core.Modules.Tbox
                 query.Add("conflict_resolution_strategy", "ask");
                 query.Add("access_token", cred.AccessToken);
 
-                HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Put, baseUrl + $"/api/v1/directory/{cred.LibraryId}/{cred.SpaceId}/{dirpath}" + UriHelper.BuildQuery(query));
+                HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Put, baseUrl + $"/api/v1/directory/{cred.LibraryId}/{cred.SpaceId}/{dirpath.UrlEncodeByParts()}" + UriHelper.BuildQuery(query));
 
                 var res = _client.SendAsync(req, ct).GetAwaiter().GetResult();
 
