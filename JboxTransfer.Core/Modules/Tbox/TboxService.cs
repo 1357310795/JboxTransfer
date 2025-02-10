@@ -323,7 +323,7 @@ namespace JboxTransfer.Core.Modules.Tbox
             }
         }
 
-        public CommonResult<TboxStartChunkUploadResDto> StartChunkUpload(string path, int chunkCount)
+        public CommonResult<TboxStartChunkUploadResDto> StartChunkUpload(string path, int chunkCount, CancellationToken ct = default)
         {
             try
             {
@@ -341,7 +341,7 @@ namespace JboxTransfer.Core.Modules.Tbox
                     sb.Append($",{i}");
                 req.Content = new StringContent($"{{\"partNumberRange\":[{sb.ToString()}]}}");
 
-                var res = _client.SendAsync(req).GetAwaiter().GetResult();
+                var res = _client.SendAsync(req, ct).GetAwaiter().GetResult();
 
                 if (!res.IsSuccessStatusCode)
                 {
@@ -367,13 +367,17 @@ namespace JboxTransfer.Core.Modules.Tbox
 
                 return new CommonResult<TboxStartChunkUploadResDto>(true, "", json);
             }
+            catch (TaskCanceledException ex)
+            {
+                return new(false, "操作已取消");
+            }
             catch (Exception ex)
             {
                 return new CommonResult<TboxStartChunkUploadResDto>(false, ex.Message);
             }
         }
 
-        public CommonResult<TboxStartChunkUploadResDto> RenewChunkUpload(string confirmKey, List<int> partNumberRange)
+        public CommonResult<TboxStartChunkUploadResDto> RenewChunkUpload(string confirmKey, List<int> partNumberRange, CancellationToken ct = default)
         {
             try
             {
@@ -393,7 +397,7 @@ namespace JboxTransfer.Core.Modules.Tbox
                     sb.Append($",{partNumberRange[i]}");
                 req.Content = new StringContent($"{{\"partNumberRange\":[{sb.ToString()}]}}");
 
-                var res = _client.SendAsync(req).GetAwaiter().GetResult();
+                var res = _client.SendAsync(req, ct).GetAwaiter().GetResult();
 
                 if (!res.IsSuccessStatusCode)
                 {
@@ -419,13 +423,17 @@ namespace JboxTransfer.Core.Modules.Tbox
 
                 return new CommonResult<TboxStartChunkUploadResDto>(true, "", json);
             }
+            catch (TaskCanceledException ex)
+            {
+                return new(false, "操作已取消");
+            }
             catch (Exception ex)
             {
                 return new CommonResult<TboxStartChunkUploadResDto>(false, ex.Message);
             }
         }
 
-        public CommonResult<TboxConfirmUploadResDto> ConfirmUpload(string confirmKey, ulong? crc64 = null)
+        public CommonResult<TboxConfirmUploadResDto> ConfirmUpload(string confirmKey, ulong? crc64 = null, CancellationToken ct = default)
         {
             try
             {
@@ -444,7 +452,7 @@ namespace JboxTransfer.Core.Modules.Tbox
                 """);
                 }
 
-                var res = _client.SendAsync(req).GetAwaiter().GetResult();
+                var res = _client.SendAsync(req, ct).GetAwaiter().GetResult();
 
                 if (!res.IsSuccessStatusCode)
                 {
@@ -469,6 +477,10 @@ namespace JboxTransfer.Core.Modules.Tbox
                 }
 
                 return new CommonResult<TboxConfirmUploadResDto>(true, "", json);
+            }
+            catch (TaskCanceledException ex)
+            {
+                return new(false, "操作已取消");
             }
             catch (Exception ex)
             {
@@ -589,7 +601,7 @@ namespace JboxTransfer.Core.Modules.Tbox
             }
         }
 
-        public CommonResult<HttpStatusCode> UploadChunk(TboxStartChunkUploadResDto info, Stream stream, int partNumber, Pack<long> chunkProgress)
+        public CommonResult<HttpStatusCode> UploadChunk(TboxStartChunkUploadResDto info, Stream stream, int partNumber, Pack<long> chunkProgress, CancellationToken ct = default)
         {
             try
             {
@@ -606,7 +618,7 @@ namespace JboxTransfer.Core.Modules.Tbox
                     req.Headers.TryAddWithoutValidation(header.Key, header.Value);
                 }
 
-                var res = _client.SendAsync(req, HttpCompletionOption.ResponseHeadersRead).GetAwaiter().GetResult();
+                var res = _client.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct).GetAwaiter().GetResult();
 
                 if (!res.IsSuccessStatusCode)
                 {
@@ -615,13 +627,17 @@ namespace JboxTransfer.Core.Modules.Tbox
 
                 return new(true, "", res.StatusCode);
             }
+            catch (TaskCanceledException ex)
+            {
+                return new(false, "操作已取消");
+            }
             catch (Exception ex)
             {
                 return new(false, ex.Message);
             }
         }
 
-        public CommonResult<TboxErrorMessageDto> CreateDirectory(string dirpath)
+        public CommonResult<TboxErrorMessageDto> CreateDirectory(string dirpath, CancellationToken ct = default)
         {
             try
             {
@@ -632,7 +648,7 @@ namespace JboxTransfer.Core.Modules.Tbox
 
                 HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Put, baseUrl + $"/api/v1/directory/{cred.LibraryId}/{cred.SpaceId}/{dirpath}" + UriHelper.BuildQuery(query));
 
-                var res = _client.SendAsync(req).GetAwaiter().GetResult();
+                var res = _client.SendAsync(req, ct).GetAwaiter().GetResult();
 
                 if (!res.IsSuccessStatusCode)
                 {
@@ -657,6 +673,10 @@ namespace JboxTransfer.Core.Modules.Tbox
                 }
 
                 return new CommonResult<TboxErrorMessageDto>(true, "", json);
+            }
+            catch (TaskCanceledException ex)
+            {
+                return new (false, "操作已取消");
             }
             catch (Exception ex)
             {

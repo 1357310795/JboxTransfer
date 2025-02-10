@@ -110,7 +110,7 @@ namespace JboxTransfer.Core.Modules.Jbox
             }
         }
 
-        public CommonResult<MemoryStream> DownloadChunk(string path, long start, long size, Pack<long> chunkProgress)
+        public async Task<CommonResult<MemoryStream>> DownloadChunk(string path, long start, long size, Pack<long> chunkProgress, CancellationToken ct = default)
         {
             if (size == 0) return new CommonResult<MemoryStream>(true, "", new MemoryStream());
             try
@@ -130,7 +130,7 @@ namespace JboxTransfer.Core.Modules.Jbox
                 req.Headers.Referrer = new Uri("https://jbox.sjtu.edu.cn/");
                 req.Headers.Range = new RangeHeaderValue(start, start + size - 1);
 
-                var res = _client.SendAsync(req, HttpCompletionOption.ResponseHeadersRead).GetAwaiter().GetResult();
+                var res = await _client.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
 
                 if (!res.IsSuccessStatusCode)
                 {
@@ -143,7 +143,7 @@ namespace JboxTransfer.Core.Modules.Jbox
                 }
 
 
-                var body = res.Content.ReadAsStream();
+                var body = await res.Content.ReadAsStreamAsync(ct);
 
                 MemoryStream ms = new MemoryStream();
 
@@ -152,9 +152,9 @@ namespace JboxTransfer.Core.Modules.Jbox
                 try
                 {
                     int bytesRead;
-                    while ((bytesRead = body.Read(buffer, 0, buffer.Length)) != 0)
+                    while ((bytesRead = await body.ReadAsync(buffer, 0, buffer.Length, ct)) != 0)
                     {
-                        ms.Write(buffer, 0, bytesRead);
+                        await ms.WriteAsync(buffer, 0, bytesRead, ct);
                         chunkProgress.Value += bytesRead;
                     }
                 }
@@ -164,6 +164,10 @@ namespace JboxTransfer.Core.Modules.Jbox
                 }
 
                 return new CommonResult<MemoryStream>(true, "", ms);
+            }
+            catch (TaskCanceledException ex)
+            {
+                return new(false, "操作已取消");
             }
             catch (Exception ex)
             {

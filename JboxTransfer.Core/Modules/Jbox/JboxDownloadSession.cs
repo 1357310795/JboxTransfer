@@ -37,11 +37,11 @@ namespace JboxTransfer.Core.Modules.Jbox
             chunkProgress = new Pack<long>(0);
         }
 
-        public CommonResult<MemoryStream> GetChunk(int chunk)
+        public CommonResult<MemoryStream> GetChunk(int chunk, CancellationToken ct)
         {
             //Todo : 检查块大小
             var curchunksize = chunk == chunkCount ? size - ChunkSize * (chunk - 1) : ChunkSize;
-            var res = _jbox.DownloadChunk(path, (chunk - 1) * ChunkSize, curchunksize, chunkProgress);
+            var res = _jbox.DownloadChunk(path, (chunk - 1) * ChunkSize, curchunksize, chunkProgress, ct).GetAwaiter().GetResult();
             if (!res.Success)
                 return res;
             if (res.Result.Length != curchunksize)

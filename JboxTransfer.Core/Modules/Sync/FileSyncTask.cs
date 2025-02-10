@@ -268,9 +268,10 @@ namespace JboxTransfer.Core.Modules.Sync
             }
         }
 
-        private async Task internalStart(AsyncServiceScope scope, PauseTokenSource inst_pts)
+        private async Task internalStart(AsyncServiceScope scope, PauseTokenSource pts)
         {
             CommonResult<MemoryStream> chunkRes = null;
+            CancellationToken ct = pts.CurrentCancellationToken;
 
             var db = scope.ServiceProvider.GetRequiredService<DefaultDbContext>();
             var dbModel = db.SyncTasks
@@ -308,12 +309,13 @@ namespace JboxTransfer.Core.Modules.Sync
             db.Update(dbModel);
             db.SaveChanges();
 
-            if (inst_pts.IsPaused) 
+            if (pts.IsPaused) 
                 return;
 
-            var res0 = tbox.EnsureDirectoryExists();
+            var res0 = tbox.EnsureDirectoryExists(ct);
             if (!res0.success)
             {
+                if (ct.IsCancellationRequested) return;
                 State = SyncTaskState.Error;
                 dbModel.State = SyncTaskDbState.Error;
                 dbModel.Message = res0.result;
@@ -324,12 +326,13 @@ namespace JboxTransfer.Core.Modules.Sync
                 return;
             }
 
-            if (inst_pts.IsPaused)
+            if (pts.IsPaused)
                 return;
 
-            var res1 = tbox.PrepareForUpload();
+            var res1 = tbox.PrepareForUpload(ct);
             if (!res1.Success)
             {
+                if (ct.IsCancellationRequested) return;
                 State = SyncTaskState.Error;
                 dbModel.State = SyncTaskDbState.Error;
                 dbModel.UpdateTime = DateTime.Now;
@@ -340,12 +343,13 @@ namespace JboxTransfer.Core.Modules.Sync
                 return;
             }
 
-            if (inst_pts.IsPaused)
+            if (pts.IsPaused)
                 return;
 
             var res2 = tbox.GetNextPartNumber();
             if (!res2.Success)
             {
+                if (ct.IsCancellationRequested) return;
                 State = SyncTaskState.Error;
                 dbModel.State = SyncTaskDbState.Error;
                 dbModel.UpdateTime = DateTime.Now;
@@ -357,7 +361,7 @@ namespace JboxTransfer.Core.Modules.Sync
             }
             curChunk = res2.Result;
 
-            if (inst_pts.IsPaused)
+            if (pts.IsPaused)
                 return;
 
             dbModel.ConfirmKey = tbox.ConfirmKey;
@@ -377,25 +381,25 @@ namespace JboxTransfer.Core.Modules.Sync
                 {
                     try
                     {
-                        if (inst_pts.IsPaused)
+                        if (pts.IsPaused)
                             return;
 
-                        var res3 = tbox.EnsureNoExpire(curChunk.PartNumber);
+                        var res3 = tbox.EnsureNoExpire(curChunk.PartNumber, ct);
                         if (!res3.success)
                             throw new Exception($"{res3.result}");
 
-                        if (inst_pts.IsPaused)
+                        if (pts.IsPaused)
                             return;
 
-                        chunkRes = jbox.GetChunk(curChunk.PartNumber);
+                        chunkRes = jbox.GetChunk(curChunk.PartNumber, ct);
                         if (!chunkRes.Success)
                             throw new Exception($"下载块 {curChunk.PartNumber} 发生错误：{chunkRes.Message}");
 
-                        if (inst_pts.IsPaused)
+                        if (pts.IsPaused)
                             return;
 
                         chunkRes.Result.Position = 0;
-                        var res4 = tbox.Upload(chunkRes.Result, curChunk.PartNumber);
+                        var res4 = tbox.Upload(chunkRes.Result, curChunk.PartNumber, ct);
                         if (res4.success)
                             break;
                         else
@@ -403,11 +407,12 @@ namespace JboxTransfer.Core.Modules.Sync
                     }
                     catch (Exception ex)
                     {
+                        if (ct.IsCancellationRequested) return;
                         logger.LogWarning($"同步文件出错：{ex}");
                         this.ex = ex;
                     }
                 }
-                if (inst_pts.IsPaused)
+                if (pts.IsPaused)
                     return;
                 if (t <= 0)
                 {
@@ -439,12 +444,13 @@ namespace JboxTransfer.Core.Modules.Sync
                 db.Update(dbModel);
                 db.SaveChanges();
 
-                if (inst_pts.IsPaused)
+                if (pts.IsPaused)
                     return;
 
                 res2 = tbox.GetNextPartNumber();
                 if (!res2.Success)
                 {
+                    if (ct.IsCancellationRequested) return;
                     Message = $"获取下一分块发生错误，当前分块为 {res2.Message}";
                     State = SyncTaskState.Error;
                     dbModel.State = SyncTaskDbState.Error;
@@ -480,9 +486,10 @@ namespace JboxTransfer.Core.Modules.Sync
                     db.SaveChanges();
                     return;
                 }
-                var res4 = tbox.Confirm(actualcrc64);
+                var res4 = tbox.Confirm(actualcrc64, ct);
                 if (!res4.Success)
                 {
+                    if (ct.IsCancellationRequested) return;
                     Message = $"{res4.Message}";
                     State = SyncTaskState.Error;
                     dbModel.State = SyncTaskDbState.Error;

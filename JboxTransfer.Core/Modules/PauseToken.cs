@@ -10,6 +10,7 @@ namespace JboxTransfer.Core.Modules
     {
         private readonly PauseTokenSource tokenSource;
         public bool IsPaused => tokenSource?.IsPaused == true;
+        public CancellationToken CurrentCancellationToken => tokenSource?.CurrentCancellationToken ?? default;
 
         internal PauseToken(PauseTokenSource source)
         {
@@ -27,15 +28,20 @@ namespace JboxTransfer.Core.Modules
     public class PauseTokenSource
     {
         private volatile TaskCompletionSource<bool> tcsPaused;
+        private CancellationTokenSource currentCancellationTokenSource = new CancellationTokenSource();
         internal static readonly Task CompletedTask = Task.FromResult(true);
 
         public PauseToken Token => new PauseToken(this);
         public bool IsPaused => tcsPaused != null;
+        public CancellationToken CurrentCancellationToken => currentCancellationTokenSource?.Token ?? default;
 
         public void Pause()
         {
             // if (tcsPause == new TaskCompletionSource<bool>()) tcsPause = null;
-            Interlocked.CompareExchange(ref tcsPaused, new TaskCompletionSource<bool>(), null);
+            if (Interlocked.CompareExchange(ref tcsPaused, new TaskCompletionSource<bool>(), null) == null)
+            {
+                currentCancellationTokenSource?.Cancel();
+            }
         }
 
         public void Resume()
@@ -54,6 +60,9 @@ namespace JboxTransfer.Core.Modules
                 if (Interlocked.CompareExchange(ref tcsPaused, null, tcs) == tcs)
                 {
                     tcs.SetResult(true);
+                    var newCts = new CancellationTokenSource();
+                    var oldCts = Interlocked.Exchange(ref currentCancellationTokenSource, newCts);
+                    oldCts?.Dispose();
                     break;
                 }
             }

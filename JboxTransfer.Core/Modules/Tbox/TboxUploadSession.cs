@@ -70,14 +70,14 @@ namespace JboxTransfer.Core.Modules.Tbox
             State = TboxUploadState.ConfirmKeyInit;
         }
 
-        public CommonResult<TboxErrorMessageDto> PrepareForUpload()
+        public CommonResult<TboxErrorMessageDto> PrepareForUpload(CancellationToken ct)
         {
             if (State == TboxUploadState.Ready || State == TboxUploadState.Uploading || State == TboxUploadState.Done)
                 return new CommonResult<TboxErrorMessageDto>(true, "");
 
             if (State == TboxUploadState.NotInit || State == TboxUploadState.Error)
             {
-                var res = _tbox.StartChunkUpload(path, chunkCount);
+                var res = _tbox.StartChunkUpload(path, chunkCount, ct);
                 if (!res.Success)
                 {
                     if (res.Result != null)
@@ -94,7 +94,7 @@ namespace JboxTransfer.Core.Modules.Tbox
             {
                 if (remainParts.Count > 0)
                 {
-                    var res = _tbox.RenewChunkUpload(confirmKey, GetRefreshPartNumberList());
+                    var res = _tbox.RenewChunkUpload(confirmKey, GetRefreshPartNumberList(), ct);
                     if (!res.Success)
                     {
                         if (res.Result != null)
@@ -131,7 +131,7 @@ namespace JboxTransfer.Core.Modules.Tbox
             part.Uploading = false;
         }
 
-        public CommonResult EnsureDirectoryExists()
+        public CommonResult EnsureDirectoryExists(CancellationToken ct)
         {
             if (State == TboxUploadState.Ready || State == TboxUploadState.Uploading || State == TboxUploadState.Done || State == TboxUploadState.ConfirmKeyInit)
                 return new CommonResult(true, "");
@@ -141,7 +141,7 @@ namespace JboxTransfer.Core.Modules.Tbox
             {
                 return new CommonResult(true, "");
             }
-            var res = _tbox.CreateDirectory(p);
+            var res = _tbox.CreateDirectory(p, ct);
             if (res.Success)
                 return new CommonResult(true, "");
             if (res.Result == null)
@@ -151,19 +151,19 @@ namespace JboxTransfer.Core.Modules.Tbox
             return new CommonResult(false, $"创建文件夹出错：{res.Message}");
         }
 
-        public CommonResult EnsureNoExpire(int partNumber)
+        public CommonResult EnsureNoExpire(int partNumber, CancellationToken ct)
         {
             var exp = uploadContext.Expiration;
             if ((exp - DateTime.Now).TotalSeconds < 30)
             {
-                var res = _tbox.RenewChunkUpload(confirmKey, GetRefreshPartNumberList());
+                var res = _tbox.RenewChunkUpload(confirmKey, GetRefreshPartNumberList(), ct);
                 if (!res.Success)
                     return new CommonResult(false, $"刷新分块凭据出错：{res.Message}");
                 uploadContext = res.Result;
             }
             if (!uploadContext.Parts.ContainsKey(partNumber.ToString()))
             {
-                var res = _tbox.RenewChunkUpload(confirmKey, GetRefreshPartNumberList());
+                var res = _tbox.RenewChunkUpload(confirmKey, GetRefreshPartNumberList(), ct);
                 if (!res.Success)
                     return new CommonResult(false, $"刷新分块凭据出错：{res.Message}");
                 uploadContext = res.Result;
@@ -173,9 +173,9 @@ namespace JboxTransfer.Core.Modules.Tbox
             return new CommonResult(true, "");
         }
 
-        public CommonResult Upload(MemoryStream data, int partNumber)
+        public CommonResult Upload(MemoryStream data, int partNumber, CancellationToken ct)
         {
-            var res = _tbox.UploadChunk(uploadContext, data, partNumber, chunkProgress);
+            var res = _tbox.UploadChunk(uploadContext, data, partNumber, chunkProgress, ct);
             if (res.Success)
             {
                 return new CommonResult(true, "");
@@ -186,10 +186,10 @@ namespace JboxTransfer.Core.Modules.Tbox
             }
         }
 
-        public CommonResult<TboxConfirmUploadResDto> Confirm(ulong crc64)
+        public CommonResult<TboxConfirmUploadResDto> Confirm(ulong crc64, CancellationToken ct)
         {
             //Todo:再次请求检查是否有未上传
-            var res = _tbox.ConfirmUpload(confirmKey, crc64);
+            var res = _tbox.ConfirmUpload(confirmKey, crc64, ct);
             if (!res.Success)
                 return new (false, $"确认上传出错：{res.Message}");
             return res;

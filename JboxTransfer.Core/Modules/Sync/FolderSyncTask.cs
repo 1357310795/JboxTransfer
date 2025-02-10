@@ -309,30 +309,37 @@ namespace JboxTransfer.Core.Modules.Sync
                             Monitor.Exit(db.insertLock);
                             return;
                         }
-                        var order = db.GetMinOrder() - 1;
+                        try
+                        {
+                            var order = db.GetMinOrder() - 1;
 
-                        //db.ChangeTracker.DetectChanges();
-                        //Console.WriteLine(db.ChangeTracker.DebugView.LongView);
-                        //Console.WriteLine("---------------------------------------");
+                            //db.ChangeTracker.DetectChanges();
+                            //Console.WriteLine(db.ChangeTracker.DebugView.LongView);
+                            //Console.WriteLine("---------------------------------------");
 
-                        //EF Core 的 SaveChanges 本身就是事务
-                        foreach (var item in info.Content.Where(x => x.IsDir == true))
-                            db.Add(new SyncTaskDbModel(user.GetUser(), SyncTaskType.Folder, item.Path, 0, order));
-                        foreach (var item in info.Content.Where(x => x.IsDir == false))
-                            db.Add(new SyncTaskDbModel(user.GetUser(), SyncTaskType.File, item.Path, item.Bytes, order) { MD5_Ori = item.Hash });
+                            //EF Core 的 SaveChanges 本身就是事务
+                            foreach (var item in info.Content.Where(x => x.IsDir == true))
+                                db.Add(new SyncTaskDbModel(user.GetUser(), SyncTaskType.Folder, item.Path, 0, order));
+                            foreach (var item in info.Content.Where(x => x.IsDir == false))
+                                db.Add(new SyncTaskDbModel(user.GetUser(), SyncTaskType.File, item.Path, item.Bytes, order) { MD5_Ori = item.Hash });
 
-                        succ += info.Content.Length;
-                        total = (int)info.ContentSize;
-                        dbModel.Size = total;
-                        dbModel.RemainParts = page.ToString();
-                        dbModel.UpdateTime = DateTime.Now;
-                        db.Update(dbModel);
+                            succ += info.Content.Length;
+                            total = (int)info.ContentSize;
+                            dbModel.Size = total;
+                            dbModel.RemainParts = page.ToString();
+                            dbModel.UpdateTime = DateTime.Now;
+                            db.Update(dbModel);
 
-                        //db.ChangeTracker.DetectChanges();
-                        //Console.WriteLine(db.ChangeTracker.DebugView.LongView);
-                        db.SaveChanges();
-
-                        Monitor.Exit(db.insertLock);
+                            //db.ChangeTracker.DetectChanges();
+                            //Console.WriteLine(db.ChangeTracker.DebugView.LongView);
+                            db.SaveChanges();
+                            Monitor.Exit(db.insertLock);
+                        }
+                        catch (Exception ex)
+                        {
+                            Monitor.Exit(db.insertLock);
+                            throw;
+                        }
 
                         page++;
                         break;

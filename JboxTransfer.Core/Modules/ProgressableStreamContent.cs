@@ -36,13 +36,19 @@ namespace JboxTransfer.Core.Modules
             this.onProgress = onProgress;
         }
 
-        protected override Task SerializeToStreamAsync(Stream stream, TransportContext context)
+
+        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context)
+        {
+            return SerializeToStreamAsync(stream, context, new CancellationToken());
+        }
+
+        protected override Task SerializeToStreamAsync(Stream stream, TransportContext context, CancellationToken cancellationToken)
         {
             Contract.Assert(stream != null);
 
             PrepareContent();
 
-            return Task.Run(() =>
+            return Task.Run(async () =>
             {
                 var buffer = new Byte[this.bufferSize];
                 var size = content.Length;
@@ -52,9 +58,9 @@ namespace JboxTransfer.Core.Modules
 
                 while (true)
                 {
-                    var length = content.Read(buffer, 0, buffer.Length);
+                    var length = await content.ReadAsync(buffer, 0, buffer.Length, cancellationToken);
                     if (length <= 0) break;
-                    stream.Write(buffer, 0, length);
+                    await stream.WriteAsync(buffer, 0, length, cancellationToken);
                     uploaded += length;
                     onProgress(uploaded);
                 }
