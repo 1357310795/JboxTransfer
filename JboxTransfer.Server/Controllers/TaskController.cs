@@ -52,11 +52,27 @@ namespace JboxTransfer.Server.Controllers
         [Authorize]
         public async Task<ApiResponse> Add([FromForm]string path) //EnqueueTask
         {
+            var user = _user.GetUser();
             var res = _jbox.GetJboxItemInfo(path);
             if (!res.Success)
             {
                 return new ApiResponse(500, "GetJboxItemInfoError", $"获取文件信息失败：{res.Message}");
             }
+            var noentry = !_db.SyncTasks
+                .Where(x => x.UserId == user.Id)
+                .Any();
+            var stat = _db.UserStats
+                .Where(x => x.UserId == user.Id)
+                .First();
+            if (noentry && path == "/")
+            {
+                stat.OnlyFullTransfer = true;
+            }
+            else
+            {
+                stat.OnlyFullTransfer = false;
+            }
+            _db.Update(stat);
 
             var order = _db.GetMinOrder() - 1;
             var entity = _db.Add(new SyncTaskDbModel(_user.GetUser(), res.Result.IsDir ? SyncTaskType.Folder : SyncTaskType.File, res.Result.Path, res.Result.Bytes, order) { MD5_Ori = res.Result.Hash });
