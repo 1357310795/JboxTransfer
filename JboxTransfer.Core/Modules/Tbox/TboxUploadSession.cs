@@ -186,10 +186,10 @@ namespace JboxTransfer.Core.Modules.Tbox
             }
         }
 
-        public CommonResult<TboxConfirmUploadResDto> Confirm(ulong crc64, CancellationToken ct)
+        public CommonResult<TboxConfirmUploadResDto> Confirm(ulong crc64, string conflict, CancellationToken ct)
         {
             //Todo:再次请求检查是否有未上传
-            var res = _tbox.ConfirmUpload(confirmKey, crc64, ct);
+            var res = _tbox.ConfirmUpload(confirmKey, crc64, conflict, ct);
             if (!res.Success)
                 return new (false, $"确认上传出错：{res.Message}");
             return res;

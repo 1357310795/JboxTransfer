@@ -433,14 +433,14 @@ namespace JboxTransfer.Core.Modules.Tbox
             }
         }
 
-        public CommonResult<TboxConfirmUploadResDto> ConfirmUpload(string confirmKey, ulong? crc64 = null, CancellationToken ct = default)
+        public CommonResult<TboxConfirmUploadResDto> ConfirmUpload(string confirmKey, ulong? crc64 = null, string conflict = "overwrite", CancellationToken ct = default)
         {
             try
             {
                 var cred = CheckLogined();
                 var query = new Dictionary<string, string>();
                 query.Add("confirm", null);
-                query.Add("conflict_resolution_strategy", "overwrite");
+                query.Add("conflict_resolution_strategy", conflict);
                 query.Add("access_token", cred.AccessToken);
 
                 HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Post, baseUrl + $"/api/v1/file/{cred.LibraryId}/{cred.SpaceId}/{confirmKey}" + UriHelper.BuildQuery(query));
@@ -768,7 +768,7 @@ namespace JboxTransfer.Core.Modules.Tbox
             {
                 var cred = CheckLogined();
                 var query = new Dictionary<string, string>();
-                query.Add("permanent", "0"); //Todo: 回收站设置
+                query.Add("permanent", "0");
                 query.Add("access_token", cred.AccessToken);
 
                 HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Delete, baseUrl + $"/api/v1/file/{cred.LibraryId}/{cred.SpaceId}/{path.UrlEncodeByParts()}" + UriHelper.BuildQuery(query));

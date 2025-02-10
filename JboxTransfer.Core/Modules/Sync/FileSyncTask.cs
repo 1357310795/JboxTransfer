@@ -300,6 +300,7 @@ namespace JboxTransfer.Core.Modules.Sync
                     tbox.Init(path, size, dbModel.ConfirmKey, JsonConvert.DeserializeObject<List<int>>(dbModel.RemainParts));
                 }
             }
+            UserPreference preference = JsonConvert.DeserializeObject<UserPreference>(dbModel.User.Preference);
 
             State = SyncTaskState.Running;
 
@@ -486,7 +487,7 @@ namespace JboxTransfer.Core.Modules.Sync
                     db.SaveChanges();
                     return;
                 }
-                var res4 = tbox.Confirm(actualcrc64, ct);
+                var res4 = tbox.Confirm(actualcrc64, preference.ConflictResolutionStrategy, ct);
                 if (!res4.Success)
                 {
                     if (ct.IsCancellationRequested) return;
