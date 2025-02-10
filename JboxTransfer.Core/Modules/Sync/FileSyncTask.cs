@@ -301,7 +301,13 @@ namespace JboxTransfer.Core.Modules.Sync
             }
 
             State = SyncTaskState.Running;
-            
+
+            dbModel.State = SyncTaskDbState.Busy;
+            dbModel.Message = "";
+            dbModel.UpdateTime = DateTime.Now;
+            db.Update(dbModel);
+            db.SaveChanges();
+
             if (inst_pts.IsPaused) 
                 return;
 

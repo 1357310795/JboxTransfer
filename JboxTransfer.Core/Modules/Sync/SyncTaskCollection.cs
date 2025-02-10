@@ -75,10 +75,10 @@ namespace JboxTransfer.Core.Modules.Sync
                 // 上次未完成直接被关闭的任务
                 db.SyncTasks
                     .Where(db => db.UserId == UserId)
-                    .Where(x => x.State == SyncTaskDbState.Busy)
+                    .Where(x => x.State == SyncTaskDbState.Busy || x.State == SyncTaskDbState.Pending)
                     .ExecuteUpdate(x => x.SetProperty(model => model.State, (_) => SyncTaskDbState.Idle));
 
-                await LoadPendingTasksFromDb(db);
+                await LoadIdleTasksFromDb(db);
             }
         }
 
@@ -154,7 +154,7 @@ namespace JboxTransfer.Core.Modules.Sync
             }
         }
 
-        private async Task LoadPendingTasksFromDb(DefaultDbContext db)
+        private async Task LoadIdleTasksFromDb(DefaultDbContext db)
         {
             Monitor.Enter(addTaskLock);
             try
@@ -182,7 +182,7 @@ namespace JboxTransfer.Core.Modules.Sync
                     }
                     foreach (var item in items)
                     {
-                        item.State = SyncTaskDbState.Busy;
+                        item.State = SyncTaskDbState.Pending;
                         item.UpdateTime = DateTime.Now;
                         db.Update(item);
                     }
@@ -249,7 +249,7 @@ namespace JboxTransfer.Core.Modules.Sync
                 {
                     var db = scope.ServiceProvider.GetRequiredService<DefaultDbContext>();
 
-                    LoadPendingTasksFromDb(db).GetAwaiter().GetResult();
+                    LoadIdleTasksFromDb(db).GetAwaiter().GetResult();
                 }
             }
             catch (Exception ex)
@@ -352,7 +352,7 @@ namespace JboxTransfer.Core.Modules.Sync
                 var db = scope.ServiceProvider.GetRequiredService<DefaultDbContext>();
                 db.SyncTasks
                     .Where(x => x.UserId == UserId)
-                    .Where(x => x.State == SyncTaskDbState.Idle || x.State == SyncTaskDbState.Busy)
+                    .Where(x => x.State == SyncTaskDbState.Idle || x.State == SyncTaskDbState.Busy || x.State == SyncTaskDbState.Pending)
                     .ExecuteDelete();
             }
             ListCurrent.Clear();
@@ -564,7 +564,7 @@ namespace JboxTransfer.Core.Modules.Sync
                         if (taskDb != null && taskDb.State == SyncTaskDbState.Idle)
                         {
                             taskDb.Order = db.GetMinOrder() - 1;
-                            taskDb.State = SyncTaskDbState.Busy;
+                            taskDb.State = SyncTaskDbState.Pending;
                             taskDb.UpdateTime = DateTime.Now;
                             db.Update(taskDb);
                             db.SaveChanges();
@@ -575,7 +575,7 @@ namespace JboxTransfer.Core.Modules.Sync
                         }
                         else
                         {
-                            return new CommonResult(false, "找不到任务");
+                            return new CommonResult(false, "找不到任务或任务状态冲突");
                         }
                     }
                 }

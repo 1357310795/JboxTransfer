@@ -9,6 +9,7 @@ using JboxTransfer.Core.Models.Output;
 using JboxTransfer.Core.Helpers;
 using System.Linq;
 using JboxTransfer.Core.Modules.Db;
+using JboxTransfer.Core.Models.Db;
 
 namespace JboxTransfer.Server.Controllers
 {
@@ -43,15 +44,10 @@ namespace JboxTransfer.Server.Controllers
             {
                 return new ApiResponse(500, "GetJboxFileListError", $"获取目录列表失败：{res.Message}");
             }
-            //Todo: 优化
             var dbStates = new List<string>(res.Result.Content.Count());
             foreach (var item in res.Result.Content)
             {
-                var dbItem = _db.SyncTasks
-                    .Where(x => x.UserId == _user.GetUser().Id)
-                    .Where(x => x.FilePath == "/" + item.Path)
-                    .FirstOrDefault();
-                dbStates.Add(dbItem != null ? dbItem.State.ToString() : "None");
+                dbStates.Add(GetDbTaskOverAllState(item.Path));
             }
             var resout = new FileSystemItemInfoOutputDto(
                 res.Result.Path.PathToName(),
@@ -89,15 +85,10 @@ namespace JboxTransfer.Server.Controllers
             {
                 return new ApiResponse(500, "GetTboxFileListError", $"获取目录列表失败：{res.Message}");
             }
-            //Todo: 优化
             var dbStates = new List<string>(res.Result.Contents.Count);
             foreach (var item in res.Result.Contents)
             {
-                var dbItem = _db.SyncTasks
-                    .Where(x => x.UserId == _user.GetUser().Id)
-                    .Where(x => x.FilePath == "/" + item.Path.Connect("/"))
-                    .FirstOrDefault();
-                dbStates.Add(dbItem != null ? dbItem.State.ToString() : "None");
+                dbStates.Add(GetDbTaskOverAllState("/" + item.Path.Connect("/")));
             }
             var resout = new FileSystemItemInfoOutputDto(
                 res.Result.Path.LastOrDefault() ?? "根目录",
@@ -160,6 +151,42 @@ namespace JboxTransfer.Server.Controllers
             var remotepath = res.Result.Path.Select(x => x.UrlEncode()).Connect("/");
 
             return new ApiResponse($"https://pan.sjtu.edu.cn/web/desktop/personalSpace?path={remotepath}");
+        }
+
+        [NonAction]
+        private string GetDbTaskOverAllState(string path)
+        {
+            var dbItem = _db.SyncTasks
+                    .Where(x => x.UserId == _user.GetUser().Id)
+                    .Where(x => x.FilePath == path)
+                    .FirstOrDefault();
+            if (dbItem == null)
+            {
+                return "None";
+            }
+            var hasError = _db.SyncTasks
+                .Where(x => x.UserId == _user.GetUser().Id)
+                .Where(x => x.FilePath.StartsWith(path + "/"))
+                .Any(x => x.State == SyncTaskDbState.Error);
+            if (hasError || dbItem.State == SyncTaskDbState.Error)
+            {
+                return SyncTaskDbState.Error.ToString();
+            }
+            if (dbItem.State == SyncTaskDbState.Idle ||
+                dbItem.State == SyncTaskDbState.Pending ||
+                dbItem.State == SyncTaskDbState.Busy)
+            {
+                return dbItem.State.ToString();
+            }
+            var allDone = _db.SyncTasks
+                .Where(x => x.UserId == _user.GetUser().Id)
+                .Where(x => x.FilePath.StartsWith(path + "/"))
+                .All(x => x.State == SyncTaskDbState.Done);
+            if (allDone)
+            {
+                return SyncTaskDbState.Done.ToString();
+            }
+            return SyncTaskDbState.Busy.ToString();
         }
     }
 }

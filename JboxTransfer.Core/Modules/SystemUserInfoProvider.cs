@@ -29,10 +29,10 @@ namespace JboxTransfer.Core.Modules
             var jaccount = _contextAccessor.HttpContext.User.FindFirst("jaccount");
             if (jaccount == null)
                 return null;
-            var user = _db.Users
+            _localUser = _db.Users
                 .AsNoTracking()
                 .FirstOrDefault(x => x.Jaccount == jaccount.Value);
-            return user;
+            return _localUser;
         }
 
         public void SetUser(SystemUser user)

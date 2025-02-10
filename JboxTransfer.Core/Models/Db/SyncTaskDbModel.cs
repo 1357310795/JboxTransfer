@@ -21,6 +21,7 @@ namespace JboxTransfer.Core.Models.Db
             Size = size;
             Order = order;
             FileName = FilePath.Split('/').Last();
+            if (FileName == "") FileName = "根目录";
             State = SyncTaskDbState.Idle;
             CreationTime = DateTime.Now;
             UpdateTime = DateTime.Now;
@@ -60,6 +61,7 @@ namespace JboxTransfer.Core.Models.Db
     public enum SyncTaskDbState
     {
         Idle,
+        Pending,
         Busy,
         Error,
         Done,
