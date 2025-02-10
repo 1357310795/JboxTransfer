@@ -73,6 +73,9 @@ namespace JboxTransfer.Server.Controllers
         [HttpPost]
         public ApiResponse Logout()
         {
+            var jaccount = User.FindFirstValue("jaccount");
+            if (jaccount != null)
+                _userInfoProvider.ClearUser(jaccount);
             HttpContext.SignOutAsync();
             return new ApiResponse(true) { Message = "ÍË³öµÇÂ¼³É¹¦" };
         }
