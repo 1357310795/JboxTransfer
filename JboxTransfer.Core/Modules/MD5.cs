@@ -1,4 +1,4 @@
-namespace JboxTransfer.Core.Modules
+ï»¿namespace JboxTransfer.Core.Modules
 {
     public class MD5Base
     {
@@ -75,7 +75,7 @@ namespace JboxTransfer.Core.Modules
         }
     }
 
-    //Todo: ÓÃÁËBuffer.BlockCopy£¬ÒÉËÆÖ»ÄÜÔÚĞ¡¶Ë»úÉÏÓÃ
+    //Todo: ç”¨äº†Buffer.BlockCopyï¼Œç–‘ä¼¼åªèƒ½åœ¨å°ç«¯æœºä¸Šç”¨
     public class MD5 : MD5Base
     {
         long m_bit_count;

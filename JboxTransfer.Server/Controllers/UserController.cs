@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+ï»¿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using Microsoft.Extensions.Caching.Memory;
@@ -48,13 +48,13 @@ namespace JboxTransfer.Server.Controllers
         {
             var jaccount = User.FindFirstValue("jaccount");
             if (jaccount == null)
-                return new ApiResponse(400, "UserIdMissingError", "ÕÒ²»µ½ÓÃ»§");
+                return new ApiResponse(400, "UserIdMissingError", "æ‰¾ä¸åˆ°ç”¨æˆ·");
             var sysuser = _context.Users
                 .Where(x => x.Jaccount == jaccount)
                 .Include(x => x.Stat)
                 .FirstOrDefault();
             if (sysuser == null)
-                return new ApiResponse(400, "UserNotFoundError", "ÕÒ²»µ½ÓÃ»§");
+                return new ApiResponse(400, "UserNotFoundError", "æ‰¾ä¸åˆ°ç”¨æˆ·");
 
             return new ApiResponse(new UserInfoDto()
             {
@@ -82,7 +82,7 @@ namespace JboxTransfer.Server.Controllers
                 _taskCollectionProvider.RemoveCollection(int.Parse(userId));
 
             HttpContext.SignOutAsync();
-            return new ApiResponse(true) { Message = "ÍË³öµÇÂ¼³É¹¦" };
+            return new ApiResponse(true) { Message = "é€€å‡ºç™»å½•æˆåŠŸ" };
         }
 
         //[Route("jaccount/getqrcode")]
@@ -109,7 +109,7 @@ namespace JboxTransfer.Server.Controllers
         //    loginService.WaitForQrCode();
         //    if (loginService.Failed || !loginService.Prepared)
         //    {
-        //        return new ApiResponse(StatusCodes.Status500InternalServerError, "GetQrcodeError", "ÎŞ·¨»ñÈ¡µÇÂ¼¶şÎ¬Âë");
+        //        return new ApiResponse(StatusCodes.Status500InternalServerError, "GetQrcodeError", "æ— æ³•è·å–ç™»å½•äºŒç»´ç ");
         //    }
 
         //    _mcache.Set(loginService.Uuid, loginService, new MemoryCacheEntryOptions()
@@ -138,25 +138,25 @@ namespace JboxTransfer.Server.Controllers
         //    var flag = _mcache.TryGetValue<JaccountFastLoginService>(uuid, out var loginService);
         //    if (!flag)
         //    {
-        //        return new ApiResponse(StatusCodes.Status408RequestTimeout, "RequestTimeoutError", "ÇëÇó³¬Ê±£¬ÇëÔÚ3·ÖÖÓÄÚÍê³É²Ù×÷¡£");
+        //        return new ApiResponse(StatusCodes.Status408RequestTimeout, "RequestTimeoutError", "è¯·æ±‚è¶…æ—¶ï¼Œè¯·åœ¨3åˆ†é’Ÿå†…å®Œæˆæ“ä½œã€‚");
         //    }
 
         //    loginService.WaitForLogined();
         //    if (loginService.Failed || !loginService.Logined)
         //    {
-        //        return new ApiResponse(StatusCodes.Status500InternalServerError, "LoginFailError", $"µÇÂ¼Ê§°Ü£º{loginService.Message}");
+        //        return new ApiResponse(StatusCodes.Status500InternalServerError, "LoginFailError", $"ç™»å½•å¤±è´¥ï¼š{loginService.Message}");
         //    }
 
         //    var userinfores = loginService.GetUserInfo();
         //    if (!userinfores.Success)
         //    {
-        //        return new ApiResponse(StatusCodes.Status500InternalServerError, "LoginFailError", $"»ñÈ¡ÓÃ»§ĞÅÏ¢Ê§°Ü£º{userinfores.Message}");
+        //        return new ApiResponse(StatusCodes.Status500InternalServerError, "LoginFailError", $"è·å–ç”¨æˆ·ä¿¡æ¯å¤±è´¥ï¼š{userinfores.Message}");
         //    }
 
         //    var sysuser = UpdateUserCookie(user, userinfores.Result, loginService.GetCookie());
         //    if (sysuser == null)
         //    {
-        //        return new ApiResponse(400, "ValidateError", "ÕÒ²»µ½ÓÃ»§");
+        //        return new ApiResponse(400, "ValidateError", "æ‰¾ä¸åˆ°ç”¨æˆ·");
         //    }
         //    UserSignin(sysuser);
 
@@ -178,10 +178,10 @@ namespace JboxTransfer.Server.Controllers
         //{
         //    var jaccount = User.FindFirstValue("jaccount");
         //    if (jaccount == null)
-        //        return new ApiResponse(400, "UserIdMissingError", "ÕÒ²»µ½ÓÃ»§");
+        //        return new ApiResponse(400, "UserIdMissingError", "æ‰¾ä¸åˆ°ç”¨æˆ·");
         //    var sysuser = _context.Users.FirstOrDefault(x => x.Jaccount == jaccount);
         //    if (sysuser == null)
-        //        return new ApiResponse(400, "UserNotFoundError", "ÕÒ²»µ½ÓÃ»§");
+        //        return new ApiResponse(400, "UserNotFoundError", "æ‰¾ä¸åˆ°ç”¨æˆ·");
 
         //    HttpClient client = new HttpClient();
         //    HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Post, "https://jaccount.sjtu.edu.cn/oauth2/token");
@@ -195,11 +195,11 @@ namespace JboxTransfer.Server.Controllers
         //    var res = client.Send(req);
         //    if (!res.IsSuccessStatusCode)
         //    {
-        //        return new ApiResponse(StatusCodes.Status400BadRequest, "GetJaccountAppTokenError", "ÑéÖ¤µÇÂ¼Ê§°Ü");
+        //        return new ApiResponse(StatusCodes.Status400BadRequest, "GetJaccountAppTokenError", "éªŒè¯ç™»å½•å¤±è´¥");
         //    }
         //    if (res.Content.Headers.ContentType.MediaType != "application/json")
         //    {
-        //        return new ApiResponse(StatusCodes.Status400BadRequest, "GetJaccountAppTokenError", "ÑéÖ¤µÇÂ¼Ê§°Ü");
+        //        return new ApiResponse(StatusCodes.Status400BadRequest, "GetJaccountAppTokenError", "éªŒè¯ç™»å½•å¤±è´¥");
         //    }
         //    var rawjson = res.Content.ReadAsStringAsync().Result;
         //    var json = JsonConvert.DeserializeObject<JacAppTokenResDto>(rawjson);
@@ -215,7 +215,7 @@ namespace JboxTransfer.Server.Controllers
         //    _context.Update(sysuser);
         //    _context.SaveChanges();
 
-        //    return new ApiResponse(jaccount) { Message = "°ó¶¨³É¹¦" };
+        //    return new ApiResponse(jaccount) { Message = "ç»‘å®šæˆåŠŸ" };
         //}
 
         [Route("jaccount/getqrcode")]
@@ -239,7 +239,7 @@ namespace JboxTransfer.Server.Controllers
             loginService.WaitForQrCode();
             if (loginService.Failed || !loginService.Prepared)
             {
-                return new ApiResponse(StatusCodes.Status500InternalServerError, "GetQrcodeError", "ÎŞ·¨»ñÈ¡µÇÂ¼¶şÎ¬Âë");
+                return new ApiResponse(StatusCodes.Status500InternalServerError, "GetQrcodeError", "æ— æ³•è·å–ç™»å½•äºŒç»´ç ");
             }
 
             _mcache.Set(loginService.Uuid, loginService, new MemoryCacheEntryOptions()
@@ -265,23 +265,23 @@ namespace JboxTransfer.Server.Controllers
             var flag = _mcache.TryGetValue<JaccountFastLoginService>(uuid, out var loginService);
             if (!flag)
             {
-                return new ApiResponse(StatusCodes.Status408RequestTimeout, "RequestTimeoutError", "ÇëÇó³¬Ê±£¬ÇëÔÚ3·ÖÖÓÄÚÍê³É²Ù×÷¡£");
+                return new ApiResponse(StatusCodes.Status408RequestTimeout, "RequestTimeoutError", "è¯·æ±‚è¶…æ—¶ï¼Œè¯·åœ¨3åˆ†é’Ÿå†…å®Œæˆæ“ä½œã€‚");
             }
 
             if (!loginService.Failed && !loginService.Logined)
             {
-                return new ApiResponse(StatusCodes.Status400BadRequest, "NotCompletedError", "µÇÂ¼»¹Î´Íê³É");
+                return new ApiResponse(StatusCodes.Status400BadRequest, "NotCompletedError", "ç™»å½•è¿˜æœªå®Œæˆ");
             }
 
             if (loginService.Failed || !loginService.Logined)
             {
-                return new ApiResponse(StatusCodes.Status500InternalServerError, "LoginFailError", $"µÇÂ¼Ê§°Ü£º{loginService.Message}");
+                return new ApiResponse(StatusCodes.Status500InternalServerError, "LoginFailError", $"ç™»å½•å¤±è´¥ï¼š{loginService.Message}");
             }
 
             var userinfores = loginService.GetUserInfo();
             if (!userinfores.Success)
             {
-                return new ApiResponse(StatusCodes.Status500InternalServerError, "LoginFailError", $"»ñÈ¡ÓÃ»§ĞÅÏ¢Ê§°Ü£º{userinfores.Message}");
+                return new ApiResponse(StatusCodes.Status500InternalServerError, "LoginFailError", $"è·å–ç”¨æˆ·ä¿¡æ¯å¤±è´¥ï¼š{userinfores.Message}");
             }
             lock (loginService)
             {
@@ -329,11 +329,11 @@ namespace JboxTransfer.Server.Controllers
             var user = _userInfoProvider.GetUser();
             if (user == null)
             {
-                return new ApiResponse(500, "UserNotFoundError", "ÇëÏÈµÇÂ¼");
+                return new ApiResponse(500, "UserNotFoundError", "è¯·å…ˆç™»å½•");
             }
             if (inputDto.ConcurrencyCount <= 0 || inputDto.ConcurrencyCount > 8)
             {
-                return new ApiResponse(400, "ParamsNotValid", "²¢ĞĞÊıÁ¿²»ºÏ·¨");
+                return new ApiResponse(400, "ParamsNotValid", "å¹¶è¡Œæ•°é‡ä¸åˆæ³•");
             }
             _context.Users
                 .Where(x => x.Id == user.Id)
@@ -351,14 +351,14 @@ namespace JboxTransfer.Server.Controllers
             var user = _userInfoProvider.GetUser();
             if (user == null)
             {
-                return new ApiResponse(500, "UserNotFoundError", "ÇëÏÈµÇÂ¼");
+                return new ApiResponse(500, "UserNotFoundError", "è¯·å…ˆç™»å½•");
             }
             var stat = _context.UserStats
                 .Where(x => x.UserId == user.Id)
                 .FirstOrDefault();
             if (stat == null)
             {
-                return new ApiResponse(500, "DataNotFoundError", "Î´ÕÒµ½Êı¾İ");
+                return new ApiResponse(500, "DataNotFoundError", "æœªæ‰¾åˆ°æ•°æ®");
             }
             var jboxQuotaInfoProvider = _serviceProvider.GetRequiredService<JboxQuotaInfoProvider>();
             var jboxUserInfo = jboxQuotaInfoProvider.GetSpaceInfo();

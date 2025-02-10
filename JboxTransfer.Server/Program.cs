@@ -1,4 +1,4 @@
-
+ï»¿
 using JboxTransfer.Core.Models.Message;
 using JboxTransfer.Core.Modules;
 using JboxTransfer.Core.Modules.AutoMapper;
@@ -42,12 +42,12 @@ namespace JboxTransfer.Server
                             {
                                 x.Events.OnRedirectToAccessDenied = (x) => {
                                     x.HttpContext.Response.ContentType = "application/json";
-                                    x.HttpContext.Response.WriteAsJsonAsync<ApiResponse>(new ApiResponse(403, "ForbidError", "ÎŞÈ¨ÏŞ£¬ÇëÊ¹ÓÃ admin ÕËºÅ"));
+                                    x.HttpContext.Response.WriteAsJsonAsync<ApiResponse>(new ApiResponse(403, "ForbidError", "æ— æƒé™ï¼Œè¯·ä½¿ç”¨ admin è´¦å·"));
                                     return Task.CompletedTask;
                                 };
                                 x.Events.OnRedirectToLogin = (x) => {
                                     x.HttpContext.Response.ContentType = "application/json";
-                                    x.HttpContext.Response.WriteAsJsonAsync<ApiResponse>(new ApiResponse(401, "NotLoginedError", "ÇëÏÈµÇÂ¼"));
+                                    x.HttpContext.Response.WriteAsJsonAsync<ApiResponse>(new ApiResponse(401, "NotLoginedError", "è¯·å…ˆç™»å½•"));
                                     return Task.CompletedTask;
                                 };
                                 //x.Cookie.HttpOnly = true;
@@ -177,7 +177,7 @@ namespace JboxTransfer.Server
 
             //app.UseCors();
 
-            //Ç¨ÒÆÊı¾İ¿â
+            //è¿ç§»æ•°æ®åº“
             using (var serviceScope = app.Services.GetService<IServiceScopeFactory>().CreateScope())
             {
                 var context = serviceScope.ServiceProvider.GetRequiredService<DefaultDbContext>();
@@ -185,7 +185,7 @@ namespace JboxTransfer.Server
             }
 
             var logger = app.Services.GetRequiredService<ILogger<Program>>();
-            logger.LogInformation($"»¶Ó­Ê¹ÓÃ JboxTransfer£¡Çë±£³Ö±¾´°¿Ú´ò¿ª£¬ÔÚä¯ÀÀÆ÷´ò¿ª http://127.0.0.1:{GlobalConfigService.Config.ServerConfig.Port} ÒÔ¿ªÊ¼Ê¹ÓÃ£¡");
+            logger.LogInformation($"æ¬¢è¿ä½¿ç”¨ JboxTransferï¼è¯·ä¿æŒæœ¬çª—å£æ‰“å¼€ï¼Œåœ¨æµè§ˆå™¨æ‰“å¼€ http://127.0.0.1:{GlobalConfigService.Config.ServerConfig.Port} ä»¥å¼€å§‹ä½¿ç”¨ï¼");
 
             app.Run();
         }
