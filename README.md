@@ -8,18 +8,18 @@
 </p>
 
 ## 背景介绍
-在[新一代交大云盘](https://pan.sjtu.edu.cn)即将推出之际，由于与[旧云盘](https://jbox.sjtu.edu.cn)（以下简称 jbox）存储策略有较大差异，文件转移较为困难，厂商无法给出理想的解决方案。若完全依赖于用户自行转移文件，对用户而言极为不便，且极大影响了新云盘的口碑，还可能增加旧云盘的维护时间。
+在[新一代交大云盘](https://pan.sjtu.edu.cn)正式推出之际，由于与[旧云盘](https://jbox.sjtu.edu.cn)（以下简称 jbox）存储策略有较大差异，文件转移较为困难，厂商无法给出理想的解决方案。若完全依赖于用户自行转移文件，对用户而言极为不便，且极大影响了新云盘的口碑，还可能增加旧云盘的维护时间。
 
 故 JboxTransfer 项目就此成立，我们的目标是推出一款高效、安全、便捷的应用程序，自动化地帮助用户更好地从 jbox 向 新云盘 迁移文件。用户在进行 jAccount 授权后可以一键迁移文件，无需占用本地磁盘空间，无需手动下载上传文件。
 
-|||
-|---|---|
-|![](https://s2.loli.net/2023/10/16/1KeoLdl9DpOByfi.png)|![](https://s2.loli.net/2023/10/16/5XHylnPGTcuzbqk.png)|
+![](https://s2.loli.net/2025/02/11/S32Lm6RWVJHostI.png)
+![](https://s2.loli.net/2025/02/11/huIpm6CnMUORraj.png)
+![](https://s2.loli.net/2025/02/11/1tusDZQCKwrEe57.png)
 
 ## 下载&安装
-详见[说明文档](https://pan.sjtu.edu.cn/jboxtransfer/)
+V2 版本说明文档：待更新
 
-本项目仅支持在 Windows 平台下使用，如需在其他系统下运行，请使用 [Okabe-Rintarou-0/JboxTransferCLI](https://github.com/Okabe-Rintarou-0/JboxTransferCLI/)
+【已过时】V1 版本仅支持在 Windows 平台下使用，详见[说明文档](https://pan.sjtu.edu.cn/jboxtransfer/)
 
 ## 致谢
 - 感谢上海交通大学网络信息中心计算业务部对本项目的支持
