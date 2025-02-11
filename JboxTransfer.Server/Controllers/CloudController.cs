@@ -47,7 +47,7 @@ namespace JboxTransfer.Server.Controllers
             var dbStates = new List<string>(res.Result.Content.Count());
             foreach (var item in res.Result.Content)
             {
-                dbStates.Add(GetDbTaskOverAllState(item.Path));
+                dbStates.Add(GetDbTaskOverAllState(item.Path, item.IsDir));
             }
             var resout = new FileSystemItemInfoOutputDto(
                 res.Result.Path.PathToName(),
@@ -88,7 +88,7 @@ namespace JboxTransfer.Server.Controllers
             var dbStates = new List<string>(res.Result.Contents.Count);
             foreach (var item in res.Result.Contents)
             {
-                dbStates.Add(GetDbTaskOverAllState("/" + item.Path.Connect("/")));
+                dbStates.Add(GetDbTaskOverAllState("/" + item.Path.Connect("/"), item.Type == "dir"));
             }
             var resout = new FileSystemItemInfoOutputDto(
                 res.Result.Path.LastOrDefault() ?? "根目录",
@@ -154,15 +154,20 @@ namespace JboxTransfer.Server.Controllers
         }
 
         [NonAction]
-        private string GetDbTaskOverAllState(string path)
+        private string GetDbTaskOverAllState(string path, bool isDir)
         {
             var dbItem = _db.SyncTasks
                     .Where(x => x.UserId == _user.GetUser().Id)
                     .Where(x => x.FilePath == path)
+                    .OrderByDescending(x => x.UpdateTime)
                     .FirstOrDefault();
             if (dbItem == null)
             {
                 return "None";
+            }
+            if (!isDir || dbItem.State == SyncTaskDbState.Cancel)
+            {
+                return dbItem.State.ToString();
             }
             var hasError = _db.SyncTasks
                 .Where(x => x.UserId == _user.GetUser().Id)
@@ -186,7 +191,7 @@ namespace JboxTransfer.Server.Controllers
             {
                 return SyncTaskDbState.Done.ToString();
             }
-            return SyncTaskDbState.Busy.ToString();
+            return "Unknown";
         }
     }
 }
