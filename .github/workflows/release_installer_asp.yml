@@ -39,6 +39,7 @@ jobs:
           out-file-path: './tmp'
 
       - name: Extract frontend files
+        shell: cmd
         run: |
           7z x tmp\jboxtransfer-front-build.zip -oJboxTransfer.Server\wwwroot
 
