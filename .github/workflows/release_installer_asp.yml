@@ -1,0 +1,83 @@
+name: Build and Upload Installer Release
+on:
+  workflow_dispatch:
+jobs:
+  release_cli_installer:
+    strategy:
+      matrix:
+        build_configuration: [Release]
+        deploy_mode: [no-runtime]
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+          ref: aspnet
+
+      - name: Setup Dotnet
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0
+
+      - name: Download & install Scoop
+        run: | 
+            iex "& {$(irm get.scoop.sh)} -RunAsAdmin"
+            Join-Path (Resolve-Path ~).Path "scoop\shims" >> $Env:GITHUB_PATH
+            scoop bucket add extras
+        
+      - name: Download & install dependencies
+        run: scoop install inno-setup 7zip
+
+      - name: Download frontend files
+        uses: robinraju/release-downloader@v1
+        with:
+          repository: '1357310795/jboxtransfer-front'
+          latest: true
+          fileName: 'jboxtransfer-front-build.zip'
+          out-file-path: './tmp'
+
+      - name: Extract frontend files
+        run: |
+          7z x tmp\jboxtransfer-front-build.zip -oJboxTransfer.Server\wwwroot
+
+      - name: Build ASP.NET Core App
+        shell: pwsh
+        run: |
+          if ('${{ matrix.deploy_mode }}' -eq 'with-runtime') {
+            dotnet publish -c ${{ matrix.build_configuration }} JboxTransfer.Server/JboxTransfer.Server.csproj --self-contained
+          } else {
+            dotnet publish -c ${{ matrix.build_configuration }} JboxTransfer.Server/JboxTransfer.Server.csproj
+          }
+
+      - name: Pack Installer
+        shell: pwsh
+        run: |
+          if ('${{ matrix.deploy_mode }}' -eq 'with-runtime') {
+            iscc ./Installer/jboxtransfer.server-offline.iss
+          } else {
+            iscc ./Installer/jboxtransfer.server-online.iss
+          }
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: JboxTransfer.Server.Installer-win-any-${{ matrix.deploy_mode }}
+          path: ./Installer/JboxTransfer.Server.Installer-win-any-${{ matrix.deploy_mode }}.exe
+
+      - name: Get the Latest Release Info
+        id: latest_release_info
+        uses: gregziegan/fetch-latest-release@v2.0.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Release Asset
+        uses: shogo82148/actions-upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.latest_release_info.outputs.upload_url }}
+          asset_path: ./Installer/JboxTransfer.Server.Installer-win-any-${{ matrix.deploy_mode }}.exe
+          asset_name: JboxTransfer.Server.Installer-win-any-${{ matrix.deploy_mode }}.exe
+          asset_content_type: application/octet-stream

@@ -1,8 +1,8 @@
-name: Release
+name: Build and Upload Portable App Release
 
 on:
-  release:
-    types: [published]
+  # release:
+  #   types: [published]
   workflow_dispatch:
 
 env:
@@ -13,11 +13,12 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  release_cli:
+  release_cli_portable:
     strategy:
       matrix:
-        rid: [linux-arm64, linux-musl-arm64, linux-x64, linux-musl-x64, osx-x64, osx-arm64, win-x64, win-x86]
+        rid: [linux-arm64, linux-musl-arm64, linux-x64, linux-musl-x64, osx-x64, osx-arm64, win-x64, win-x86, win-arm64]
         build_configuration: [Release]
+        deploy_mode: [with-runtime, no-runtime]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -45,12 +46,17 @@ jobs:
           dotnet-version: 8.0
 
       - name: Build ASP.NET Core App
-        run: dotnet publish -c ${{ matrix.build_configuration }} -r ${{ matrix.rid }} JboxTransfer.Server/JboxTransfer.Server.csproj
+        run: |
+          if [ "${{ matrix.deploy_mode }}" == "with-runtime" ]; then
+            dotnet publish -c ${{ matrix.build_configuration }} -r ${{ matrix.rid }} JboxTransfer.Server/JboxTransfer.Server.csproj --self-contained
+          else
+            dotnet publish -c ${{ matrix.build_configuration }} -r ${{ matrix.rid }} JboxTransfer.Server/JboxTransfer.Server.csproj
+          fi
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: JboxTransfer.Server-${{ matrix.rid }}-${{ matrix.build_configuration }}
+          name: JboxTransfer.Server-${{ matrix.rid }}-${{ matrix.build_configuration }}-${{ matrix.deploy_mode }}
           path: JboxTransfer.Server/bin/${{ matrix.build_configuration }}/net8.0/${{ matrix.rid }}/publish/
 
       - name: Pack Release Asset
@@ -58,12 +64,18 @@ jobs:
           cd JboxTransfer.Server/bin/${{ matrix.build_configuration }}/net8.0/${{ matrix.rid }}/publish/
           zip -r /tmp/app-${{ matrix.rid }}-${{ matrix.build_configuration }}.zip .
 
+      - name: Get the Latest Release Info
+        id: latest_release_info
+        uses: gregziegan/fetch-latest-release@v2.0.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Upload Release Asset
         uses: shogo82148/actions-upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ github.event.release.upload_url }}
+          upload_url: ${{ steps.latest_release_info.outputs.upload_url }}
           asset_path: /tmp/app-${{ matrix.rid }}-${{ matrix.build_configuration }}.zip
-          asset_name: JboxTransfer.Server-${{ matrix.rid }}.zip
+          asset_name: JboxTransfer.Server-${{ matrix.rid }}-${{ matrix.deploy_mode }}.zip
           asset_content_type: application/zip
