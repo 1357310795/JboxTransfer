@@ -1,20 +1,11 @@
 ﻿using JboxTransfer.Core.Models.Db;
-using JboxTransfer.Core.Models.Message;
 using JboxTransfer.Core.Models.Output;
 using JboxTransfer.Core.Models.Sync;
-using JboxTransfer.Core.Modules;
 using JboxTransfer.Core.Modules.Db;
-using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Teru.Code.Models;
 using Teru.Code.Services;
 
@@ -218,9 +209,9 @@ namespace JboxTransfer.Core.Modules.Sync
                 task2.Init(item);
             }
             if (setTop)
-                ListCurrent.Insert(0, task2);
+                SetTopCurrent(task2);
             else
-                ListCurrent.Add(task2);
+                AddToCurrent(task2);
         }
         #endregion
 
@@ -277,24 +268,24 @@ namespace JboxTransfer.Core.Modules.Sync
 
         private void UpdateList()
         {
-            for (int i = ListCurrent.Count - 1; i >= 0; i--)
+            lock (_listCurrentLock)
             {
-                var task = ListCurrent[i];
-                if (task.State == SyncTaskState.Complete)
+                for (int i = ListCurrent.Count - 1; i >= 0; i--)
                 {
-                    ListCurrent.Remove(task);
-                    ListCompleted.Insert(0, task);
+                    var task = ListCurrent[i];
+                    if (task.State == SyncTaskState.Complete)
+                    {
+                        RemoveFromCurrent(task);
+                        AddToCompleted(task);
+                    }
+                    else if (task.State == SyncTaskState.Error)
+                    {
+                        RemoveFromCurrent(task);
+                        AddToError(task);
+                        CheckTooManyErrors();
+                    }
                 }
-                else if (task.State == SyncTaskState.Error)
-                {
-                    ListCurrent.Remove(task);
-                    ListError.Insert(0, task);
-                    CheckTooManyErrors();
-                }
-            }
-            if (ListCompleted.Count > MaxCompletedTaskCount)
-            {
-                ListCompleted.RemoveRange(MaxCompletedTaskCount, ListCompleted.Count - MaxCompletedTaskCount);
+                CheckCompletedOverflow();
             }
         }
 
@@ -326,9 +317,12 @@ namespace JboxTransfer.Core.Modules.Sync
                 return new CommonResult(false, Message);
             }
             IsBusy = true;
-            foreach (var task in ListCurrent)
+            lock (_listCurrentLock)
             {
-                task.IsUserPause = false;
+                foreach (var task in ListCurrent)
+                {
+                    task.IsUserPause = false;
+                }
             }
             return new CommonResult(true, "");
         }
@@ -336,10 +330,13 @@ namespace JboxTransfer.Core.Modules.Sync
         public CommonResult PauseAll()
         {
             IsBusy = false;
-            foreach (var task in ListCurrent)
+            lock (_listCurrentLock)
             {
-                task.Pause();
-                task.IsUserPause = true;
+                foreach (var task in ListCurrent)
+                {
+                    task.Pause();
+                    task.IsUserPause = true;
+                }
             }
             return new CommonResult(true, "");
         }
@@ -347,10 +344,15 @@ namespace JboxTransfer.Core.Modules.Sync
         public CommonResult CancelAll()
         {
             IsBusy = false;
-            foreach (var task in ListCurrent)
+            lock (_listCurrentLock)
             {
-                task.Cancel();
+                foreach (var task in ListCurrent)
+                {
+                    task.Cancel();
+                }
+                ListCurrent.Clear();
             }
+                
             using (var scope = _serviceScopeFactory.CreateAsyncScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<DefaultDbContext>();
@@ -359,7 +361,6 @@ namespace JboxTransfer.Core.Modules.Sync
                     .Where(x => x.State == SyncTaskDbState.Idle || x.State == SyncTaskDbState.Busy || x.State == SyncTaskDbState.Pending)
                     .ExecuteDelete();
             }
-            ListCurrent.Clear();
             return new CommonResult(true, "");
         }
 
@@ -367,12 +368,16 @@ namespace JboxTransfer.Core.Modules.Sync
         {
             try
             {
-                for (int i = ListError.Count - 1; i >= 0; i--)
+                lock (_listErrorLock)
                 {
-                    var item = ListError[i];
-                    item.Recover(true);
-                    ListError.Remove(item);
+                    for (int i = ListError.Count - 1; i >= 0; i--)
+                    {
+                        var item = ListError[i];
+                        item.Recover(true);
+                        ListError.Remove(item);
+                    }
                 }
+                
                 CheckTooManyErrors();
                 return new CommonResult(true, "");
             }
@@ -386,11 +391,15 @@ namespace JboxTransfer.Core.Modules.Sync
         {
             try
             {
-                foreach (var task in ListError)
+                lock (_listErrorLock)
                 {
-                    task.Cancel();
+                    foreach (var task in ListError)
+                    {
+                        task.Cancel();
+                    }
+                    ListError = new List<IBaseSyncTask>();
                 }
-                ListError = new List<IBaseSyncTask>();
+                    
                 CheckTooManyErrors();
                 return new CommonResult(true, "");
             }
@@ -404,7 +413,10 @@ namespace JboxTransfer.Core.Modules.Sync
         {
             try
             {
-                ListCompleted = new List<IBaseSyncTask>();
+                lock(_listCompletedLock)
+                {
+                    ListCompleted = new List<IBaseSyncTask>();
+                }
                 return new CommonResult(true, "");
             }
             catch (Exception ex)
@@ -421,21 +433,24 @@ namespace JboxTransfer.Core.Modules.Sync
             }
             try
             {
-                var task = ListCurrent.FirstOrDefault(x => x.SyncTaskId == syncTaskId);
-                if (task != null)
+                lock (_listCurrentLock)
                 {
-                    if (task.State == SyncTaskState.Pause)
+                    var task = ListCurrent.FirstOrDefault(x => x.SyncTaskId == syncTaskId);
+                    if (task != null)
                     {
-                        task.Resume();
-                        task.IsUserPause = false;
+                        if (task.State == SyncTaskState.Pause)
+                        {
+                            task.Resume();
+                            task.IsUserPause = false;
+                        }
+                        else if (task.State == SyncTaskState.Wait)
+                            task.Start();
+                        return new CommonResult(true, "");
                     }
-                    else if (task.State == SyncTaskState.Wait)
-                        task.Start();
-                    return new CommonResult(true, "");
-                }
-                else
-                {
-                    return new CommonResult(false, "找不到任务，请确保任务在传输列表中");
+                    else
+                    {
+                        return new CommonResult(false, "找不到任务，请确保任务在传输列表中");
+                    }
                 }
             }
             catch (Exception ex)
@@ -448,19 +463,22 @@ namespace JboxTransfer.Core.Modules.Sync
         {
             try
             {
-                var task = ListCurrent.FirstOrDefault(x => x.SyncTaskId == syncTaskId);
-                if (task != null)
+                lock(_listCurrentLock)
                 {
-                    if (task.State == SyncTaskState.Running || task.State == SyncTaskState.Wait)
+                    var task = ListCurrent.FirstOrDefault(x => x.SyncTaskId == syncTaskId);
+                    if (task != null)
                     {
-                        task.Pause();
-                        task.IsUserPause = true;
+                        if (task.State == SyncTaskState.Running || task.State == SyncTaskState.Wait)
+                        {
+                            task.Pause();
+                            task.IsUserPause = true;
+                        }
+                        return new CommonResult(true, "");
                     }
-                    return new CommonResult(true, "");
-                }
-                else
-                {
-                    return new CommonResult(false, "找不到任务，请确保任务在传输列表中");
+                    else
+                    {
+                        return new CommonResult(false, "找不到任务，请确保任务在传输列表中");
+                    }
                 }
             }
             catch (Exception ex)
@@ -473,30 +491,31 @@ namespace JboxTransfer.Core.Modules.Sync
         {
             try
             {
-                var task = ListCurrent.FirstOrDefault(x => x.SyncTaskId == syncTaskId);
-                if (task != null)
+                lock (_listCurrentLock)
                 {
-                    task.Cancel();
-                    ListCurrent.Remove(task);
-                    return new CommonResult(true, "");
-                }
-                else
-                {
-                    using (var scope = _serviceScopeFactory.CreateScope())
+                    var task = ListCurrent.FirstOrDefault(x => x.SyncTaskId == syncTaskId);
+                    if (task != null)
                     {
-                        var db = scope.ServiceProvider.GetRequiredService<DefaultDbContext>();
-                        var taskDb = db.SyncTasks.FirstOrDefault(x => x.Id == syncTaskId);
-                        if (taskDb != null)
-                        {
-                            taskDb.State = SyncTaskDbState.Cancel;
-                            db.Update(taskDb);
-                            int changed = db.SaveChanges(); //todo: 检查
-                            return new CommonResult(true, "");
-                        }
-                        else
-                        {
-                            return new CommonResult(false, "找不到任务");
-                        }
+                        task.Cancel();
+                        ListCurrent.Remove(task);
+                        return new CommonResult(true, "");
+                    }
+                }
+                //task is null
+                using (var scope = _serviceScopeFactory.CreateScope())
+                {
+                    var db = scope.ServiceProvider.GetRequiredService<DefaultDbContext>();
+                    var taskDb = db.SyncTasks.FirstOrDefault(x => x.Id == syncTaskId);
+                    if (taskDb != null)
+                    {
+                        taskDb.State = SyncTaskDbState.Cancel;
+                        db.Update(taskDb);
+                        int changed = db.SaveChanges(); //todo: 检查
+                        return new CommonResult(true, "");
+                    }
+                    else
+                    {
+                        return new CommonResult(false, "找不到任务");
                     }
                 }
             }
@@ -510,17 +529,20 @@ namespace JboxTransfer.Core.Modules.Sync
         {
             try
             {
-                var task = ListError.FirstOrDefault(x => x.SyncTaskId == syncTaskId);
-                if (task != null)
+                lock(_listErrorLock)
                 {
-                    task.Recover(true);
-                    ListError.Remove(task);
-                    CheckTooManyErrors();
-                    return new CommonResult(true, "");
-                }
-                else
-                {
-                    return new CommonResult(false, "找不到任务，请确保任务在错误列表中");
+                    var task = ListError.FirstOrDefault(x => x.SyncTaskId == syncTaskId);
+                    if (task != null)
+                    {
+                        task.Recover(true);
+                        ListError.Remove(task);
+                        CheckTooManyErrors();
+                        return new CommonResult(true, "");
+                    }
+                    else
+                    {
+                        return new CommonResult(false, "找不到任务，请确保任务在错误列表中");
+                    }
                 }
             }
             catch (Exception ex)
@@ -533,17 +555,20 @@ namespace JboxTransfer.Core.Modules.Sync
         {
             try
             {
-                var task = ListError.FirstOrDefault(x => x.SyncTaskId == syncTaskId);
-                if (task != null)
+                lock (_listErrorLock)
                 {
-                    task.Cancel();
-                    ListError.Remove(task);
-                    CheckTooManyErrors();
-                    return new CommonResult(true, "");
-                }
-                else
-                {
-                    return new CommonResult(false, "找不到任务，请确保任务在错误列表中");
+                    var task = ListError.FirstOrDefault(x => x.SyncTaskId == syncTaskId);
+                    if (task != null)
+                    {
+                        task.Cancel();
+                        ListError.Remove(task);
+                        CheckTooManyErrors();
+                        return new CommonResult(true, "");
+                    }
+                    else
+                    {
+                        return new CommonResult(false, "找不到任务，请确保任务在错误列表中");
+                    }
                 }
             }
             catch (Exception ex)
@@ -556,35 +581,39 @@ namespace JboxTransfer.Core.Modules.Sync
         {
             try
             {
-                var task = ListCurrent.FirstOrDefault(x => x.SyncTaskId == syncTaskId);
-                if (task != null)
+                lock(_listCurrentLock)
                 {
-                    ListCurrent.Remove(task);
-                    ListCurrent.Insert(0, task);
-                    return new CommonResult(true, "");
-                }
-                else
-                {
-                    using (var scope = _serviceScopeFactory.CreateScope())
+                    var task = ListCurrent.FirstOrDefault(x => x.SyncTaskId == syncTaskId);
+                    if (task != null)
                     {
-                        var db = scope.ServiceProvider.GetRequiredService<DefaultDbContext>();
-                        var taskDb = db.SyncTasks.FirstOrDefault(x => x.Id == syncTaskId);
-                        if (taskDb != null && taskDb.State == SyncTaskDbState.Idle)
-                        {
-                            taskDb.Order = db.GetMinOrder() - 1;
-                            taskDb.State = SyncTaskDbState.Pending;
-                            taskDb.UpdateTime = DateTime.Now;
-                            db.Update(taskDb);
-                            db.SaveChanges();
+                        ListCurrent.Remove(task);
+                        ListCurrent.Insert(0, task);
+                        return new CommonResult(true, "");
+                    }
+                }
+                // task is null
+                using (var scope = _serviceScopeFactory.CreateScope())
+                {
+                    var db = scope.ServiceProvider.GetRequiredService<DefaultDbContext>();
+                    var taskDb = db.SyncTasks.FirstOrDefault(x => x.Id == syncTaskId);
+                    if (taskDb != null && taskDb.State == SyncTaskDbState.Idle)
+                    {
+                        taskDb.Order = db.GetMinOrder() - 1;
+                        taskDb.State = SyncTaskDbState.Pending;
+                        taskDb.UpdateTime = DateTime.Now;
+                        db.Update(taskDb);
+                        db.SaveChanges();
 
-                            AddToCurrentInternal(taskDb, true); //todo: 和前面的冲突怎么办
-
-                            return new CommonResult(true, "");
-                        }
-                        else
+                        lock(addTaskLock)
                         {
-                            return new CommonResult(false, "找不到任务或任务状态冲突");
+                            AddToCurrentInternal(taskDb, true);
                         }
+
+                        return new CommonResult(true, "");
+                    }
+                    else
+                    {
+                        return new CommonResult(false, "找不到任务或任务状态冲突");
                     }
                 }
             }
@@ -679,6 +708,64 @@ namespace JboxTransfer.Core.Modules.Sync
             outputDto.CompletedCount = this.ListCompleted.Count;
             outputDto.ErrorCount = this.ListError.Count;
             return new(true, "", outputDto);
+        }
+        #endregion
+
+        #region Locked List Operations
+        private static object _listCurrentLock = new object();
+        private static object _listCompletedLock = new object();
+        private static object _listErrorLock = new object();
+
+        private void AddToCurrent(IBaseSyncTask task)
+        {
+            lock (_listCurrentLock)
+            {
+                ListCurrent.Add(task);
+            }
+        }        
+        
+        private void AddToCompleted(IBaseSyncTask task)
+        {
+            lock (_listCompletedLock)
+            {
+                ListCompleted.Insert(0, task);
+            }
+        }        
+        
+        private void AddToError(IBaseSyncTask task)
+        {
+            lock (_listErrorLock)
+            {
+                ListError.Insert(0, task);
+            }
+        }
+
+        private void RemoveFromCurrent(IBaseSyncTask task)
+        {
+            lock (_listCurrentLock)
+            {
+                ListCurrent.Remove(task);
+            }
+        }
+
+        private void SetTopCurrent(IBaseSyncTask task)
+        {
+            lock (_listCurrentLock)
+            {
+                ListCurrent.Remove(task);
+                ListCurrent.Insert(0, task);
+            }
+        }        
+        
+        private void CheckCompletedOverflow()
+        {
+            lock (_listCompletedLock)
+            {
+                if (ListCompleted.Count > MaxCompletedTaskCount)
+                {
+                    ListCompleted.RemoveRange(MaxCompletedTaskCount, ListCompleted.Count - MaxCompletedTaskCount);
+                }
+            }
         }
         #endregion
     }
