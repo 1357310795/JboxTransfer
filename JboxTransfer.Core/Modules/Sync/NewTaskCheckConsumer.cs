@@ -26,7 +26,7 @@ namespace JboxTransfer.Core.Modules.Sync
         public Task Consume(ConsumeContext<NewTaskCheckMessage> context)
         {
             var taskCollection = _syncTaskCollectionProvider.GetRequiredSyncTaskCollection(context.Message.UserId);
-            Task.Run(() => { taskCollection.UpdateFromDb(); });
+            Task.Run(async () => { await taskCollection.UpdateFromDb(); });
             return Task.CompletedTask;
         }
     }

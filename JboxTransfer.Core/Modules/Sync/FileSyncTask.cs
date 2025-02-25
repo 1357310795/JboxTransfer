@@ -392,7 +392,7 @@ namespace JboxTransfer.Core.Modules.Sync
                         if (pts.IsPaused)
                             return;
 
-                        chunkRes = jbox.GetChunk(curChunk.PartNumber, ct);
+                        chunkRes = await jbox.GetChunk(curChunk.PartNumber, ct);
                         if (!chunkRes.Success)
                             throw new Exception($"下载块 {curChunk.PartNumber} 发生错误：{chunkRes.Message}");
 

@@ -231,15 +231,15 @@ namespace JboxTransfer.Core.Modules.Sync
             return TaskState.Started;
         }
 
-        public void UpdateFromDb()
+        public async Task UpdateFromDb()
         {
             try
             {
-                using (var scope = _serviceScopeFactory.CreateScope())
+                using (var scope = _serviceScopeFactory.CreateAsyncScope())
                 {
                     var db = scope.ServiceProvider.GetRequiredService<DefaultDbContext>();
 
-                    LoadIdleTasksFromDb(db).GetAwaiter().GetResult();
+                    await LoadIdleTasksFromDb(db);
                 }
             }
             catch (Exception ex)
