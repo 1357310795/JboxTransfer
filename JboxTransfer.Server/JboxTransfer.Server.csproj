@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <Platforms>AnyCPU;ARM64;x86;x64</Platforms>
+    <ApplicationIcon>jboxtransfer.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,6 +14,10 @@
 
   <ItemGroup>
     <None Remove="Resources\top100_cn.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="jboxtransfer.ico" />
   </ItemGroup>
 
   <ItemGroup>
