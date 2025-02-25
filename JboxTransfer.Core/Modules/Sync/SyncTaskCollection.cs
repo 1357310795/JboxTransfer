@@ -376,7 +376,7 @@ namespace JboxTransfer.Core.Modules.Sync
                     for (int i = ListError.Count - 1; i >= 0; i--)
                     {
                         var item = ListError[i];
-                        item.Recover(true);
+                        item.Recover(keepProgress);
                         ListError.Remove(item);
                     }
                 }
@@ -537,7 +537,7 @@ namespace JboxTransfer.Core.Modules.Sync
                     var task = ListError.FirstOrDefault(x => x.SyncTaskId == syncTaskId);
                     if (task != null)
                     {
-                        task.Recover(true);
+                        task.Recover(keepProgress);
                         ListError.Remove(task);
                         CheckTooManyErrors();
                         return new CommonResult(true, "");
@@ -597,26 +597,26 @@ namespace JboxTransfer.Core.Modules.Sync
                 // task is null
                 using (var scope = _serviceScopeFactory.CreateScope())
                 {
-                    var db = scope.ServiceProvider.GetRequiredService<DefaultDbContext>();
-                    var taskDb = db.SyncTasks.FirstOrDefault(x => x.Id == syncTaskId);
-                    if (taskDb != null && taskDb.State == SyncTaskDbState.Idle)
+                    lock (addTaskLock)
                     {
-                        taskDb.Order = db.GetMinOrder() - 1;
-                        taskDb.State = SyncTaskDbState.Pending;
-                        taskDb.UpdateTime = DateTime.Now;
-                        db.Update(taskDb);
-                        db.SaveChanges();
-
-                        lock(addTaskLock)
+                        var db = scope.ServiceProvider.GetRequiredService<DefaultDbContext>();
+                        var taskDb = db.SyncTasks.FirstOrDefault(x => x.Id == syncTaskId);
+                        if (taskDb != null && taskDb.State == SyncTaskDbState.Idle)
                         {
-                            AddToCurrentInternal(taskDb, true);
-                        }
+                            taskDb.Order = db.GetMinOrder() - 1;
+                            taskDb.State = SyncTaskDbState.Pending;
+                            taskDb.UpdateTime = DateTime.Now;
+                            db.Update(taskDb);
+                            db.SaveChanges();
 
-                        return new CommonResult(true, "");
-                    }
-                    else
-                    {
-                        return new CommonResult(false, "找不到任务或任务状态冲突");
+                            AddToCurrentInternal(taskDb, true);
+
+                            return new CommonResult(true, "");
+                        }
+                        else
+                        {
+                            return new CommonResult(false, "找不到任务或任务状态冲突");
+                        }
                     }
                 }
             }
