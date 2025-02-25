@@ -350,7 +350,6 @@ namespace JboxTransfer.Core.Modules.Sync
                 {
                     task.Cancel();
                 }
-                ListCurrent.Clear();
             }
                 
             using (var scope = _serviceScopeFactory.CreateAsyncScope())
@@ -360,6 +359,10 @@ namespace JboxTransfer.Core.Modules.Sync
                     .Where(x => x.UserId == UserId)
                     .Where(x => x.State == SyncTaskDbState.Idle || x.State == SyncTaskDbState.Busy || x.State == SyncTaskDbState.Pending)
                     .ExecuteDelete();
+            }
+            lock (_listCurrentLock)
+            {
+                ListCurrent.Clear();
             }
             return new CommonResult(true, "");
         }
