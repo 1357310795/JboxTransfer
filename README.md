@@ -17,9 +17,9 @@
 ![](https://s2.loli.net/2025/02/11/1tusDZQCKwrEe57.png)
 
 ## 下载&安装
-V2 版本说明文档：待更新
+V2 版本说明文档：[官方托管页](https://pan.sjtu.edu.cn/jboxtransfer/) 或 [Github Pages](https://1357310795.github.io/jboxtransfer-docs/)
 
-【已过时】V1 版本仅支持在 Windows 平台下使用，详见[说明文档](https://pan.sjtu.edu.cn/jboxtransfer/)
+~~【已过时】V1 版本仅支持在 Windows 平台下使用，详见[说明文档](https://1357310795.github.io/jboxtransfer-docs/1.0.0/)~~
 
 ## 致谢
 - 感谢上海交通大学网络信息中心计算业务部对本项目的支持
