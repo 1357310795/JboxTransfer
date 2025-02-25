@@ -8,7 +8,6 @@ using JboxTransfer.Core.Models.Sync;
 using JboxTransfer.Core.Modules.Db;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using System.Drawing;
 using JboxTransfer.Core.Models.Message;
 using MassTransit;
 
@@ -263,6 +262,12 @@ namespace JboxTransfer.Core.Modules.Sync
             var logger = scope.ServiceProvider.GetRequiredService<ILogger<FolderSyncTask>>();
 
             State = SyncTaskState.Running;
+
+            dbModel.State = SyncTaskDbState.Busy;
+            dbModel.Message = "";
+            dbModel.UpdateTime = DateTime.Now;
+            db.Update(dbModel);
+            db.SaveChanges();
 
             if (inst_pts.IsPaused)
                 return;
