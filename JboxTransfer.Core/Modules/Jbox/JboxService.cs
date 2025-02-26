@@ -150,9 +150,23 @@ namespace JboxTransfer.Core.Modules.Jbox
                 byte[] buffer = ArrayPool<byte>.Shared.Rent(81920 / 2);
                 try
                 {
-                    int bytesRead;
-                    while ((bytesRead = await body.ReadAsync(buffer, 0, buffer.Length, ct)) != 0)
+                    while (true)
                     {
+                        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                        timeoutCts.CancelAfter(TimeSpan.FromMinutes(1));
+
+                        int bytesRead;
+                        try
+                        {
+                            bytesRead = await body.ReadAsync(buffer, 0, buffer.Length, timeoutCts.Token);
+                        }
+                        catch (OperationCanceledException ex) when (timeoutCts.IsCancellationRequested && !ct.IsCancellationRequested)
+                        {
+                            throw new TimeoutException("读取数据超时，已中断下载", ex);
+                        }
+
+                        if (bytesRead == 0) break;
+
                         await ms.WriteAsync(buffer, 0, bytesRead, ct);
                         chunkProgress.Value += bytesRead;
                     }
@@ -163,6 +177,10 @@ namespace JboxTransfer.Core.Modules.Jbox
                 }
 
                 return new CommonResult<MemoryStream>(true, "", ms);
+            }
+            catch (TimeoutException ex)
+            {
+                return new(false, ex.Message);
             }
             catch (TaskCanceledException ex)
             {
