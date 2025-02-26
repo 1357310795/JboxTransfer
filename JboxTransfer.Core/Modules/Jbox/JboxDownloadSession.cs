@@ -10,13 +10,13 @@ namespace JboxTransfer.Core.Modules.Jbox
         private string path;
         private long size;
         private int chunkCount;
-        private Pack<long> chunkProgress;
+        private Pack<long>? chunkProgress;
 
         public long Progress
         {
             get
             {
-                return chunkProgress.Value;
+                return chunkProgress?.Value ?? 0;
             }
         }
 
