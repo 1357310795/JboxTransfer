@@ -441,6 +441,8 @@ namespace JboxTransfer.Core.Modules.Sync
                 crc64.TransformBlock(chunkRes.Result.ToArray(), 0, (int)chunkRes.Result.Length);
                 tbox.CompletePart(curChunk);
                 succChunk++;
+                jbox.ClearProgress();
+                tbox.ClearProgress();
                 dbModel.CRC64_Part = (long)crc64.GetValue();
                 dbModel.MD5_Part = JsonConvert.SerializeObject(md5.GetValue());
                 dbModel.RemainParts = JsonConvert.SerializeObject(tbox.RemainParts.Select(x=>x.PartNumber));
