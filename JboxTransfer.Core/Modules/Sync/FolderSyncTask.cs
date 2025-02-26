@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using JboxTransfer.Core.Models.Message;
 using MassTransit;
+using Nito.AsyncEx;
 
 namespace JboxTransfer.Core.Modules.Sync
 {
@@ -35,6 +36,7 @@ namespace JboxTransfer.Core.Modules.Sync
         public int UserId { get; private set; }
 
         public PauseTokenSource pts;
+        private AsyncLock _taskLock = new AsyncLock();
 
         public double Progress
         {
@@ -212,7 +214,7 @@ namespace JboxTransfer.Core.Modules.Sync
 
                 try
                 {
-                    Monitor.Enter(this);
+                    _taskLock.Lock();
                     if (inst_pts.IsPaused)
                     {
                         State = SyncTaskState.Pause;
@@ -240,7 +242,7 @@ namespace JboxTransfer.Core.Modules.Sync
                 }
                 finally
                 {
-                    Monitor.Exit(this);
+                    _taskLock.ReleaseLock();
                     ISendEndpointProvider sendEndpointProvider = scope.ServiceProvider.GetRequiredService<ISendEndpointProvider>();
                     var endpoint = await sendEndpointProvider.GetSendEndpoint(new Uri("queue:add_task_from_db"));
                     await endpoint.Send(new NewTaskCheckMessage() { UserId = this.UserId });

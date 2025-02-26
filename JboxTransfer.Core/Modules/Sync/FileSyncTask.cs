@@ -14,6 +14,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using JboxTransfer.Core.Models.Message;
 using MassTransit;
+using Nito.AsyncEx;
 
 namespace JboxTransfer.Core.Modules.Sync
 {
@@ -47,6 +48,8 @@ namespace JboxTransfer.Core.Modules.Sync
 
         private CRC64 crc64;
         private MD5 md5;
+
+        private AsyncLock _taskLock = new AsyncLock();
 
         public PauseTokenSource pts;
 
@@ -232,7 +235,7 @@ namespace JboxTransfer.Core.Modules.Sync
                 var db = scope.ServiceProvider.GetRequiredService<DefaultDbContext>();
                 try
                 {
-                    Monitor.Enter(this);
+                    _taskLock.Lock();
                     if (inst_pts.IsPaused)
                     {
                         State = SyncTaskState.Pause;
@@ -260,7 +263,7 @@ namespace JboxTransfer.Core.Modules.Sync
                 }
                 finally
                 {
-                    Monitor.Exit(this);
+                    _taskLock.ReleaseLock();
                     ISendEndpointProvider sendEndpointProvider = scope.ServiceProvider.GetRequiredService<ISendEndpointProvider>();
                     var endpoint = await sendEndpointProvider.GetSendEndpoint(new Uri("queue:add_task_from_db"));
                     await endpoint.Send(new NewTaskCheckMessage() { UserId = this.UserId });

@@ -5,6 +5,7 @@ using JboxTransfer.Core.Modules.Db;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
+using Nito.AsyncEx;
 using System.Diagnostics;
 using Teru.Code.Models;
 using Teru.Code.Services;
@@ -23,7 +24,7 @@ namespace JboxTransfer.Core.Modules.Sync
         private int UserId { get; set; }
         private UserPreference Preference { get; set; }
 
-        private object addTaskLock = new object();
+        private AsyncLock addTaskLock = new AsyncLock();
 
         private LoopWorker checker;
 
@@ -146,7 +147,7 @@ namespace JboxTransfer.Core.Modules.Sync
 
         private async Task LoadIdleTasksFromDb(DefaultDbContext db)
         {
-            Monitor.Enter(addTaskLock);
+            addTaskLock.Lock();
             try
             {
                 int availableCount = MaxPendingTaskCount - ListCurrent.Count;
@@ -191,7 +192,7 @@ namespace JboxTransfer.Core.Modules.Sync
             }
             finally
             {
-                Monitor.Exit(addTaskLock);
+                addTaskLock.ReleaseLock();
             }
         }
 
