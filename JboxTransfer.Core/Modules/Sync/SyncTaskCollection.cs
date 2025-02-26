@@ -632,23 +632,27 @@ namespace JboxTransfer.Core.Modules.Sync
         public CommonResult<SyncTaskListOutputDto> GetCurrentListInfo()
         {
             List<SyncTaskOutputDto> list = new List<SyncTaskOutputDto>();
-            foreach (var task in ListCurrent)
+            lock (_listCurrentLock)
             {
-                list.Add(new SyncTaskOutputDto()
+                foreach (var task in ListCurrent)
                 {
-                    Id = task.SyncTaskId,
-                    FileName = task.FileName,
-                    FilePath = task.FilePath,
-                    ParentPath = task.ParentPath,
-                    Progress = task.Progress,
-                    TotalBytes = task.TotalBytes,
-                    DownloadedBytes = task.DownloadedBytes,
-                    UploadedBytes = task.UploadedBytes,
-                    State = task.State,
-                    Message = task.Message,
-                    Type = task.Type,
-                });
+                    list.Add(new SyncTaskOutputDto()
+                    {
+                        Id = task.SyncTaskId,
+                        FileName = task.FileName,
+                        FilePath = task.FilePath,
+                        ParentPath = task.ParentPath,
+                        Progress = task.Progress,
+                        TotalBytes = task.TotalBytes,
+                        DownloadedBytes = task.DownloadedBytes,
+                        UploadedBytes = task.UploadedBytes,
+                        State = task.State,
+                        Message = task.Message,
+                        Type = task.Type,
+                    });
+                }
             }
+            
             var outputDto = new SyncTaskListOutputDto(list);
             outputDto.HasMore = this.HasMoreTasks;
             outputDto.IsTooManyError = this.IsTooManyError;
@@ -662,23 +666,27 @@ namespace JboxTransfer.Core.Modules.Sync
         public CommonResult<SyncTaskListOutputDto> GetCompletedListInfo()
         {
             List<SyncTaskOutputDto> list = new List<SyncTaskOutputDto>();
-            foreach (var task in ListCompleted)
+            lock (_listCompletedLock)
             {
-                list.Add(new SyncTaskOutputDto()
+                foreach (var task in ListCompleted)
                 {
-                    Id = task.SyncTaskId,
-                    FileName = task.FileName,
-                    FilePath = task.FilePath,
-                    ParentPath = task.ParentPath,
-                    Progress = task.Progress,
-                    TotalBytes = task.TotalBytes,
-                    DownloadedBytes = task.DownloadedBytes,
-                    UploadedBytes = task.UploadedBytes,
-                    State = task.State,
-                    Message = task.Message,
-                    Type = task.Type,
-                });
+                    list.Add(new SyncTaskOutputDto()
+                    {
+                        Id = task.SyncTaskId,
+                        FileName = task.FileName,
+                        FilePath = task.FilePath,
+                        ParentPath = task.ParentPath,
+                        Progress = task.Progress,
+                        TotalBytes = task.TotalBytes,
+                        DownloadedBytes = task.DownloadedBytes,
+                        UploadedBytes = task.UploadedBytes,
+                        State = task.State,
+                        Message = task.Message,
+                        Type = task.Type,
+                    });
+                }
             }
+            
             var outputDto = new SyncTaskListOutputDto(list);
             outputDto.HasMore = ListCompleted.Count >= MaxCompletedTaskCount;
             outputDto.RunningCount = this.ListCurrent.Count;
@@ -690,23 +698,27 @@ namespace JboxTransfer.Core.Modules.Sync
         public CommonResult<SyncTaskListOutputDto> GetErrorListInfo()
         {
             List<SyncTaskOutputDto> list = new List<SyncTaskOutputDto>();
-            foreach (var task in ListError)
+            lock(_listErrorLock)
             {
-                list.Add(new SyncTaskOutputDto()
+                foreach (var task in ListError)
                 {
-                    Id = task.SyncTaskId,
-                    FileName = task.FileName,
-                    FilePath = task.FilePath,
-                    ParentPath = task.ParentPath,
-                    Progress = task.Progress,
-                    TotalBytes = task.TotalBytes,
-                    DownloadedBytes = task.DownloadedBytes,
-                    UploadedBytes = task.UploadedBytes,
-                    State = task.State,
-                    Message = task.Message,
-                    Type = task.Type,
-                });
+                    list.Add(new SyncTaskOutputDto()
+                    {
+                        Id = task.SyncTaskId,
+                        FileName = task.FileName,
+                        FilePath = task.FilePath,
+                        ParentPath = task.ParentPath,
+                        Progress = task.Progress,
+                        TotalBytes = task.TotalBytes,
+                        DownloadedBytes = task.DownloadedBytes,
+                        UploadedBytes = task.UploadedBytes,
+                        State = task.State,
+                        Message = task.Message,
+                        Type = task.Type,
+                    });
+                }
             }
+            
             var outputDto = new SyncTaskListOutputDto(list);
             outputDto.RunningCount = this.ListCurrent.Count;
             outputDto.CompletedCount = this.ListCompleted.Count;
