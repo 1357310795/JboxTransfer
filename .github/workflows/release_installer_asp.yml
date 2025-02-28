@@ -2,7 +2,7 @@ name: Build and Upload Installer Release
 on:
   workflow_dispatch:
 jobs:
-  release_cli_installer:
+  release_webview2app_installer:
     strategy:
       matrix:
         build_configuration: [Release]
@@ -43,7 +43,7 @@ jobs:
         run: |
           7z x tmp\jboxtransfer-front-build.zip -oJboxTransfer.Webview2\wwwroot
 
-      - name: Build ASP.NET Core App
+      - name: Build WPF App
         shell: pwsh
         run: |
           if ('${{ matrix.deploy_mode }}' -eq 'with-runtime') {
