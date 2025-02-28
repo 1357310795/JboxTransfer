@@ -21,7 +21,7 @@
 
             <ProgressBar Height="16"
                          Margin="0,20,0,0"
-                         BorderThickness="0" IsIndeterminate="True" Foreground="#FF31DAF2" />
+                         BorderThickness="0" IsIndeterminate="True" Foreground="#FF7ED3FF" />
 
             <TextBlock HorizontalAlignment="Center"
                        Margin="0,20,0,0"

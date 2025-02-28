@@ -28,14 +28,15 @@ namespace JboxTransfer.Webview2
 
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            // 获取程序集版本（示例用方法3）
+            // 获取当前类的程序集（例如 MainWindow 所在程序集）
             var assembly = typeof(MainWindow).Assembly;
-            var versionAttribute = assembly.GetCustomAttribute<AssemblyVersionAttribute>();
-            string displayVersion = versionAttribute != null
-                ? $"v{versionAttribute.Version}"
-                : "v1.0.0"; // 默认值
 
-            // 设置窗口标题
+            // 获取版本信息（格式为 "1.0.0.0"）
+            Version version = assembly.GetName().Version;
+
+            // 格式化为 "v1.0.0"
+            string displayVersion = $"v{version.Major}.{version.Minor}.{version.Build}";
+
             this.Title = $"JboxTransfer 桌面端 - {displayVersion}";
 
             var webView2Environment = await CoreWebView2Environment.CreateAsync(null, PathHelper.AppDataPath, new CoreWebView2EnvironmentOptions()
