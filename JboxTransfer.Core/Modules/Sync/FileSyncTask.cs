@@ -414,6 +414,7 @@ namespace JboxTransfer.Core.Modules.Sync
                         if (ct.IsCancellationRequested) return;
                         logger.LogWarning($"同步文件出错：{ex}");
                         this.ex = ex;
+                        await Task.Delay(100, ct);
                     }
                 }
                 if (pts.IsPaused)
