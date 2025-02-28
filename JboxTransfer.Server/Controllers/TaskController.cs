@@ -16,6 +16,7 @@ namespace JboxTransfer.Server.Controllers
 {
     [ApiController]
     [Route("api/v1/task")]
+    [ResponseCache(Location = ResponseCacheLocation.None, Duration = 0, NoStore = true)]
     public class TaskController : ControllerBase
     {
         private readonly ILogger<TaskController> _logger;

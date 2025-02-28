@@ -8,9 +8,9 @@ using JboxTransfer.Core.Models.Sync;
 using JboxTransfer.Core.Modules.Db;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using System.Drawing;
 using JboxTransfer.Core.Models.Message;
 using MassTransit;
+using Nito.AsyncEx;
 
 namespace JboxTransfer.Core.Modules.Sync
 {
@@ -36,6 +36,7 @@ namespace JboxTransfer.Core.Modules.Sync
         public int UserId { get; private set; }
 
         public PauseTokenSource pts;
+        private AsyncLock _taskLock = new AsyncLock();
 
         public double Progress
         {
@@ -213,7 +214,7 @@ namespace JboxTransfer.Core.Modules.Sync
 
                 try
                 {
-                    Monitor.Enter(this);
+                    _taskLock.Lock();
                     if (inst_pts.IsPaused)
                     {
                         State = SyncTaskState.Pause;
@@ -241,7 +242,7 @@ namespace JboxTransfer.Core.Modules.Sync
                 }
                 finally
                 {
-                    Monitor.Exit(this);
+                    _taskLock.ReleaseLock();
                     ISendEndpointProvider sendEndpointProvider = scope.ServiceProvider.GetRequiredService<ISendEndpointProvider>();
                     var endpoint = await sendEndpointProvider.GetSendEndpoint(new Uri("queue:add_task_from_db"));
                     await endpoint.Send(new NewTaskCheckMessage() { UserId = this.UserId });
@@ -263,6 +264,12 @@ namespace JboxTransfer.Core.Modules.Sync
             var logger = scope.ServiceProvider.GetRequiredService<ILogger<FolderSyncTask>>();
 
             State = SyncTaskState.Running;
+
+            dbModel.State = SyncTaskDbState.Busy;
+            dbModel.Message = "";
+            dbModel.UpdateTime = DateTime.Now;
+            db.Update(dbModel);
+            db.SaveChanges();
 
             if (inst_pts.IsPaused)
                 return;

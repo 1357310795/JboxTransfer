@@ -21,6 +21,7 @@ namespace JboxTransfer.Server.Controllers
 {
     [ApiController]
     [Route("api/v1/user")]
+    [ResponseCache(Location = ResponseCacheLocation.None, Duration = 0, NoStore = true)]
     public class UserController : ControllerBase
     {
         private readonly ILogger<UserController> _logger;
@@ -260,7 +261,7 @@ namespace JboxTransfer.Server.Controllers
 
         [Route("jaccount/validate")]
         [HttpGet]
-        public ApiResponse LoginByJacValidate([FromQuery] string uuid)
+        public async Task<ApiResponse> LoginByJacValidate([FromQuery] string uuid)
         {
             var flag = _mcache.TryGetValue<JaccountFastLoginService>(uuid, out var loginService);
             if (!flag)
@@ -278,15 +279,15 @@ namespace JboxTransfer.Server.Controllers
                 return new ApiResponse(StatusCodes.Status500InternalServerError, "LoginFailError", $"登录失败：{loginService.Message}");
             }
 
-            var userinfores = loginService.GetUserInfo();
+            var userinfores = await loginService.GetUserInfo();
             if (!userinfores.Success)
             {
                 return new ApiResponse(StatusCodes.Status500InternalServerError, "LoginFailError", $"获取用户信息失败：{userinfores.Message}");
             }
+            SystemUser? sysuser = null;
             lock (loginService)
             {
-                var sysuser = _context.Users.FirstOrDefault(x => x.Jaccount == userinfores.Result.AccountNo);
-
+                sysuser = _context.Users.FirstOrDefault(x => x.Jaccount == userinfores.Result.AccountNo);
                 if (sysuser == null)
                 {
                     sysuser = new SystemUser()
@@ -315,10 +316,10 @@ namespace JboxTransfer.Server.Controllers
                     _context.Update(sysuser);
                     _context.SaveChanges();
                 }
-
-                UserSignin(sysuser);
-                return new ApiResponse(true);
             }
+
+            await UserSignin(sysuser);
+            return new ApiResponse(true);
         }
 
         [Route("updatepreference")]
@@ -386,7 +387,7 @@ namespace JboxTransfer.Server.Controllers
         //}
 
         [NonAction]
-        private void UserSignin(SystemUser user)
+        private async Task UserSignin(SystemUser user)
         {
             var claims = new List<Claim>
             {
@@ -405,10 +406,10 @@ namespace JboxTransfer.Server.Controllers
             {
             };
 
-            HttpContext.SignInAsync(
+            await HttpContext.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme,
                 new ClaimsPrincipal(claimsIdentity),
-                authProperties).GetAwaiter().GetResult();
+                authProperties);
         }
 
         [NonAction]

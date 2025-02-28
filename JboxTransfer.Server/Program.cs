@@ -28,80 +28,96 @@ namespace JboxTransfer.Server
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            builder.Services.AddControllers(options =>
+            builder.Services.AddDataWrapper();
+            builder.Services.AddSwagger();
+            builder.Services.AddCookieAuth();
+            builder.Services.AddHttpContextAccessor();
+            builder.Services.AddMemoryCache();
+            builder.Services.AddSqlite();
+            builder.Services.AddMapper();
+            builder.Services.AddMassTransit();
+            builder.Services.AddAppServices();
+
+            var server_url = $"http://{GlobalConfigService.Config.ServerConfig.Host}:{GlobalConfigService.Config.ServerConfig.Port}";
+            builder.WebHost.UseUrls(server_url);
+
+            var app = builder.Build();
+
+            app.UseRouting();
+
+            app.UseSwagger();
+            app.UseSwaggerUI();
+
+            app.UseAuthentication();
+            app.UseAuthorization();
+
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllers();
+            });
+
+            app.UseDefaultFiles();
+            app.UseStaticFiles();
+
+            app.UseRewriter(new RewriteOptions().AddRewrite("^[^.]*$", "index.html", true));
+            app.UseStaticFiles();
+
+            //迁移数据库
+            using (var serviceScope = app.Services.GetService<IServiceScopeFactory>().CreateScope())
+            {
+                var context = serviceScope.ServiceProvider.GetRequiredService<DefaultDbContext>();
+                context.Database.Migrate();
+            }
+
+            var logger = app.Services.GetRequiredService<ILogger<Program>>();
+            logger.LogInformation($"欢迎使用 JboxTransfer！请保持本窗口打开，在浏览器打开 http://127.0.0.1:{GlobalConfigService.Config.ServerConfig.Port} 以开始使用！");
+
+            app.Run();
+        }
+    }
+
+    public static class MainServiceExtension
+    {
+        public static void AddDataWrapper(this IServiceCollection services)
+        {
+            services.AddControllers(options =>
             {
                 options.Filters.Add<DataWrapperFilter>();
                 options.Filters.Add<ExceptionDataWrapperFilter>();
             });
-            builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
 
-            // Cookie
-            builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-                            .AddCookie(x =>
-                            {
-                                x.Events.OnRedirectToAccessDenied = (x) => {
-                                    x.HttpContext.Response.ContentType = "application/json";
-                                    x.HttpContext.Response.WriteAsJsonAsync<ApiResponse>(new ApiResponse(403, "ForbidError", "无权限，请使用 admin 账号"));
-                                    return Task.CompletedTask;
-                                };
-                                x.Events.OnRedirectToLogin = (x) => {
-                                    x.HttpContext.Response.ContentType = "application/json";
-                                    x.HttpContext.Response.WriteAsJsonAsync<ApiResponse>(new ApiResponse(401, "NotLoginedError", "请先登录"));
-                                    return Task.CompletedTask;
-                                };
-                                //x.Cookie.HttpOnly = true;
-                                //x.Cookie.SameSite = SameSiteMode.None;
-                                //x.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-                            });
-            builder.Services.AddAuthorization(options =>
-            {
-                //options.AddPolicy("CustomPolicy", policy =>
-                //{
-                //    policy.Requirements.Add(new CustomAuthorizationRequirement());
-                //    policy.RequireAuthenticatedUser();
-                //});
-                //options.DefaultPolicy = options.GetPolicy("CustomPolicy");
-            });
+            services.AddSingleton<IDataWrapperOptions, DataWrapperOptions>();
+            services.AddSingleton<IDataWrapperExecutor, DefaultWrapperExecutor>();
+        }        
+        
+        public static void AddSwagger(this IServiceCollection services)
+        {
+            services.AddEndpointsApiExplorer();
+            services.AddSwaggerGen();
+        }        
 
-            // HttpContextAccessor
-            builder.Services.AddHttpContextAccessor();
-
-            // Cache
-            builder.Services.AddMemoryCache();
-
-            // DataWrapper
-            builder.Services.AddSingleton<IDataWrapperOptions, DataWrapperOptions>();
-            builder.Services.AddSingleton<IDataWrapperExecutor, DefaultWrapperExecutor>();
-
-            // Sqlite
+        public static void AddSqlite(this IServiceCollection services)
+        {
             Directory.CreateDirectory(PathHelper.AppDataPath);
-            builder.Services.AddDbContext<DefaultDbContext>(options => {
+            services.AddDbContext<DefaultDbContext>(options => {
                 options.UseSqlite($"DataSource={Path.Combine(PathHelper.AppDataPath, "jboxtransfer.server.db")};");
                 //options.EnableSensitiveDataLogging();
             });
+        }
 
-            // AutoMapper
-            builder.Services.AddAutoMapper(cfg =>
+        public static void AddMapper(this IServiceCollection services)
+        {
+            services.AddAutoMapper(cfg =>
             {
                 cfg.AddProfile<SyncTaskMapperProfile>();
                 cfg.AddProfile<UserMapperProfile>();
             });
 
-            // CORS
-            //builder.Services.AddCors(options =>
-            //{
-            //    options.AddDefaultPolicy(
-            //        x => x.WithOrigins("http://localhost:5173")
-            //            .WithMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
-            //            .AllowAnyHeader()
-            //            .SetIsOriginAllowed(origin => origin == "http://localhost:5173")
-            //            .AllowCredentials()
-            //    );
-            //});
+        }
 
-            //MassTransit
-            builder.Services.AddMassTransit(x =>
+        public static void AddMassTransit(this IServiceCollection services)
+        {
+            services.AddMassTransit(x =>
             {
                 x.AddConsumer<NewTaskCheckConsumer>((context, cfg) =>
                 {
@@ -123,71 +139,58 @@ namespace JboxTransfer.Server
                     cfg.ConfigureEndpoints(context);
                 });
             });
+        }
 
-            // Application
-            builder.Services.AddScoped<TboxSpaceCredProvider>();
-            builder.Services.AddScoped<TboxUserTokenProvider>();
-            builder.Services.AddScoped<TboxSpaceInfoProvider>();
-            builder.Services.AddScoped<TboxService>();
-            builder.Services.AddTransient<TboxUploadSession>();
-
-            builder.Services.AddScoped<JboxCredProvider>();
-            builder.Services.AddScoped<JboxService>();
-            builder.Services.AddScoped<JboxQuotaInfoProvider>();
-            builder.Services.AddTransient<JboxDownloadSession>();
-
-            builder.Services.AddSingleton<CookieContainerProvider>();
-            builder.Services.AddScoped<HttpClientFactory>();
-            builder.Services.AddScoped<SystemUserInfoProvider>();
-
-            builder.Services.AddTransient<FileSyncTask>();
-            builder.Services.AddTransient<FolderSyncTask>();
-            builder.Services.AddSingleton<SyncTaskCollectionProvider>();
-
-            // Host
-            var server_url = $"http://{GlobalConfigService.Config.ServerConfig.Host}:{GlobalConfigService.Config.ServerConfig.Port}";
-            builder.WebHost.UseUrls(server_url);
-
-            var app = builder.Build();
-
-            // Configure the HTTP request pipeline.
-            app.UseRouting();
-
-            app.UseSwagger();
-            app.UseSwaggerUI();
-
-            app.UseAuthentication();
-            app.UseAuthorization();
-
-            app.UseEndpoints(endpoints =>
+        public static void AddCookieAuth(this IServiceCollection services)
+        {
+            services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+                            .AddCookie(x =>
+                            {
+                                x.Events.OnRedirectToAccessDenied = (x) => {
+                                    x.HttpContext.Response.ContentType = "application/json";
+                                    x.HttpContext.Response.WriteAsJsonAsync<ApiResponse>(new ApiResponse(403, "ForbidError", "无权限，请使用 admin 账号"));
+                                    return Task.CompletedTask;
+                                };
+                                x.Events.OnRedirectToLogin = (x) => {
+                                    x.HttpContext.Response.ContentType = "application/json";
+                                    x.HttpContext.Response.WriteAsJsonAsync<ApiResponse>(new ApiResponse(401, "NotLoginedError", "请先登录"));
+                                    return Task.CompletedTask;
+                                };
+                                //x.Cookie.HttpOnly = true;
+                                //x.Cookie.SameSite = SameSiteMode.None;
+                                //x.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                            });
+            services.AddAuthorization(options =>
             {
-                endpoints.MapControllers();
+                //options.AddPolicy("CustomPolicy", policy =>
+                //{
+                //    policy.Requirements.Add(new CustomAuthorizationRequirement());
+                //    policy.RequireAuthenticatedUser();
+                //});
+                //options.DefaultPolicy = options.GetPolicy("CustomPolicy");
             });
+        }        
+        
+        public static void AddAppServices(this IServiceCollection services)
+        {
+            services.AddScoped<TboxSpaceCredProvider>();
+            services.AddScoped<TboxUserTokenProvider>();
+            services.AddScoped<TboxSpaceInfoProvider>();
+            services.AddScoped<TboxService>();
+            services.AddTransient<TboxUploadSession>();
 
-            app.UseDefaultFiles();
-            app.UseStaticFiles();
-            //app.UseStaticFiles(new StaticFileOptions()
-            //{
-            //    RequestPath = "/static",
-            //    FileProvider = new PhysicalFileProvider(System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "Static"))
-            //});
+            services.AddScoped<JboxCredProvider>();
+            services.AddScoped<JboxService>();
+            services.AddScoped<JboxQuotaInfoProvider>();
+            services.AddTransient<JboxDownloadSession>();
 
-            app.UseRewriter(new RewriteOptions().AddRewrite("^[^.]*$", "index.html", true));
-            app.UseStaticFiles();
+            services.AddSingleton<CookieContainerProvider>();
+            services.AddScoped<HttpClientFactory>();
+            services.AddScoped<SystemUserInfoProvider>();
 
-            //app.UseCors();
-
-            //迁移数据库
-            using (var serviceScope = app.Services.GetService<IServiceScopeFactory>().CreateScope())
-            {
-                var context = serviceScope.ServiceProvider.GetRequiredService<DefaultDbContext>();
-                context.Database.Migrate();
-            }
-
-            var logger = app.Services.GetRequiredService<ILogger<Program>>();
-            logger.LogInformation($"欢迎使用 JboxTransfer！请保持本窗口打开，在浏览器打开 http://127.0.0.1:{GlobalConfigService.Config.ServerConfig.Port} 以开始使用！");
-
-            app.Run();
+            services.AddTransient<FileSyncTask>();
+            services.AddTransient<FolderSyncTask>();
+            services.AddSingleton<SyncTaskCollectionProvider>();
         }
     }
 }

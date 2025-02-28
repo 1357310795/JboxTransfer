@@ -1,0 +1,15 @@
+﻿<!-- Directory.Build.props -->
+<Project>
+  <PropertyGroup>
+    <!-- 统一版本信息 -->
+    <Version>2.0.1</Version>
+    <AssemblyVersion>2.0.1.0</AssemblyVersion>
+    <FileVersion>2.0.1.0</FileVersion>
+    <InformationalVersion>2.0.1</InformationalVersion>
+    
+    <!-- 统一其他元数据 -->
+    <Company>SJTU</Company>
+    <Copyright>Copyright © 2025 上海交通大学网络信息中心</Copyright>
+    <NeutralLanguage>zh-cn</NeutralLanguage>
+  </PropertyGroup>
+</Project>

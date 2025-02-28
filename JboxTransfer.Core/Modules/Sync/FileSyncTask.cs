@@ -14,6 +14,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using JboxTransfer.Core.Models.Message;
 using MassTransit;
+using Nito.AsyncEx;
 
 namespace JboxTransfer.Core.Modules.Sync
 {
@@ -47,6 +48,8 @@ namespace JboxTransfer.Core.Modules.Sync
 
         private CRC64 crc64;
         private MD5 md5;
+
+        private AsyncLock _taskLock = new AsyncLock();
 
         public PauseTokenSource pts;
 
@@ -232,7 +235,7 @@ namespace JboxTransfer.Core.Modules.Sync
                 var db = scope.ServiceProvider.GetRequiredService<DefaultDbContext>();
                 try
                 {
-                    Monitor.Enter(this);
+                    _taskLock.Lock();
                     if (inst_pts.IsPaused)
                     {
                         State = SyncTaskState.Pause;
@@ -260,7 +263,7 @@ namespace JboxTransfer.Core.Modules.Sync
                 }
                 finally
                 {
-                    Monitor.Exit(this);
+                    _taskLock.ReleaseLock();
                     ISendEndpointProvider sendEndpointProvider = scope.ServiceProvider.GetRequiredService<ISendEndpointProvider>();
                     var endpoint = await sendEndpointProvider.GetSendEndpoint(new Uri("queue:add_task_from_db"));
                     await endpoint.Send(new NewTaskCheckMessage() { UserId = this.UserId });
@@ -392,7 +395,7 @@ namespace JboxTransfer.Core.Modules.Sync
                         if (pts.IsPaused)
                             return;
 
-                        chunkRes = jbox.GetChunk(curChunk.PartNumber, ct);
+                        chunkRes = await jbox.GetChunk(curChunk.PartNumber, ct);
                         if (!chunkRes.Success)
                             throw new Exception($"下载块 {curChunk.PartNumber} 发生错误：{chunkRes.Message}");
 
@@ -411,6 +414,7 @@ namespace JboxTransfer.Core.Modules.Sync
                         if (ct.IsCancellationRequested) return;
                         logger.LogWarning($"同步文件出错：{ex}");
                         this.ex = ex;
+                        await Task.Delay(100, ct);
                     }
                 }
                 if (pts.IsPaused)
@@ -438,6 +442,8 @@ namespace JboxTransfer.Core.Modules.Sync
                 crc64.TransformBlock(chunkRes.Result.ToArray(), 0, (int)chunkRes.Result.Length);
                 tbox.CompletePart(curChunk);
                 succChunk++;
+                jbox.ClearProgress();
+                tbox.ClearProgress();
                 dbModel.CRC64_Part = (long)crc64.GetValue();
                 dbModel.MD5_Part = JsonConvert.SerializeObject(md5.GetValue());
                 dbModel.RemainParts = JsonConvert.SerializeObject(tbox.RemainParts.Select(x=>x.PartNumber));

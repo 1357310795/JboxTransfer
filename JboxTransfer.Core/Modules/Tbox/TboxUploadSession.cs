@@ -34,13 +34,13 @@ namespace JboxTransfer.Core.Modules.Tbox
         private List<TboxUploadPartSession> remainParts;
         public List<TboxUploadPartSession> RemainParts => remainParts;
         TboxStartChunkUploadResDto uploadContext;
-        private Pack<long> chunkProgress;
+        private Pack<long>? chunkProgress;
         public TboxUploadState State { get; set; }
         public long Progress
         {
             get
             {
-                return chunkProgress.Value;
+                return chunkProgress?.Value ?? 0;
             }
         }
 

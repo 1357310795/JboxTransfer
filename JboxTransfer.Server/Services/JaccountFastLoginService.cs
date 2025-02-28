@@ -230,7 +230,7 @@ namespace JboxTransfer.Server.Services
             }
         }
 
-        public CommonResult<UserInfoEntity> GetUserInfo()
+        public async Task<CommonResult<UserInfoEntity>> GetUserInfo()
         {
             HttpRequestMessage req = new HttpRequestMessage(HttpMethod.Get, "https://my.sjtu.edu.cn/api/resource/my/info");
             req.Headers.Accept.ParseAdd("text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
@@ -240,7 +240,7 @@ namespace JboxTransfer.Server.Services
 
             try
             {
-                var res = client.SendAsync(req).GetAwaiter().GetResult();
+                var res = await client.SendAsync(req);
 
                 while (res.StatusCode == HttpStatusCode.Found && res.Headers.Location.Scheme == "http")
                 {
@@ -249,7 +249,7 @@ namespace JboxTransfer.Server.Services
                     req.Headers.AcceptEncoding.ParseAdd("gzip, deflate, br");
                     req.Headers.AcceptLanguage.ParseAdd("zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7");
                     req.Headers.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36 Edg/116.0.1938.76");
-                    res = client.SendAsync(req).GetAwaiter().GetResult();
+                    res = await client.SendAsync(req);
                 }
 
                 if (!res.IsSuccessStatusCode)
@@ -257,7 +257,7 @@ namespace JboxTransfer.Server.Services
                     return new(false, $"服务器响应{res.StatusCode}");
                 }
 
-                var body = res.Content.ReadAsStringAsync().Result;
+                var body = await res.Content.ReadAsStringAsync();
                 var json = JsonConvert.DeserializeObject<UserInfoDto>(body);
 
                 if (json.Errno != 0)

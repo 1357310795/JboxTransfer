@@ -15,6 +15,7 @@ namespace JboxTransfer.Server.Controllers
 {
     [ApiController]
     [Route("api/v1/db")]
+    [ResponseCache(Location = ResponseCacheLocation.None, Duration = 0, NoStore = true)]
     public class DbController : ControllerBase
     {
         private readonly ILogger<DbController> _logger;

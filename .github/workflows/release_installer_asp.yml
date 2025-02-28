@@ -2,7 +2,7 @@ name: Build and Upload Installer Release
 on:
   workflow_dispatch:
 jobs:
-  release_cli_installer:
+  release_webview2app_installer:
     strategy:
       matrix:
         build_configuration: [Release]
@@ -41,31 +41,31 @@ jobs:
       - name: Extract frontend files
         shell: cmd
         run: |
-          7z x tmp\jboxtransfer-front-build.zip -oJboxTransfer.Server\wwwroot
+          7z x tmp\jboxtransfer-front-build.zip -oJboxTransfer.Webview2\wwwroot
 
-      - name: Build ASP.NET Core App
+      - name: Build WPF App
         shell: pwsh
         run: |
           if ('${{ matrix.deploy_mode }}' -eq 'with-runtime') {
-            dotnet publish -c ${{ matrix.build_configuration }} JboxTransfer.Server/JboxTransfer.Server.csproj --self-contained
+            dotnet publish -c ${{ matrix.build_configuration }} JboxTransfer.Webview2/JboxTransfer.Webview2.csproj --self-contained
           } else {
-            dotnet publish -c ${{ matrix.build_configuration }} JboxTransfer.Server/JboxTransfer.Server.csproj
+            dotnet publish -c ${{ matrix.build_configuration }} JboxTransfer.Webview2/JboxTransfer.Webview2.csproj
           }
 
       - name: Pack Installer
         shell: pwsh
         run: |
           if ('${{ matrix.deploy_mode }}' -eq 'with-runtime') {
-            iscc ./Installer/jboxtransfer.server-offline.iss
+            iscc ./Installer/jboxtransfer.webview2-offline.iss
           } else {
-            iscc ./Installer/jboxtransfer.server-online.iss
+            iscc ./Installer/jboxtransfer.webview2-online.iss
           }
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: JboxTransfer.Server.Installer-win-any-${{ matrix.deploy_mode }}
-          path: ./Installer/JboxTransfer.Server.Installer-win-any-${{ matrix.deploy_mode }}.exe
+          name: JboxTransfer.Webview2.Installer-win-any-${{ matrix.deploy_mode }}
+          path: ./Installer/JboxTransfer.Webview2.Installer-win-any-${{ matrix.deploy_mode }}.exe
 
       - name: Get the Latest Release Info
         id: latest_release_info
@@ -79,6 +79,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.latest_release_info.outputs.upload_url }}
-          asset_path: ./Installer/JboxTransfer.Server.Installer-win-any-${{ matrix.deploy_mode }}.exe
-          asset_name: JboxTransfer.Server.Installer-win-any-${{ matrix.deploy_mode }}.exe
+          asset_path: ./Installer/JboxTransfer.Webview2.Installer-win-any-${{ matrix.deploy_mode }}.exe
+          asset_name: JboxTransfer.Webview2.Installer-win-any-${{ matrix.deploy_mode }}.exe
           asset_content_type: application/octet-stream

@@ -11,6 +11,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JboxTransfer.Core", "JboxTr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JboxTransfer.Server", "JboxTransfer.Server\JboxTransfer.Server.csproj", "{10DAD0C0-4DFB-4F0B-956A-DFC3DAFC572D}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JboxTransfer.Webview2", "JboxTransfer.Webview2\JboxTransfer.Webview2.csproj", "{1882E656-45E1-4C4A-A065-D97319C943B3}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution_files", "solution_files", "{FDFE31CF-2CE0-45E9-B5B4-0C81D4546FA8}"
+	ProjectSection(SolutionItems) = preProject
+		Directory.Build.props = Directory.Build.props
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -83,6 +90,22 @@ Global
 		{10DAD0C0-4DFB-4F0B-956A-DFC3DAFC572D}.Release|x64.Build.0 = Release|Any CPU
 		{10DAD0C0-4DFB-4F0B-956A-DFC3DAFC572D}.Release|x86.ActiveCfg = Release|Any CPU
 		{10DAD0C0-4DFB-4F0B-956A-DFC3DAFC572D}.Release|x86.Build.0 = Release|Any CPU
+		{1882E656-45E1-4C4A-A065-D97319C943B3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1882E656-45E1-4C4A-A065-D97319C943B3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1882E656-45E1-4C4A-A065-D97319C943B3}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+		{1882E656-45E1-4C4A-A065-D97319C943B3}.Debug|ARM64.Build.0 = Debug|Any CPU
+		{1882E656-45E1-4C4A-A065-D97319C943B3}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1882E656-45E1-4C4A-A065-D97319C943B3}.Debug|x64.Build.0 = Debug|Any CPU
+		{1882E656-45E1-4C4A-A065-D97319C943B3}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1882E656-45E1-4C4A-A065-D97319C943B3}.Debug|x86.Build.0 = Debug|Any CPU
+		{1882E656-45E1-4C4A-A065-D97319C943B3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1882E656-45E1-4C4A-A065-D97319C943B3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1882E656-45E1-4C4A-A065-D97319C943B3}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{1882E656-45E1-4C4A-A065-D97319C943B3}.Release|ARM64.Build.0 = Release|Any CPU
+		{1882E656-45E1-4C4A-A065-D97319C943B3}.Release|x64.ActiveCfg = Release|Any CPU
+		{1882E656-45E1-4C4A-A065-D97319C943B3}.Release|x64.Build.0 = Release|Any CPU
+		{1882E656-45E1-4C4A-A065-D97319C943B3}.Release|x86.ActiveCfg = Release|Any CPU
+		{1882E656-45E1-4C4A-A065-D97319C943B3}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
