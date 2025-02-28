@@ -1,0 +1,40 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+	<ApplicationIcon>jboxtransfer.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="jboxtransfer.ico" />
+    <None Remove="splash_bg.png" />
+    <None Remove="tboxtransfer-demo Copy 2.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="jboxtransfer.ico" />
+    <Resource Include="splash_bg.png" />
+    <Resource Include="tboxtransfer-demo Copy 2.png" />
+  </ItemGroup>
+
+	<ItemGroup>
+		<!-- 这里模仿 ASP.NET Core，将 SPA 资源文件存于 wwwroot 文件夹下 -->
+		<None Update="wwwroot\**">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3065.39" />
+	<FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\JboxTransfer.Server\JboxTransfer.Server.csproj" />
+  </ItemGroup>
+
+</Project>
