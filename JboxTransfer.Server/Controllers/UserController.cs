@@ -21,6 +21,7 @@ namespace JboxTransfer.Server.Controllers
 {
     [ApiController]
     [Route("api/v1/user")]
+    [ResponseCache(Location = ResponseCacheLocation.None, Duration = 0, NoStore = true)]
     public class UserController : ControllerBase
     {
         private readonly ILogger<UserController> _logger;
