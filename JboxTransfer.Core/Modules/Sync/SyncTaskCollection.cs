@@ -32,6 +32,7 @@ namespace JboxTransfer.Core.Modules.Sync
         public bool IsTooManyError { get; set; }
         public bool HasMoreTasks { get; set; }
         public string Message { get; set; }
+        public bool Empty => ListCurrent.Count == 0;
 
         private readonly IServiceScopeFactory _serviceScopeFactory;
 
