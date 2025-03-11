@@ -286,6 +286,11 @@ namespace JboxTransfer.Server.Services
         public string GetCookie()
         {
             return logined.Task.Result;
+        }        
+        
+        public void SetCookie(string cookie)
+        {
+            cookieContainer.Add(new Cookie("JAAuthCookie", cookie, "/jaccount", "jaccount.sjtu.edu.cn"));
         }
 
         public void Dispose()

@@ -16,6 +16,7 @@ using JboxTransfer.Core.Modules;
 using AutoMapper;
 using JboxTransfer.Core.Modules.Sync;
 using TboxWebdav.Server.Modules.Tbox;
+using Teru.Code.Models;
 
 namespace JboxTransfer.Server.Controllers
 {
@@ -287,39 +288,33 @@ namespace JboxTransfer.Server.Controllers
             SystemUser? sysuser = null;
             lock (loginService)
             {
-                sysuser = _context.Users.FirstOrDefault(x => x.Jaccount == userinfores.Result.AccountNo);
-                if (sysuser == null)
-                {
-                    sysuser = new SystemUser()
-                    {
-                        Name = userinfores.Result.Name,
-                        Avatar = userinfores.Result.Avatars,
-                        Jaccount = userinfores.Result.AccountNo,
-                        Cookie = loginService.GetCookie(),
-                        RegistrationTime = DateTime.Now,
-                        Role = userinfores.Result.UserType,
-                        Stat = new UserStatistics(),
-                        Preference = JsonConvert.SerializeObject(new UserPreference())
-                    };
-                    var entity = _context.Add(sysuser).Entity;
-                    _context.SaveChanges();
-                    entity.Stat.UserId = entity.Id;
-                    _context.SaveChanges();
-                }
-                else
-                {
-                    sysuser.Cookie = loginService.GetCookie();
-                    sysuser.Name = userinfores.Result.Name;
-                    sysuser.Role = userinfores.Result.UserType;
-                    sysuser.Jaccount = userinfores.Result.AccountNo;
-                    sysuser.Avatar = userinfores.Result.Avatars;
-                    _context.Update(sysuser);
-                    _context.SaveChanges();
-                }
+                sysuser = RegisterOrUpdateUser(userinfores, loginService.GetCookie());
             }
 
             await UserSignin(sysuser);
             return new ApiResponse(true);
+        }
+
+        [Route("jaccount/directlogin")]
+        [HttpPost]
+        public async Task<ApiResponse> LoginByCookie([FromForm] string cookie)
+        {
+            JaccountFastLoginService loginService = new JaccountFastLoginService();
+            loginService.SetCookie(cookie);
+            
+            var userinfores = await loginService.GetUserInfo();
+            if (!userinfores.Success)
+            {
+                return new ApiResponse(StatusCodes.Status500InternalServerError, "LoginFailError", $"获取用户信息失败：{userinfores.Message}");
+            }
+            SystemUser? sysuser = null;
+            lock (loginService)
+            {
+                sysuser = RegisterOrUpdateUser(userinfores, cookie);
+            }
+
+            await UserSignin(sysuser);
+            return Info();
         }
 
         [Route("updatepreference")]
@@ -385,6 +380,42 @@ namespace JboxTransfer.Server.Controllers
         //    UserSignin(user);
         //    return new ApiResponse(true);
         //}
+
+        [NonAction]
+        private SystemUser RegisterOrUpdateUser(CommonResult<UserInfoEntity> userinfores, string cookie)
+        {
+            SystemUser? sysuser = _context.Users.FirstOrDefault(x => x.Jaccount == userinfores.Result.AccountNo);
+            if (sysuser == null)
+            {
+                sysuser = new SystemUser()
+                {
+                    Name = userinfores.Result.Name,
+                    Avatar = userinfores.Result.Avatars,
+                    Jaccount = userinfores.Result.AccountNo,
+                    Cookie = cookie,
+                    RegistrationTime = DateTime.Now,
+                    Role = userinfores.Result.UserType,
+                    Stat = new UserStatistics(),
+                    Preference = JsonConvert.SerializeObject(new UserPreference())
+                };
+                var entity = _context.Add(sysuser).Entity;
+                _context.SaveChanges();
+                entity.Stat.UserId = entity.Id;
+                _context.SaveChanges();
+            }
+            else
+            {
+                sysuser.Cookie = cookie;
+                sysuser.Name = userinfores.Result.Name;
+                sysuser.Role = userinfores.Result.UserType;
+                sysuser.Jaccount = userinfores.Result.AccountNo;
+                sysuser.Avatar = userinfores.Result.Avatars;
+                _context.Update(sysuser);
+                _context.SaveChanges();
+            }
+
+            return sysuser;
+        }
 
         [NonAction]
         private async Task UserSignin(SystemUser user)
