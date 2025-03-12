@@ -21,7 +21,7 @@ namespace JboxTransfer.Core.Modules.Sync
     public class FileSyncTask : IBaseSyncTask
     {
         public const long ChunkSize = 4 * 1024 * 1024;
-        private const int RetryTimes = 3;
+        private const int RetryTimes = 10;
         private string path;
         private string jboxhash;
         private long size;

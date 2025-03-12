@@ -16,7 +16,7 @@ namespace JboxTransfer.Core.Modules.Sync
 {
     public class FolderSyncTask : IBaseSyncTask
     {
-        private const int RetryTimes = 3;
+        private const int RetryTimes = 10;
         private string path;
         private Exception ex;
         private int total;
