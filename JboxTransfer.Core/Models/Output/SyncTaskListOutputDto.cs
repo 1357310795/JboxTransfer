@@ -14,6 +14,7 @@ namespace JboxTransfer.Core.Models.Output
         public int RunningCount { get; set; }
         public int CompletedCount { get; set; }
         public int ErrorCount { get; set; }
+        public bool JboxLag { get; set; }
 
         public SyncTaskListOutputDto(List<SyncTaskOutputDto> entities) : base(entities)
         {

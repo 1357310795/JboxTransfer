@@ -21,6 +21,7 @@ namespace JboxTransfer.Core.Modules.Jbox
         private readonly SystemUserInfoProvider _user;
         private readonly HttpClientFactory _clientFactory;
         private readonly CookieContainerProvider _ccProvider;
+        private readonly SlidingWindowEventDetector _detector;
 
         public JboxService(ILogger<JboxService> logger, JboxCredProvider credProvider, SystemUserInfoProvider user, HttpClientFactory clientFactory, CookieContainerProvider ccProvider)
         {
@@ -30,6 +31,7 @@ namespace JboxTransfer.Core.Modules.Jbox
             _clientFactory = clientFactory;
             _client = _clientFactory.CreateClient();
             _ccProvider = ccProvider;
+            _detector = SlidingWindowEventDetector.Default;
         }
 
         public CommonResult<JboxCredInfo> Login()
@@ -129,7 +131,14 @@ namespace JboxTransfer.Core.Modules.Jbox
                 req.Headers.Referrer = new Uri("https://jbox.sjtu.edu.cn/");
                 req.Headers.Range = new RangeHeaderValue(start, start + size - 1);
 
+                var dt = DateTime.Now;
                 var res = await _client.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
+                var dt2 = DateTime.Now;
+                //_logger.LogInformation($"请求 {path} 耗时 {(dt2 - dt).TotalMilliseconds}ms");
+                if ((dt2 - dt).TotalMilliseconds > 2000)
+                {
+                    _detector.RecordEvent();
+                }
 
                 if (!res.IsSuccessStatusCode)
                 {

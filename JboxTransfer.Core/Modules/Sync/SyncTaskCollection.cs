@@ -35,6 +35,7 @@ namespace JboxTransfer.Core.Modules.Sync
         public bool Empty => ListCurrent.Count == 0;
 
         private readonly IServiceScopeFactory _serviceScopeFactory;
+        private readonly SlidingWindowEventDetector _detector;
 
         public SyncTaskCollection(SystemUser user, IServiceScopeFactory serviceScopeFactory)
         {
@@ -44,6 +45,7 @@ namespace JboxTransfer.Core.Modules.Sync
             ListError = new List<IBaseSyncTask>();
             ListCurrent = new List<IBaseSyncTask>();
             _serviceScopeFactory = serviceScopeFactory;
+            _detector = SlidingWindowEventDetector.Default;
 
             checker = new LoopWorker();
             checker.Interval = 1000;
@@ -225,12 +227,18 @@ namespace JboxTransfer.Core.Modules.Sync
                 UpdateList();
                 if (IsBusy && !IsTooManyError)
                     UpdateStartNew();
+                UpdateSystemState();
             }
             catch( Exception ex)
             {
                 Debug.WriteLine(ex);
             }
             return TaskState.Started;
+        }
+
+        private void UpdateSystemState()
+        {
+            _detector.CleanOldEvents();
         }
 
         public async Task UpdateFromDb()
@@ -661,6 +669,7 @@ namespace JboxTransfer.Core.Modules.Sync
             outputDto.RunningCount = this.ListCurrent.Count;
             outputDto.CompletedCount = this.ListCompleted.Count;
             outputDto.ErrorCount = this.ListError.Count;
+            outputDto.JboxLag = this._detector.State;
             return new (true, "", outputDto);
         }        
         
