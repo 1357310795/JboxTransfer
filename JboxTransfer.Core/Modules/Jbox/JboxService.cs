@@ -131,15 +131,25 @@ namespace JboxTransfer.Core.Modules.Jbox
                 req.Headers.Referrer = new Uri("https://jbox.sjtu.edu.cn/");
                 req.Headers.Range = new RangeHeaderValue(start, start + size - 1);
 
-                var dt = DateTime.Now;
-                var res = await _client.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
-                var dt2 = DateTime.Now;
-                //_logger.LogInformation($"请求 {path} 耗时 {(dt2 - dt).TotalMilliseconds}ms");
-                if ((dt2 - dt).TotalMilliseconds > 2000)
+                using var headerTimeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                headerTimeoutCts.CancelAfter(TimeSpan.FromSeconds(10));
+                HttpResponseMessage res = null;
+                try
                 {
-                    _detector.RecordEvent();
+                    var dt = DateTime.Now;
+                    res = await _client.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, headerTimeoutCts.Token);
+                    var dt2 = DateTime.Now;
+                    _logger.LogInformation($"请求 {path} 耗时 {(dt2 - dt).TotalMilliseconds}ms");
+                    if ((dt2 - dt).TotalMilliseconds > 2000)
+                    {
+                        _detector.RecordEvent();
+                    }
                 }
-
+                catch (OperationCanceledException ex) when (headerTimeoutCts.IsCancellationRequested && !ct.IsCancellationRequested)
+                {
+                    throw new TimeoutException("请求超时，准备重试", ex);
+                }
+                
                 if (!res.IsSuccessStatusCode)
                 {
                     return new(false, $"服务器响应{res.StatusCode}");
