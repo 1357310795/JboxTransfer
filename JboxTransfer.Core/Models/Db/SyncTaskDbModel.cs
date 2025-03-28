@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -26,6 +27,8 @@ namespace JboxTransfer.Core.Models.Db
             CreationTime = DateTime.Now;
             UpdateTime = DateTime.Now;
             UserId = user.Id;
+            ErrorCause = SyncTaskErrorCause.None;
+            ChunkFactor = 1;
         }
 
         public int Id { get; set; }
@@ -40,6 +43,7 @@ namespace JboxTransfer.Core.Models.Db
         public string FileName { get; set; }
         public string FilePath { get; set; }
         public long Size { get; set; }
+        public int ChunkFactor { get; set; } = 1;
         public string? ConfirmKey { get; set; }
         /// <summary>
         /// 0:Idle
@@ -49,6 +53,7 @@ namespace JboxTransfer.Core.Models.Db
         /// 4:Cancel
         /// </summary>
         public SyncTaskDbState State { get; set; }
+        public SyncTaskErrorCause ErrorCause { get; set; }
         public string? MD5_Part { get; set; }
         public string? MD5_Ori { get; set; }
         public long? CRC64_Part { get; set; }
@@ -71,5 +76,17 @@ namespace JboxTransfer.Core.Models.Db
     public enum SyncTaskType
     {
         File, Folder
+    }    
+    
+    public enum SyncTaskErrorCause
+    {
+        None,
+        Auth,
+        LocalNetwork,
+        Jbox,
+        Tbox,
+        DownHash,
+        UpHash,
+        Other,
     }
 }

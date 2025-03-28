@@ -26,12 +26,24 @@ namespace JboxTransfer.Core.Modules.Db
             modelBuilder
                 .Entity<SyncTaskDbModel>()
                 .Property(e => e.State)
+                .HasConversion<string>();            
+            modelBuilder
+                .Entity<SyncTaskDbModel>()
+                .Property(e => e.ErrorCause)
                 .HasConversion<string>();
             modelBuilder.Entity<SystemUser>()
                 .HasOne(e => e.Stat)
                 .WithMany()
                 .HasForeignKey(e => e.StatId)
                 .IsRequired();
+            modelBuilder
+                .Entity<SyncTaskDbModel>()
+                .Property(e => e.ChunkFactor)
+                .HasDefaultValue(1);            
+            modelBuilder
+                .Entity<SyncTaskDbModel>()
+                .Property(e => e.ErrorCause)
+                .HasDefaultValue(SyncTaskErrorCause.None);
         }
 
         public int GetMinOrder()
