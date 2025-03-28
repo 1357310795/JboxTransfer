@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "JboxTransfer"
-#define MyAppVersion "2.0.3"
+#define MyAppVersion "2.0.4"
 #define MyAppPublisher "SJTU"
 #define MyAppURL "https://pan.sjtu.edu.cn/jboxtransfer/"
 #define MyAppExeName "JboxTransfer.Webview2.exe"
