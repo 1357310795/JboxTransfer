@@ -139,7 +139,7 @@ namespace JboxTransfer.Core.Modules.Jbox
                     var dt = DateTime.Now;
                     res = await _client.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, headerTimeoutCts.Token);
                     var dt2 = DateTime.Now;
-                    _logger.LogInformation($"请求 {path} 耗时 {(dt2 - dt).TotalMilliseconds}ms");
+                    //_logger.LogInformation($"请求 {path} 耗时 {(dt2 - dt).TotalMilliseconds}ms");
                     if ((dt2 - dt).TotalMilliseconds > 2000)
                     {
                         _detector.RecordEvent();

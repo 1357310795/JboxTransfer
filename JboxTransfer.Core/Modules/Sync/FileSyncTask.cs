@@ -220,6 +220,7 @@ namespace JboxTransfer.Core.Modules.Sync
                             .ExecuteUpdate(call => call
                             .SetProperty(x => x.State, x => SyncTaskDbState.Idle)
                             .SetProperty(x => x.UpdateTime, x => DateTime.Now)
+                            .SetProperty(x => x.ErrorCause, x => SyncTaskErrorCause.None)
                             .SetProperty(x => x.Message, x => null));
                     }
                     else
@@ -231,6 +232,7 @@ namespace JboxTransfer.Core.Modules.Sync
                             .SetProperty(x => x.UpdateTime, x => DateTime.Now)
                             .SetProperty(x => x.ConfirmKey, x => null)
                             .SetProperty(x => x.RemainParts, x => null)
+                            .SetProperty(x => x.ErrorCause, x => SyncTaskErrorCause.None)
                             .SetProperty(x => x.Message, x => null));
                     }
 
@@ -337,7 +339,10 @@ namespace JboxTransfer.Core.Modules.Sync
                 State = SyncTaskState.Error;
                 dbModel.State = SyncTaskDbState.Error;
                 dbModel.Message = Message = res0.result;
-                dbModel.ErrorCause = ErrorCause = SyncTaskErrorCause.Tbox;
+                if (Message.Contains("SSL"))
+                    dbModel.ErrorCause = ErrorCause = SyncTaskErrorCause.LocalNetwork;
+                else
+                    dbModel.ErrorCause = ErrorCause = SyncTaskErrorCause.Tbox;
                 dbModel.UpdateTime = DateTime.Now;
                 db.Update(dbModel);
                 db.SaveChanges();
@@ -355,7 +360,10 @@ namespace JboxTransfer.Core.Modules.Sync
                 dbModel.State = SyncTaskDbState.Error;
                 dbModel.UpdateTime = DateTime.Now;
                 dbModel.Message = Message = res1.Message;
-                dbModel.ErrorCause = ErrorCause = SyncTaskErrorCause.Tbox;
+                if (Message.Contains("SSL"))
+                    dbModel.ErrorCause = ErrorCause = SyncTaskErrorCause.LocalNetwork;
+                else
+                    dbModel.ErrorCause = ErrorCause = SyncTaskErrorCause.Tbox;
                 db.Update(dbModel);
                 db.SaveChanges();
                 return;
@@ -458,7 +466,7 @@ namespace JboxTransfer.Core.Modules.Sync
                 }
                 if (pts.IsPaused)
                     return;
-                if (t <= 0)
+                if (t < 0)
                 {
                     tbox.ResetPartNumber(curChunk);
                     State = SyncTaskState.Error;

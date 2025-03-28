@@ -11,6 +11,8 @@ using MassTransit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.DependencyInjection;
+using System.Threading.Tasks;
 
 namespace JboxTransfer.Server.Controllers
 {
@@ -196,12 +198,15 @@ namespace JboxTransfer.Server.Controllers
         [HttpPost]
         [Route("renew")]
         [Authorize]
-        public ApiResponse RenewCancelled([FromForm] int id)
+        public async Task<ApiResponse> RenewCancelled([FromForm] int id)
         {
             var collection = _taskCollectionProvider.GetSyncTaskCollection(_user.GetUser());
             var res = collection.RenewCancelled(id);
             if (res.success)
             {
+                var endpoint = await _sendEndpointProvider.GetSendEndpoint(new Uri("queue:add_task_from_db"));
+                await endpoint.Send(new NewTaskCheckMessage() { UserId = _user.GetUser().Id });
+
                 return new ApiResponse(true);
             }
             else
