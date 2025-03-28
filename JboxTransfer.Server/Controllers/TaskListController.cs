@@ -114,10 +114,27 @@ namespace JboxTransfer.Server.Controllers
         [HttpPost]
         [Route("restartallerr")]
         [Authorize]
-        public ApiResponse RestartAll(bool keepProgress = true)
+        public ApiResponse RestartAllError(bool keepProgress = true)
         {
             var collection = _taskCollectionProvider.GetSyncTaskCollection(_user.GetUser());
             var res = collection.RestartAllError(keepProgress);
+            if (res.success)
+            {
+                return new ApiResponse(true);
+            }
+            else
+            {
+                return new ApiResponse(500, "RestartTaskQueueError", res.result);
+            }
+        }        
+        
+        [HttpPost]
+        [Route("restartallerrauto")]
+        [Authorize]
+        public ApiResponse RestartAllErrorAuto()
+        {
+            var collection = _taskCollectionProvider.GetSyncTaskCollection(_user.GetUser());
+            var res = collection.RestartAllErrorAuto();
             if (res.success)
             {
                 return new ApiResponse(true);

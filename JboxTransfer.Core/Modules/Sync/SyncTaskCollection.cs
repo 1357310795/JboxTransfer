@@ -403,6 +403,38 @@ namespace JboxTransfer.Core.Modules.Sync
             {
                 return new CommonResult(false, ex.Message);
             }
+        }        
+        
+        public CommonResult RestartAllErrorAuto()
+        {
+            try
+            {
+                lock (_listErrorLock)
+                {
+                    for (int i = ListError.Count - 1; i >= 0; i--)
+                    {
+                        var item = ListError[i];
+                        switch(item.ErrorCause)
+                        {
+                            case SyncTaskErrorCause.UpHash:
+                            case SyncTaskErrorCause.DownHash:
+                                item.Recover(keepProgress: false);
+                                break;
+                            default:
+                                item.Recover(keepProgress: true);
+                                break;
+                        }
+                        ListError.Remove(item);
+                    }
+                }
+                
+                CheckTooManyErrors();
+                return new CommonResult(true, "");
+            }
+            catch (Exception ex)
+            {
+                return new CommonResult(false, ex.Message);
+            }
         }
 
         public CommonResult CancelAllError()
@@ -568,6 +600,40 @@ namespace JboxTransfer.Core.Modules.Sync
                 return new CommonResult(false, ex.Message);
             }
         } 
+
+        public CommonResult RenewCancelled(int syncTaskId)
+        {
+            try
+            {
+                using (var scope = _serviceScopeFactory.CreateScope())
+                {
+                    var db = scope.ServiceProvider.GetRequiredService<DefaultDbContext>();
+                    var taskDb = db.SyncTasks.FirstOrDefault(x => x.Id == syncTaskId);
+                    if (taskDb != null && taskDb.State == SyncTaskDbState.Cancel)
+                    {
+                        taskDb.State = SyncTaskDbState.Idle;
+                        taskDb.CRC64_Part = null;
+                        taskDb.MD5_Part = null;
+                        taskDb.RemainParts = null;
+                        taskDb.ErrorCause = SyncTaskErrorCause.None;
+                        taskDb.ConfirmKey = null;
+                        taskDb.Message = null;
+                        taskDb.UpdateTime = DateTime.Now;
+                        db.Update(taskDb);
+                        db.SaveChanges();
+                        return new CommonResult(true, "");
+                    }
+                    else
+                    {
+                        return new CommonResult(false, "找不到任务或任务状态冲突");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                return new CommonResult(false, ex.Message);
+            }
+        } 
         
         public CommonResult CancelOneError(int syncTaskId)
         {
@@ -713,10 +779,14 @@ namespace JboxTransfer.Core.Modules.Sync
         public CommonResult<SyncTaskListOutputDto> GetErrorListInfo()
         {
             List<SyncTaskOutputDto> list = new List<SyncTaskOutputDto>();
+            int num = 0;
             lock(_listErrorLock)
             {
-                foreach (var task in ListError.Slice(0, 99))
+                foreach (var task in ListError)
                 {
+                    num++;
+                    if (num > MaxErrorTaskCount)
+                        break;
                     list.Add(new SyncTaskOutputDto()
                     {
                         Id = task.SyncTaskId,

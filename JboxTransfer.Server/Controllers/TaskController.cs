@@ -193,5 +193,22 @@ namespace JboxTransfer.Server.Controllers
             }
         }
 
+        [HttpPost]
+        [Route("renew")]
+        [Authorize]
+        public ApiResponse RenewCancelled([FromForm] int id)
+        {
+            var collection = _taskCollectionProvider.GetSyncTaskCollection(_user.GetUser());
+            var res = collection.RenewCancelled(id);
+            if (res.success)
+            {
+                return new ApiResponse(true);
+            }
+            else
+            {
+                return new ApiResponse(500, "RenewCancelledTaskError", res.result);
+            }
+        }
+
     }
 }
