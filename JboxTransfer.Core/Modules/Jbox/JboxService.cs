@@ -111,9 +111,9 @@ namespace JboxTransfer.Core.Modules.Jbox
             }
         }
 
-        public async Task<CommonResult<MemoryStream>> DownloadChunk(string path, long start, long size, Pack<long> chunkProgress, CancellationToken ct = default)
+        public async Task<MemoryStream> DownloadChunk(string path, long start, long size, Pack<long> chunkProgress, CancellationToken ct = default)
         {
-            if (size == 0) return new CommonResult<MemoryStream>(true, "", new MemoryStream());
+            if (size == 0) return new MemoryStream();
             try
             {
                 var cred = CheckLogined();
@@ -152,12 +152,12 @@ namespace JboxTransfer.Core.Modules.Jbox
                 
                 if (!res.IsSuccessStatusCode)
                 {
-                    return new(false, $"服务器响应{res.StatusCode}");
+                    throw new UnauthorizedAccessException($"服务器响应{res.StatusCode}");
                 }
 
                 if (res.RequestMessage.RequestUri.Host == "restrict.sjtu.edu.cn")
                 {
-                    return new(false, $"非校园网环境");
+                    throw new WebException($"非校园网环境");
                 }
 
 
@@ -195,19 +195,19 @@ namespace JboxTransfer.Core.Modules.Jbox
                     ArrayPool<byte>.Shared.Return(buffer);
                 }
 
-                return new CommonResult<MemoryStream>(true, "", ms);
+                return ms;
             }
             catch (TimeoutException ex)
             {
-                return new(false, ex.Message);
+                throw;
             }
             catch (TaskCanceledException ex)
             {
-                return new(false, "操作已取消");
+                throw;
             }
-            catch (Exception ex)
+            catch
             {
-                return new(false, ex.Message);
+                throw;
             }
         }
 
@@ -283,6 +283,10 @@ namespace JboxTransfer.Core.Modules.Jbox
 
                 return new CommonResult<JboxItemInfo>(true, "", json);
             }
+            catch (HttpRequestException ex)
+            {
+                return new CommonResult<JboxItemInfo>(false, $"网络错误：{ex.Message}");
+            }            
             catch (Exception ex)
             {
                 return new CommonResult<JboxItemInfo>(false, $"{ex.Message}");

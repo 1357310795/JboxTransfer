@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using JboxTransfer.Core.Models.Message;
 using MassTransit;
 using Nito.AsyncEx;
+using JboxTransfer.Core.Models.Exceptions;
 
 namespace JboxTransfer.Core.Modules.Sync
 {
@@ -31,6 +32,8 @@ namespace JboxTransfer.Core.Modules.Sync
             get { return message; }
             set { message = value; }
         }
+
+        public SyncTaskErrorCause ErrorCause { get; set; }
 
         public int SyncTaskId { get; private set; }
         public int UserId { get; private set; }
@@ -92,7 +95,8 @@ namespace JboxTransfer.Core.Modules.Sync
             total = (int)dbModel.Size;
             path = dbModel.FilePath;
             State = dbModel.State == SyncTaskDbState.Error ? SyncTaskState.Error : SyncTaskState.Wait;
-            this.Message = dbModel.Message;
+            ErrorCause = dbModel.ErrorCause;
+            Message = dbModel.Message;
             pts = new PauseTokenSource();
         }
 
@@ -266,7 +270,8 @@ namespace JboxTransfer.Core.Modules.Sync
             State = SyncTaskState.Running;
 
             dbModel.State = SyncTaskDbState.Busy;
-            dbModel.Message = "";
+            dbModel.Message = Message = "";
+            dbModel.ErrorCause = ErrorCause = SyncTaskErrorCause.None;
             dbModel.UpdateTime = DateTime.Now;
             db.Update(dbModel);
             db.SaveChanges();
@@ -285,6 +290,7 @@ namespace JboxTransfer.Core.Modules.Sync
                     dbModel.State = SyncTaskDbState.Error;
                     dbModel.UpdateTime = DateTime.Now;
                     dbModel.Message = Message;
+                    dbModel.ErrorCause = ErrorCause = SyncTaskErrorCause.Tbox;
                     db.Update(dbModel);
                     db.SaveChanges();
                     return;
@@ -305,7 +311,7 @@ namespace JboxTransfer.Core.Modules.Sync
                         info = res.Result;
 
                         if (!res.Success)
-                            throw new Exception($"获取文件夹信息失败：{res.Message}");
+                            throw new JboxException($"获取文件夹信息失败：{res.Message}");
 
                         if (info.Content.Length == 0)
                             break;
@@ -360,10 +366,19 @@ namespace JboxTransfer.Core.Modules.Sync
                 if (t <= 0)
                 {
                     State = SyncTaskState.Error;
-                    Message = ex.Message;
                     dbModel.State = SyncTaskDbState.Error;
                     dbModel.UpdateTime = DateTime.Now;
-                    dbModel.Message = Message;
+                    dbModel.Message = Message = ex.Message;
+                    if (ex.Message.Contains("服务器响应"))
+                        dbModel.ErrorCause = ErrorCause = SyncTaskErrorCause.Auth;                   
+                    else if (ex.Message.Contains("网络错误"))
+                        dbModel.ErrorCause = ErrorCause = SyncTaskErrorCause.LocalNetwork;
+                    else if (ex is JboxException)
+                        dbModel.ErrorCause = ErrorCause = SyncTaskErrorCause.Jbox;
+                    else
+                        dbModel.ErrorCause = ErrorCause = SyncTaskErrorCause.Other;
+
+
                     db.Update(dbModel);
                     db.SaveChanges();
                     return;
@@ -372,10 +387,10 @@ namespace JboxTransfer.Core.Modules.Sync
                     break;
             }
             State = SyncTaskState.Complete;
-            Message = "同步完成";
             dbModel.State = SyncTaskDbState.Done;
             dbModel.UpdateTime = DateTime.Now;
-            dbModel.Message = Message;
+            dbModel.Message = Message = "同步完成";
+            dbModel.ErrorCause = ErrorCause = SyncTaskErrorCause.None;
             db.Update(dbModel);
             db.SaveChanges();
         }

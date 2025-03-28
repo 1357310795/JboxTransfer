@@ -15,6 +15,8 @@ using Microsoft.Extensions.Logging;
 using JboxTransfer.Core.Models.Message;
 using MassTransit;
 using Nito.AsyncEx;
+using JboxTransfer.Core.Models.Exceptions;
+using System.Net;
 
 namespace JboxTransfer.Core.Modules.Sync
 {
@@ -37,6 +39,15 @@ namespace JboxTransfer.Core.Modules.Sync
             get { return message; }
             set { message = value; }
         }
+
+        private SyncTaskErrorCause errorCause;
+        public SyncTaskErrorCause ErrorCause
+        {
+            get { return errorCause; }
+            set { errorCause = value; }
+        }
+
+        public int ChunkFactor { get; set; }
 
         public bool IsUserPause { get; set; }
 
@@ -76,6 +87,7 @@ namespace JboxTransfer.Core.Modules.Sync
         public FileSyncTask(IServiceScopeFactory serviceScopeFactory)
         {
             _serviceScopeFactory = serviceScopeFactory;
+            pts = new PauseTokenSource();
         }
 
         public void Init(SyncTaskDbModel dbModel)
@@ -86,6 +98,8 @@ namespace JboxTransfer.Core.Modules.Sync
             this.jboxhash = dbModel.MD5_Ori;
             this.size = dbModel.Size;
             this.Message = dbModel.Message;
+            this.ErrorCause = dbModel.ErrorCause;
+            this.ChunkFactor = dbModel.ChunkFactor;
             this.chunkCount = size.GetChunkCount();
 
             if (dbModel.ConfirmKey == null)
@@ -102,7 +116,6 @@ namespace JboxTransfer.Core.Modules.Sync
                 this.succChunk = this.chunkCount - remain.Count;
             }
             State = dbModel.State == SyncTaskDbState.Error ? SyncTaskState.Error : SyncTaskState.Wait;
-            pts = new PauseTokenSource();
         }
         
         public string GetName()
@@ -273,7 +286,7 @@ namespace JboxTransfer.Core.Modules.Sync
 
         private async Task internalStart(AsyncServiceScope scope, PauseTokenSource pts)
         {
-            CommonResult<MemoryStream> chunkRes = null;
+            MemoryStream chunkRes = null;
             CancellationToken ct = pts.CurrentCancellationToken;
 
             var db = scope.ServiceProvider.GetRequiredService<DefaultDbContext>();
@@ -309,6 +322,7 @@ namespace JboxTransfer.Core.Modules.Sync
 
             dbModel.State = SyncTaskDbState.Busy;
             dbModel.Message = "";
+            dbModel.ErrorCause = SyncTaskErrorCause.None;
             dbModel.UpdateTime = DateTime.Now;
             db.Update(dbModel);
             db.SaveChanges();
@@ -322,9 +336,9 @@ namespace JboxTransfer.Core.Modules.Sync
                 if (ct.IsCancellationRequested) return;
                 State = SyncTaskState.Error;
                 dbModel.State = SyncTaskDbState.Error;
-                dbModel.Message = res0.result;
+                dbModel.Message = Message = res0.result;
+                dbModel.ErrorCause = ErrorCause = SyncTaskErrorCause.Tbox;
                 dbModel.UpdateTime = DateTime.Now;
-                Message = res0.result; 
                 db.Update(dbModel);
                 db.SaveChanges();
                 return;
@@ -340,8 +354,8 @@ namespace JboxTransfer.Core.Modules.Sync
                 State = SyncTaskState.Error;
                 dbModel.State = SyncTaskDbState.Error;
                 dbModel.UpdateTime = DateTime.Now;
-                dbModel.Message = res1.Message;
-                Message = res1.Message;
+                dbModel.Message = Message = res1.Message;
+                dbModel.ErrorCause = ErrorCause = SyncTaskErrorCause.Tbox;
                 db.Update(dbModel);
                 db.SaveChanges();
                 return;
@@ -357,8 +371,8 @@ namespace JboxTransfer.Core.Modules.Sync
                 State = SyncTaskState.Error;
                 dbModel.State = SyncTaskDbState.Error;
                 dbModel.UpdateTime = DateTime.Now;
-                dbModel.Message = res2.Message;
-                Message = res2.Message;
+                dbModel.Message = Message = res2.Message;
+                dbModel.ErrorCause = ErrorCause = SyncTaskErrorCause.Tbox;
                 db.Update(dbModel);
                 db.SaveChanges();
                 return;
@@ -390,24 +404,45 @@ namespace JboxTransfer.Core.Modules.Sync
 
                         var res3 = tbox.EnsureNoExpire(curChunk.PartNumber, ct);
                         if (!res3.success)
-                            throw new Exception($"{res3.result}");
+                            throw new TboxException($"{res3.result}");
 
                         if (pts.IsPaused)
                             return;
 
-                        chunkRes = await jbox.GetChunk(curChunk.PartNumber, ct);
-                        if (!chunkRes.Success)
-                            throw new Exception($"下载块 {curChunk.PartNumber} 发生错误：{chunkRes.Message}");
+                        try
+                        {
+                            chunkRes = await jbox.GetChunk(curChunk.PartNumber, ct);
+                        }
+                        catch (TimeoutException ex)
+                        {
+                            throw new JboxException($"下载块 {curChunk.PartNumber} 发生错误：{ex.Message}【服务繁忙，请于空闲时段重试】");
+                        }                        
+                        catch (TaskCanceledException ex)
+                        {
+                            throw new JboxException($"下载块 {curChunk.PartNumber} 发生错误：{ex.Message}【服务繁忙，请于空闲时段重试】");
+                        }                        
+                        catch (UnauthorizedAccessException ex)
+                        {
+                            throw new UnauthorizedAccessException($"【认证失败，请尝试重启 JboxTransfer】");
+                        }                     
+                        catch (WebException ex)
+                        {
+                            throw new WebException($"下载块 {curChunk.PartNumber} 发生错误：{ex.Message}【请检查您的网络连接】");
+                        }
+                        catch
+                        {
+                            throw;
+                        }
 
                         if (pts.IsPaused)
                             return;
 
-                        chunkRes.Result.Position = 0;
-                        var res4 = tbox.Upload(chunkRes.Result, curChunk.PartNumber, ct);
+                        chunkRes.Position = 0;
+                        var res4 = tbox.Upload(chunkRes, curChunk.PartNumber, ct);
                         if (res4.success)
                             break;
                         else
-                            throw new Exception($"上传块 {curChunk.PartNumber} 发生错误：{res3.result}");
+                            throw new TboxException($"上传块 {curChunk.PartNumber} 发生错误：{res3.result}");
                     }
                     catch (Exception ex)
                     {
@@ -423,23 +458,29 @@ namespace JboxTransfer.Core.Modules.Sync
                 {
                     tbox.ResetPartNumber(curChunk);
                     State = SyncTaskState.Error;
-                    Message = ex.Message;
                     chunkRes = null;
                     dbModel.State = SyncTaskDbState.Error;
                     dbModel.UpdateTime = DateTime.Now;
-                    dbModel.Message = ex.Message;
+                    dbModel.Message = Message = ex.Message;
+                    dbModel.ErrorCause = ErrorCause = (ex.GetType().Name) switch {
+                        nameof(JboxException) => SyncTaskErrorCause.Jbox,
+                        nameof(TboxException) => SyncTaskErrorCause.Tbox,
+                        nameof(WebException) => SyncTaskErrorCause.LocalNetwork,
+                        nameof(UnauthorizedAccessException) => SyncTaskErrorCause.Auth,
+                        _ => SyncTaskErrorCause.Other,
+                    };
                     db.Update(dbModel);
                     db.SaveChanges();
                     return;
                 }
 
-                chunkRes.Result.Position = 0;
-                if (chunkRes.Result.Length > 0)
+                chunkRes.Position = 0;
+                if (chunkRes.Length > 0)
                 {
-                    var sha256 = HashHelper.SHA256Hash(chunkRes.Result);
+                    var sha256 = HashHelper.SHA256Hash(chunkRes);
                     md5.MD5Hash_Proc(Encoding.Default.GetBytes((curChunk.PartNumber == 1 ? "" : ",") + sha256));
                 }
-                crc64.TransformBlock(chunkRes.Result.ToArray(), 0, (int)chunkRes.Result.Length);
+                crc64.TransformBlock(chunkRes.ToArray(), 0, (int)chunkRes.Length);
                 tbox.CompletePart(curChunk);
                 succChunk++;
                 jbox.ClearProgress();
@@ -458,10 +499,10 @@ namespace JboxTransfer.Core.Modules.Sync
                 if (!res2.Success)
                 {
                     if (ct.IsCancellationRequested) return;
-                    Message = $"获取下一分块发生错误，当前分块为 {res2.Message}";
                     State = SyncTaskState.Error;
                     dbModel.State = SyncTaskDbState.Error;
-                    dbModel.Message = Message;
+                    dbModel.Message = Message = $"获取下一分块发生错误，当前分块为 {res2.Message}";
+                    dbModel.ErrorCause = ErrorCause = SyncTaskErrorCause.Tbox;
                     dbModel.UpdateTime = DateTime.Now;
                     db.Update(dbModel);
                     db.SaveChanges();
@@ -484,11 +525,11 @@ namespace JboxTransfer.Core.Modules.Sync
             {
                 if (jboxhash != actualHash)
                 {
-                    Message = $"下载流校验值不匹配";
                     State = SyncTaskState.Error;
                     dbModel.State = SyncTaskDbState.Error;
                     dbModel.UpdateTime = DateTime.Now;
-                    dbModel.Message = Message;
+                    dbModel.Message = Message = $"下载流校验值不匹配";
+                    dbModel.ErrorCause = ErrorCause = SyncTaskErrorCause.DownHash;
                     db.Update(dbModel);
                     db.SaveChanges();
                     return;
@@ -497,22 +538,24 @@ namespace JboxTransfer.Core.Modules.Sync
                 if (!res4.Success)
                 {
                     if (ct.IsCancellationRequested) return;
-                    Message = $"{res4.Message}";
                     State = SyncTaskState.Error;
                     dbModel.State = SyncTaskDbState.Error;
                     dbModel.UpdateTime = DateTime.Now;
-                    dbModel.Message = Message;
+                    dbModel.Message = Message = $"{res4.Message}";
+                    dbModel.ErrorCause = ErrorCause = 
+                        (res4.Message.Contains("different crc64 value") ? SyncTaskErrorCause.UpHash : SyncTaskErrorCause.Tbox);
                     db.Update(dbModel);
                     db.SaveChanges();
                     return;
                 }
-                Message = "同步完成";
                 State = SyncTaskState.Complete;
-                dbModel.Message = Message;
+                dbModel.Message = Message = "同步完成";
                 dbModel.State = SyncTaskDbState.Done;
                 dbModel.UpdateTime = DateTime.Now;
+                dbModel.ErrorCause = ErrorCause = SyncTaskErrorCause.None;
                 db.Update(dbModel);
                 db.SaveChanges();
+
                 db.UserStats
                     .Where(x => x.UserId == UserId)
                     .ExecuteUpdate(call => call

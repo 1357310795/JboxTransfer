@@ -1,5 +1,6 @@
 ﻿using JboxTransfer.Core.Extensions;
 using Microsoft.Extensions.Logging;
+using System.Net;
 using Teru.Code.Models;
 
 namespace JboxTransfer.Core.Modules.Jbox
@@ -37,15 +38,13 @@ namespace JboxTransfer.Core.Modules.Jbox
             chunkProgress = new Pack<long>(0);
         }
 
-        public async Task<CommonResult<MemoryStream>> GetChunk(int chunk, CancellationToken ct)
+        public async Task<MemoryStream> GetChunk(int chunk, CancellationToken ct)
         {
             //Todo : 检查块大小
             var curchunksize = chunk == chunkCount ? size - ChunkSize * (chunk - 1) : ChunkSize;
             var res = await _jbox.DownloadChunk(path, (chunk - 1) * ChunkSize, curchunksize, chunkProgress, ct);
-            if (!res.Success)
-                return res;
-            if (res.Result.Length != curchunksize)
-                return new CommonResult<MemoryStream>(false, $"块大小错误：got {res.Result.Length}, expected {curchunksize}");
+            if (res.Length != curchunksize)
+                throw new WebException($"块大小错误：got {res.Length}, expected {curchunksize}");
             return res;
         }
 
