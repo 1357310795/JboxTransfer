@@ -301,7 +301,12 @@ namespace JboxTransfer.Core.Modules.Sync
 
         private void CheckTooManyErrors()
         {
-            if (ListError.Count > MaxErrorTaskCount)
+            List<SyncTaskErrorCause> NonCriticalErrorCause = new List<SyncTaskErrorCause> { 
+                SyncTaskErrorCause.UpHash,
+                SyncTaskErrorCause.DownHash,
+                SyncTaskErrorCause.Jbox,
+            };
+            if (ListError.Where(x => !NonCriticalErrorCause.Contains(x.ErrorCause)).Count() > MaxErrorTaskCount)
             {
                 IsTooManyError = true;
                 Message = "错误过多，队列被迫终止。请先处理出错的项目。";
@@ -710,7 +715,7 @@ namespace JboxTransfer.Core.Modules.Sync
             List<SyncTaskOutputDto> list = new List<SyncTaskOutputDto>();
             lock(_listErrorLock)
             {
-                foreach (var task in ListError)
+                foreach (var task in ListError.Slice(0, 99))
                 {
                     list.Add(new SyncTaskOutputDto()
                     {

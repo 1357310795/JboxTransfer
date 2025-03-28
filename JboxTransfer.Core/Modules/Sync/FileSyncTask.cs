@@ -428,6 +428,10 @@ namespace JboxTransfer.Core.Modules.Sync
                         catch (WebException ex)
                         {
                             throw new WebException($"下载块 {curChunk.PartNumber} 发生错误：{ex.Message}【请检查您的网络连接】");
+                        }                     
+                        catch (HttpRequestException ex)
+                        {
+                            throw new WebException($"下载块 {curChunk.PartNumber} 发生错误：{ex.Message}【请检查您的网络连接】");
                         }
                         catch
                         {

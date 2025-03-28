@@ -1,4 +1,5 @@
 ﻿using JboxTransfer.Core.Extensions;
+using JboxTransfer.Core.Models.Exceptions;
 using Microsoft.Extensions.Logging;
 using System.Net;
 using Teru.Code.Models;
@@ -44,7 +45,7 @@ namespace JboxTransfer.Core.Modules.Jbox
             var curchunksize = chunk == chunkCount ? size - ChunkSize * (chunk - 1) : ChunkSize;
             var res = await _jbox.DownloadChunk(path, (chunk - 1) * ChunkSize, curchunksize, chunkProgress, ct);
             if (res.Length != curchunksize)
-                throw new WebException($"块大小错误：got {res.Length}, expected {curchunksize}");
+                throw new JboxException($"块大小错误：got {res.Length}, expected {curchunksize}");
             return res;
         }
 
