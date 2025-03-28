@@ -17,6 +17,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Rewrite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Primitives;
 using TboxWebdav.Server.Modules;
 using TboxWebdav.Server.Modules.Tbox;
 
@@ -57,10 +58,22 @@ namespace JboxTransfer.Server
             });
 
             app.UseDefaultFiles();
-            app.UseStaticFiles();
+            app.UseStaticFiles(new StaticFileOptions()
+            {
+                OnPrepareResponse = (context) =>
+                {
+                    context.Context.Response.Headers.CacheControl = new StringValues("no-cache, no-store, must-revalidate");
+                }
+            });
 
             app.UseRewriter(new RewriteOptions().AddRewrite("^[^.]*$", "index.html", true));
-            app.UseStaticFiles();
+            app.UseStaticFiles(new StaticFileOptions()
+            {
+                OnPrepareResponse = (context) =>
+                {
+                    context.Context.Response.Headers.CacheControl = new StringValues("no-cache, no-store, must-revalidate");
+                }
+            });
 
             //迁移数据库
             using (var serviceScope = app.Services.GetService<IServiceScopeFactory>().CreateScope())
@@ -159,6 +172,8 @@ namespace JboxTransfer.Server
                                 //x.Cookie.HttpOnly = true;
                                 //x.Cookie.SameSite = SameSiteMode.None;
                                 //x.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                                x.ExpireTimeSpan = TimeSpan.FromDays(7);
+                                x.Cookie.MaxAge = TimeSpan.FromDays(7);
                             });
             services.AddAuthorization(options =>
             {
