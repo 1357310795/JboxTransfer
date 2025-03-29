@@ -44,6 +44,8 @@ namespace JboxTransfer.Webview2
                 AdditionalBrowserArguments = ""
             });
             await webView.EnsureCoreWebView2Async(webView2Environment);
+            await webView.CoreWebView2.Profile.ClearBrowsingDataAsync(CoreWebView2BrowsingDataKinds.AllDomStorage);
+            await webView.CoreWebView2.Profile.ClearBrowsingDataAsync(CoreWebView2BrowsingDataKinds.DiskCache);
 
             _lifetime.ApplicationStarted.Register(() =>
             {
